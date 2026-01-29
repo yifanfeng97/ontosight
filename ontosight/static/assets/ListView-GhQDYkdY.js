@@ -1,0 +1,2 @@
+import{r as l,u as a,j as e,E as c,L as i}from"./index-WuE-ptUs.js";const m=l.memo(function({data:t}){const{selectedNodes:r,selectNode:o}=a();return!t.items||t.items.length===0?e.jsx(c,{description:"No items to display"}):e.jsx("div",{className:"list-view",children:e.jsx(i,{dataSource:t.items,renderItem:s=>e.jsx(i.Item,{className:`list-item ${r.has(s.id)?"selected":""}`,onClick:()=>o(s.id),style:{cursor:"pointer"},children:e.jsx(i.Item.Meta,{title:s.label,description:s.id})},s.id)})})});export{m as default};
+//# sourceMappingURL=ListView-GhQDYkdY.js.map
