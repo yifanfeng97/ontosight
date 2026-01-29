@@ -12,22 +12,31 @@ interface VisualizationRouterProps {
 }
 
 export default function VisualizationRouter({ data, meta }: VisualizationRouterProps) {
-  // Determine view type from data structure
-  let viewType: "graph" | "list" | "hypergraph" = "graph";
-
-  if (data.nodes && data.edges) {
-    viewType = data.hyperedges ? "hypergraph" : "graph";
-  } else if (data.items) {
-    viewType = "list";
+  console.log("[VisualizationRouter] Received data:", data);
+  console.log("[VisualizationRouter] Data keys:", data ? Object.keys(data) : "null");
+  
+  // Determine view type from payload
+  const payload = data?.payload;
+  console.log("[VisualizationRouter] Payload:", payload);
+  console.log("[VisualizationRouter] Payload type:", payload?.type);
+  
+  if (!payload) {
+    console.warn("[VisualizationRouter] No payload found, showing empty");
+    return <Empty description="No data to visualize" />;
   }
+
+  const viewType = payload.type;
+  const viewData = payload.data;
+  
+  console.log("[VisualizationRouter] View type:", viewType);
+  console.log("[VisualizationRouter] View data:", viewData);
 
   return (
     <div className="visualization-router">
       <Suspense fallback={<div>Loading visualization...</div>}>
-        {viewType === "graph" && <GraphView data={data} meta={meta} />}
-        {viewType === "list" && <ListView data={data} meta={meta} />}
-        {viewType === "hypergraph" && <HypergraphView />}
-        {!data && <Empty description="No data to visualize" />}
+        {viewType === "graph" && <GraphView data={viewData} meta={meta} />}
+        {viewType === "list" && <ListView data={viewData} meta={meta} />}
+        {viewType === "hypergraph" && <HypergraphView data={viewData} meta={meta} />}
       </Suspense>
     </div>
   );

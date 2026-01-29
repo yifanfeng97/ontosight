@@ -108,34 +108,22 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   }, [searchResults]);
 
   useEffect(() => {
-    if (!containerRef.current || !data.nodes) return;
+    console.log("[GraphView] useEffect triggered");
+    console.log("[GraphView] data:", data);
+    console.log("[GraphView] data.nodes:", data?.nodes?.length || 0);
+    console.log("[GraphView] data.edges:", data?.edges?.length || 0);
+    
+    if (!containerRef.current || !data?.nodes) {
+      console.warn("[GraphView] Missing containerRef or data.nodes");
+      return;
+    }
 
     // Clean up old graph
     if (graphRef.current) {
       graphRef.current.destroy();
     }
 
-    // 注册自定义节点状态样式
-    if (!(G6 as any).registered('highlight')) {
-      (G6 as any).registerBehavior('highlight', {
-        getEvents() {
-          return {
-            'node:mouseenter': 'onNodeEnter',
-            'node:mouseleave': 'onNodeLeave',
-          };
-        },
-        onNodeEnter(evt: any) {
-          const { item } = evt;
-          (this.graph as any).setItemState(item, 'highlight', true);
-        },
-        onNodeLeave(evt: any) {
-          const { item } = evt;
-          (this.graph as any).setItemState(item, 'highlight', false);
-        },
-      });
-    }
-
-    // Create new graph
+    // Create new graph with state styles and data
     const graph = new (G6 as any).Graph({
       container: containerRef.current,
       width: containerRef.current.clientWidth,
@@ -166,26 +154,24 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
           opacity: 1,
         },
       },
-    });
-
-    // Add data
-    (graph as any).data({
-      nodes: data.nodes.map((node: any) => ({
-        ...node,
-        size: 30,
-        style: {
-          fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
-          lineWidth: selectedNodes.has(node.id) ? 3 : 1,
-          stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
-        },
-      })),
-      edges: (data.edges || []).map((edge: any) => ({
-        ...edge,
-        style: {
-          stroke: '#ccc',
-          lineWidth: 1,
-        },
-      })),
+      data: {
+        nodes: data.nodes.map((node: any) => ({
+          ...node,
+          size: 30,
+          style: {
+            fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
+            lineWidth: selectedNodes.has(node.id) ? 3 : 1,
+            stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+          },
+        })),
+        edges: (data.edges || []).map((edge: any) => ({
+          ...edge,
+          style: {
+            stroke: '#ccc',
+            lineWidth: 1,
+          },
+        })),
+      },
     });
 
     // Event handlers

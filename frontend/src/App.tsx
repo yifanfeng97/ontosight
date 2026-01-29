@@ -12,13 +12,23 @@ export default function App() {
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log("[App] Fetching meta...");
         const meta = await apiClient.getMeta();
+        console.log("[App] Meta response:", meta);
         setMeta(meta);
 
+        console.log("[App] Fetching data...");
         const data = await apiClient.getData();
+        console.log("[App] Data response:", data);
+        console.log("[App] Data structure:", {
+          hasPayload: !!data?.payload,
+          payloadType: data?.payload?.type,
+          dataKeys: data ? Object.keys(data) : "N/A"
+        });
         setData(data);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to load data";
+        console.error("[App] Error:", message, err);
         setError(message);
       } finally {
         setLoading(false);

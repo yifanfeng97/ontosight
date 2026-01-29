@@ -64,19 +64,40 @@ export interface Edge<T> {
 }
 
 /**
+ * Generic item for list/table visualization.
+ * 
+ * @template T - Type of item data
+ * 
+ * @example
+ * const item: Item<PersonData> = {
+ *   id: "person_1",
+ *   data: { name: "Alice", age: 30 },
+ *   label: "Alice"
+ * };
+ */
+export interface Item<T> {
+  /** Unique item identifier */
+  id: string;
+  /** Item data */
+  data: T;
+  /** Display label */
+  label: string;
+}
+
+/**
  * Multi-node edge connecting more than 2 nodes.
  * Used for hypergraph visualization.
  * 
  * @template T - Type of hyperedge metadata
  * 
  * @example
- * const hyperedge: HyperEdge<ProjectData> = {
+ * const hyperedge: Hyperedge<ProjectData> = {
  *   nodes: ["researcher_1", "researcher_2", "researcher_3"],
  *   data: { project: "AI Safety" },
  *   label: "AI Safety collaboration"
  * };
  */
-export interface HyperEdge<T> {
+export interface Hyperedge<T> {
   /** List of node IDs in this hyperedge (minimum 2) */
   nodes: string[];
   /** Hyperedge metadata */
@@ -156,24 +177,34 @@ export interface ChatResponse {
  * Complete visualization data payload for /api/data endpoint.
  */
 export interface VisualizationData {
-  /** List of node objects */
-  nodes?: Record<string, any>[];
-  /** List of edge objects */
-  edges?: Record<string, any>[];
-  /** List of items for table/list view */
-  items?: Record<string, any>[];
-  /** List of hyperedge objects */
-  hyperedges?: Record<string, any>[];
+    payload: GraphPayload | HypergraphPayload | ListPayload;
 }
 
-// ============================================================================
-// Type aliases for common scenarios
-// ============================================================================
+export interface GraphData {
+    nodes: Node<any>[];
+    edges: Edge<any>[];
+}
 
-/**
- * Hypergraph visualization data.
- */
 export interface HypergraphData {
-  nodes: Node<Record<string, any>>[];
-  hyperedges: HyperEdge<Record<string, any>>[];
+    nodes: Node<any>[];
+    edges: Hyperedge<any>[];
+}
+
+export interface ListData {
+    items: Item<any>[];
+}
+
+export interface GraphPayload {
+    type: "graph";
+    data: GraphData;
+}
+
+export interface HypergraphPayload {
+    type: "hypergraph";
+    data: HypergraphData;
+}
+
+export interface ListPayload {
+    type: "list";
+    data: ListData;
 }
