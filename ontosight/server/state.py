@@ -65,6 +65,7 @@ class GlobalState:
         self._state_lock = threading.Lock()
         self._callbacks: Dict[str, Callable] = {}
         self._visualization_data: Dict[str, Any] = {}
+        self._visualization_type: str = "graph"  # Default type
         self._context: Dict[str, Any] = {}
 
         logger.info("GlobalState initialized (singleton)")
@@ -150,6 +151,17 @@ class GlobalState:
         except Exception as e:
             logger.error(f"Callback {callback_name} failed: {type(e).__name__}: {e}", exc_info=True)
             raise
+
+    def set_visualization_type(self, viz_type: str) -> None:
+        """Set the type of visualization (graph, hypergraph, list)."""
+        with self._state_lock:
+            self._visualization_type = viz_type
+            logger.debug(f"Set visualization type: {viz_type}")
+
+    def get_visualization_type(self) -> str:
+        """Get the current visualization type."""
+        with self._state_lock:
+            return self._visualization_type
 
     def set_visualization_data(self, key: str, value: Any) -> None:
         """Store visualization data in global state.

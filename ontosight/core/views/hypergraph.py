@@ -1,6 +1,7 @@
 """Hypergraph visualization - creates interactive hypergraph views."""
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
+from pydantic import BaseModel
 import logging
 
 from ontosight.server.state import global_state
@@ -14,15 +15,18 @@ from ontosight.utils import (
 
 logger = logging.getLogger(__name__)
 
+NodeSchema = TypeVar("NodeSchema", bound=BaseModel)
+EdgeSchema = TypeVar("EdgeSchema", bound=BaseModel)
+
 
 def view_hypergraph(
-    node_list: List[Any],
-    edge_list: List[Any],
-    node_schema: Any,
-    edge_schema: Any,
-    node_name_extractor: Extractor,
-    edge_name_extractor: Extractor,
-    nodes_in_edge_extractor: Extractor,
+    node_list: List[NodeSchema],
+    edge_list: List[EdgeSchema],
+    node_schema: Type[NodeSchema],
+    edge_schema: Type[EdgeSchema],
+    node_name_extractor: Callable[[NodeSchema], str] | str,
+    edge_name_extractor: Callable[[EdgeSchema], str] | str,
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str]] | str,
     on_search: Optional[Callable[[str, Dict], Any]] = None,
     on_chat: Optional[Callable[[str, Dict], Any]] = None,
     context: Optional[Dict[str, Any]] = None,
@@ -75,8 +79,9 @@ def view_hypergraph(
             edge_name_extractor=edge_name_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
+        global_state.set_visualization_type("hypergraph")
         global_state.set_visualization_data("nodes", result.get("nodes", []))
-        global_state.set_visualization_data("hyperedges", result.get("hyperedges", []))
+        global_state.set_visualization_data("edges", result.get("hyperedges", []))
 
         logger.info("Hypergraph visualization setup complete")
 

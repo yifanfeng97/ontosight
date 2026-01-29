@@ -1,7 +1,8 @@
 """Graph visualization - creates interactive force-directed graphs."""
 
 
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
+from pydantic import BaseModel
 import logging
 
 from ontosight.server.state import global_state
@@ -15,23 +16,26 @@ from ontosight.utils import (
 
 logger = logging.getLogger(__name__)
 
+NodeSchema = TypeVar("NodeSchema", bound=BaseModel)
+EdgeSchema = TypeVar("EdgeSchema", bound=BaseModel)
+
 
 def view_graph(
-    node_list: List[Any],
-    edge_list: List[Any],
-    node_schema: Any,
-    edge_schema: Any,
-    node_name_extractor: Extractor,
-    edge_name_extractor: Extractor,
-    nodes_in_edge_extractor: Extractor,
+    node_list: List[NodeSchema],
+    edge_list: List[EdgeSchema],
+    node_schema: Type[NodeSchema],
+    edge_schema: Type[EdgeSchema],
+    node_name_extractor: Callable[[NodeSchema], str] | str,
+    edge_name_extractor: Callable[[EdgeSchema], str] | str,
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str]] | str,
     on_search: Optional[Callable[[str, Dict], Any]] = None,
     on_chat: Optional[Callable[[str, Dict], Any]] = None,
     context: Optional[Dict[str, Any]] = None,
 ) -> None:
     """Create an interactive graph visualization.
 
-    Converts explicit node and edge lists into a normalized graph format
-    using extractors to map object fields to graph attributes.
+    A graph visualization connects nodes using edges (typically pairwise connections).
+    Each node and edge can have properties that are extracted using the provided extractors.
 
     Args:
         node_list: List of node objects/dicts
@@ -44,12 +48,6 @@ def view_graph(
         on_search: Optional callback for search queries
         on_chat: Optional callback for chat queries
         context: Optional context data to store with visualization
-
-    Example:
-        >>> # All arguments (except callbacks) are required
-        >>> nodes = [{"id": "1", "label": "Alice"}]
-        >>> edges = [{"source": "1", "target": "1"}]
-        >>> view_graph(nodes, edges, None, None, None, None, None)
     """
     ensure_server_running()
     global_state.clear()
@@ -82,6 +80,7 @@ def view_graph(
             edge_name_extractor=edge_name_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
+        global_state.set_visualization_type("graph")
         global_state.set_visualization_data("nodes", result.get("nodes", []))
         global_state.set_visualization_data("edges", result.get("edges", []))
 

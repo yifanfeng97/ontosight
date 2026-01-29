@@ -4,9 +4,23 @@ This example shows how to use OntoSight with Pydantic models
 for structured data with validation.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import List
 from ontosight.core import view_graph
+
+# Define node and edge schemas for visualization
+class NodeSchema(BaseModel):
+    id: str = Field(..., description="Unique identifier for the node")
+    label: str = Field(..., description="Label of the node")
+    email: str = Field(..., description="Email of the node")
+    department: str = Field(..., description="Department of the node")
+
+
+class EdgeSchema(BaseModel):
+    source: str = Field(..., description="Source node ID")
+    target: str = Field(..., description="Target node ID")
+    label: str = Field(..., description="Label of the edge")
+
 
 # Define Pydantic models
 class Person(BaseModel):
@@ -70,21 +84,21 @@ if __name__ == "__main__":
     
     # Convert to OntoSight format
     nodes = [
-        {
-            "id": p.id,
-            "label": extract_person_label(p),
-            "email": p.email,
-            "department": p.department,
-        }
+        NodeSchema(
+            id=p.id,
+            label=extract_person_label(p),
+            email=p.email,
+            department=p.department,
+        )
         for p in people
     ]
     
     edges = [
-        {
-            "source": r.source_id,
-            "target": r.target_id,
-            "label": extract_relationship_label(r),
-        }
+        EdgeSchema(
+            source=r.source_id,
+            target=r.target_id,
+            label=extract_relationship_label(r),
+        )
         for r in relationships
     ]
     
@@ -92,11 +106,11 @@ if __name__ == "__main__":
     view_graph(
         node_list=nodes,
         edge_list=edges,
-        node_schema=None,
-        edge_schema=None,
-        node_name_extractor=None,
-        edge_name_extractor=None,
-        nodes_in_edge_extractor=None,
+        node_schema=NodeSchema,
+        edge_schema=EdgeSchema,
+        node_name_extractor=lambda node: node.label,
+        edge_name_extractor=lambda edge: edge.label,
+        nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         context={"model": "Person", "type": "organizational_network"}
     )
     

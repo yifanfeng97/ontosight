@@ -1,7 +1,8 @@
 """List visualization - creates interactive list views."""
 
 import logging
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TypeVar, List, Type
+from pydantic import BaseModel
 
 from ontosight.server.state import global_state
 from ontosight.utils import (
@@ -14,11 +15,12 @@ from ontosight.utils import (
 
 logger = logging.getLogger(__name__)
 
+ItemSchema = TypeVar("ItemSchema", bound=BaseModel)
 
 def view_list(
-    item_list: list[Any],
-    item_schema: Any,
-    item_name_extractor: Extractor,
+    item_list: List[ItemSchema],
+    item_schema: Type[ItemSchema],
+    item_name_extractor: Callable[[ItemSchema], str] | str,
     on_search: Optional[Callable[[str, dict], Any]] = None,
     on_chat: Optional[Callable[[str, dict], Any]] = None,
     context: Optional[dict[str, Any]] = None,
@@ -65,6 +67,7 @@ def view_list(
             items=item_list,
             name_extractor=item_name_extractor,
         )
+        global_state.set_visualization_type("list")
         global_state.set_visualization_data("items", result.get("items", []))
 
         logger.info("List visualization setup complete")

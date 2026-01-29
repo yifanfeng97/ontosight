@@ -5,22 +5,36 @@ This example shows how to use OntoSight with NetworkX graphs.
 
 import networkx as nx
 from ontosight.core import view_graph
+from pydantic import BaseModel, Field
+
+
+class NodeSchema(BaseModel):
+    id: str = Field(..., description="Unique identifier for the node")
+    label: str = Field(..., description="Label of the node")
+    club: str = Field(..., description="Club affiliation")
+
+
+class EdgeSchema(BaseModel):
+    source: str = Field(..., description="Source node ID")
+    target: str = Field(..., description="Target node ID")
+    label: str = Field(..., description="Label of the edge")
+
 
 # Create a NetworkX graph
 G = nx.karate_club_graph()  # Famous Zachary's Karate Club network
 
 # Convert NetworkX nodes and edges to OntoSight format
 nodes = [
-    {
-        "id": str(node),
-        "label": f"Person {node}",
-        "club": G.nodes[node].get("club", "Unknown"),
-    }
+    NodeSchema(
+        id=str(node),
+        label=f"Person {node}",
+        club=G.nodes[node].get("club", "Unknown"),
+    )
     for node in G.nodes()
 ]
 
 edges = [
-    {"source": str(u), "target": str(v), "label": "connected"}
+    EdgeSchema(source=str(u), target=str(v), label="connected")
     for u, v in G.edges()
 ]
 
@@ -31,11 +45,11 @@ if __name__ == "__main__":
     view_graph(
         node_list=nodes,
         edge_list=edges,
-        node_schema=None,
-        edge_schema=None,
-        node_name_extractor=None,
-        edge_name_extractor=None,
-        nodes_in_edge_extractor=None,
+        node_schema=NodeSchema,
+        edge_schema=EdgeSchema,
+        node_name_extractor=lambda node: node.label,
+        edge_name_extractor=lambda edge: edge.label,
+        nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
     )
     
     print("\nGraph visualization started!")

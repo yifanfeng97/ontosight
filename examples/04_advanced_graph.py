@@ -5,23 +5,38 @@ visualization interactive.
 """
 
 from ontosight.core import view_graph
-from typing import Dict, Any
+from typing import Dict, Any, Tuple
+from pydantic import BaseModel, Field
+
+
+class NodeSchema(BaseModel):
+    id: str = Field(..., description="Unique identifier for the node")
+    label: str = Field(..., description="Label of the node")
+    department: str = Field(..., description="Department of the node")
+    level: str = Field(..., description="Level of the node")
+
+
+class EdgeSchema(BaseModel):
+    source: str = Field(..., description="Source node ID")
+    target: str = Field(..., description="Target node ID")
+    label: str = Field(..., description="Label of the edge")
+
 
 # Sample network data
 nodes = [
-    {"id": "alice", "label": "Alice", "department": "Engineering", "level": "Senior"},
-    {"id": "bob", "label": "Bob", "department": "Sales", "level": "Manager"},
-    {"id": "charlie", "label": "Charlie", "department": "Engineering", "level": "Junior"},
-    {"id": "diana", "label": "Diana", "department": "Marketing", "level": "Manager"},
-    {"id": "eve", "label": "Eve", "department": "HR", "level": "Director"},
+    NodeSchema(id="alice", label="Alice", department="Engineering", level="Senior"),
+    NodeSchema(id="bob", label="Bob", department="Sales", level="Manager"),
+    NodeSchema(id="charlie", label="Charlie", department="Engineering", level="Junior"),
+    NodeSchema(id="diana", label="Diana", department="Marketing", level="Manager"),
+    NodeSchema(id="eve", label="Eve", department="HR", level="Director"),
 ]
 
 edges = [
-    {"source": "alice", "target": "charlie", "label": "mentors"},
-    {"source": "bob", "target": "diana", "label": "manages"},
-    {"source": "diana", "target": "eve", "label": "reports_to"},
-    {"source": "charlie", "target": "eve", "label": "reports_to"},
-    {"source": "alice", "target": "bob", "label": "collaborates_with"},
+    EdgeSchema(source="alice", target="charlie", label="mentors"),
+    EdgeSchema(source="bob", target="diana", label="manages"),
+    EdgeSchema(source="diana", target="eve", label="reports_to"),
+    EdgeSchema(source="charlie", target="eve", label="reports_to"),
+    EdgeSchema(source="alice", target="bob", label="collaborates_with"),
 ]
 
 # Define search callback
@@ -32,10 +47,10 @@ def on_search(query: str, context: Dict[str, Any]) -> list:
     results = []
     for node in nodes:
         # Search in label, department, level
-        if (query.lower() in node["label"].lower() or
-            query.lower() in node["department"].lower() or
-            query.lower() in node["level"].lower()):
-            results.append(node["id"])
+        if (query.lower() in node.label.lower() or
+            query.lower() in node.department.lower() or
+            query.lower() in node.level.lower()):
+            results.append(node.id)
     
     print(f"[Search] Found {len(results)} results: {results}")
     return results
@@ -68,11 +83,11 @@ if __name__ == "__main__":
     view_graph(
         node_list=nodes,
         edge_list=edges,
-        node_schema=None,
-        edge_schema=None,
-        node_name_extractor=None,
-        edge_name_extractor=None,
-        nodes_in_edge_extractor=None,
+        node_schema=NodeSchema,
+        edge_schema=EdgeSchema,
+        node_name_extractor=lambda node: node.label,
+        edge_name_extractor=lambda edge: edge.label,
+        nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         on_search=on_search,
         on_chat=on_chat,
         context={"org": "Acme Corp", "team": "Engineering"},

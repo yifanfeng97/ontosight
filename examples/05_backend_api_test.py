@@ -7,20 +7,34 @@ without starting the frontend. Useful for testing and integration.
 import requests
 import json
 from typing import Dict, Any
+from pydantic import BaseModel, Field
+
+
+class NodeSchema(BaseModel):
+    id: str = Field(..., description="Unique identifier for the node")
+    label: str = Field(..., description="Label of the node")
+    value: int = Field(..., description="Value of the node")
+
+
+class EdgeSchema(BaseModel):
+    source: str = Field(..., description="Source node ID")
+    target: str = Field(..., description="Target node ID")
+    label: str = Field(..., description="Label of the edge")
+
 
 # Backend API base URL
 API_BASE_URL = "http://localhost:8000"
 
 # Sample data
 TEST_NODES = [
-    {"id": "1", "label": "Node 1", "value": 10},
-    {"id": "2", "label": "Node 2", "value": 20},
-    {"id": "3", "label": "Node 3", "value": 30},
+    NodeSchema(id="1", label="Node 1", value=10),
+    NodeSchema(id="2", label="Node 2", value=20),
+    NodeSchema(id="3", label="Node 3", value=30),
 ]
 
 TEST_EDGES = [
-    {"source": "1", "target": "2", "label": "connects"},
-    {"source": "2", "target": "3", "label": "connects"},
+    EdgeSchema(source="1", target="2", label="connects"),
+    EdgeSchema(source="2", target="3", label="connects"),
 ]
 
 def test_health_check():
@@ -62,13 +76,13 @@ def test_data_endpoint():
         # First, set some data on the backend using view_graph
         from ontosight.core import view_graph
         view_graph(
-            TEST_NODES,
-            TEST_EDGES,
-            None,
-            None,
-            None,
-            None,
-            None,
+            node_list=TEST_NODES,
+            edge_list=TEST_EDGES,
+            node_schema=NodeSchema,
+            edge_schema=EdgeSchema,
+            node_name_extractor=lambda node: node.label,
+            edge_name_extractor=lambda edge: edge.label,
+            nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         )
         
         # Now fetch the data

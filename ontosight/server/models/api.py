@@ -23,7 +23,7 @@ Example:
     ... )
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal, Union
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -113,24 +113,48 @@ class ChatResponse(BaseModel):
     sources: Optional[List[str]] = Field(None, description="Optional list of source item IDs")
 
 
+class GraphData(BaseModel):
+    """Data for graph visualization."""
+    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects")
+    edges: List[Dict[str, Any]] = Field(..., description="List of edge objects")
+
+
+class HypergraphData(BaseModel):
+    """Data for hypergraph visualization."""
+    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects")
+    edges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects")
+
+
+class ListData(BaseModel):
+    """Data for list/table visualization."""
+    items: List[Dict[str, Any]] = Field(..., description="List of items")
+
+
+class GraphPayload(BaseModel):
+    """Payload for graph visualization."""
+    type: Literal["graph"] = Field("graph", description="Type of visualization")
+    data: GraphData = Field(..., description="Graph data")
+
+
+class HypergraphPayload(BaseModel):
+    """Payload for hypergraph visualization."""
+    type: Literal["hypergraph"] = Field("hypergraph", description="Type of visualization")
+    data: HypergraphData = Field(..., description="Hypergraph data")
+
+
+class ListPayload(BaseModel):
+    """Payload for list visualization."""
+    type: Literal["list"] = Field("list", description="Type of visualization")
+    data: ListData = Field(..., description="List data")
+
+
 class VisualizationData(BaseModel):
     """Complete visualization data payload for /api/data endpoint.
-
-    Contains all nodes, edges, or items needed for rendering.
-
-    Attributes:
-        nodes: List of node data
-        edges: List of edge data
-        items: List of items (for table/list views)
-        hyperedges: List of hyperedges
+    
+    Uses a discriminated union to strictly type the data based on visualization type.
     """
-
-    nodes: Optional[List[Dict[str, Any]]] = Field(None, description="List of node objects")
-    edges: Optional[List[Dict[str, Any]]] = Field(None, description="List of edge objects")
-    items: Optional[List[Dict[str, Any]]] = Field(None, description="List of items for table view")
-    hyperedges: Optional[List[Dict[str, Any]]] = Field(
-        None, description="List of hyperedge objects"
-    )
+    
+    payload: Union[GraphPayload, HypergraphPayload, ListPayload] = Field(..., discriminator="type")
 
 
 __all__ = [
