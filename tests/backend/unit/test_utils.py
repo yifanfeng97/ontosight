@@ -2,9 +2,9 @@
 
 import pytest
 from ontosight.utils import extract_value
-from ontosight.core.views.list import normalize_dict
-from ontosight.core.views.graph import normalize_graph
-from ontosight.core.views.hypergraph import normalize_hypergraph
+from ontosight.core.views.list import format_data_for_ui
+from ontosight.core.views.graph import format_data_for_ui
+from ontosight.core.views.hypergraph import format_data_for_ui
 
 
 class TestExtractValue:
@@ -56,7 +56,7 @@ class TestNormalizeDict:
             {"label": "B"},
         ]
 
-        result = normalize_dict(items)
+        result = format_data_for_ui(items)
 
         assert "items" in result
         assert len(result["items"]) == 2
@@ -70,7 +70,7 @@ class TestNormalizeDict:
             {"title": "Second"},
         ]
 
-        result = normalize_dict(items, name_extractor="title")
+        result = format_data_for_ui(items, name_extractor="title")
 
         assert result["items"][0]["label"] == "First"
         assert result["items"][1]["label"] == "Second"
@@ -79,7 +79,7 @@ class TestNormalizeDict:
         """Test that normalization includes extra fields as data."""
         items = [{"label": "A", "extra": "value"}]
 
-        result = normalize_dict(items)
+        result = format_data_for_ui(items)
 
         assert "data" in result["items"][0]
         assert result["items"][0]["data"]["extra"] == "value"
@@ -93,7 +93,7 @@ class TestNormalizeGraph:
         nodes = [{"label": "A"}, {"label": "B"}]
         edges = [{"source": nodes[0], "target": nodes[1]}]
 
-        result = normalize_graph(nodes=nodes, edges=edges)
+        result = format_data_for_ui(nodes=nodes, edges=edges)
 
         assert len(result["nodes"]) == 2
         assert len(result["edges"]) == 1
@@ -104,7 +104,7 @@ class TestNormalizeGraph:
         nodes = [{"name": "Node 1"}]
         edges = [{"src": nodes[0], "dst": nodes[0], "title": "edge"}]
 
-        result = normalize_graph(
+        result = format_data_for_ui(
             nodes=nodes,
             edges=edges,
             node_name_extractor="name",
@@ -119,7 +119,7 @@ class TestNormalizeGraph:
         """Test graph normalization without edges."""
         nodes = [{"label": "A"}]
 
-        result = normalize_graph(nodes=nodes)
+        result = format_data_for_ui(nodes=nodes)
 
         assert len(result["nodes"]) == 1
         assert len(result["edges"]) == 0
@@ -137,7 +137,7 @@ class TestNormalizeHypergraph:
         ]
         hyperedges = [{"nodes": nodes, "label": "triple"}]
 
-        result = normalize_hypergraph(nodes=nodes, hyperedges=hyperedges)
+        result = format_data_for_ui(nodes=nodes, hyperedges=hyperedges)
 
         assert len(result["nodes"]) == 3
         assert len(result["hyperedges"]) == 1
@@ -148,7 +148,7 @@ class TestNormalizeHypergraph:
         nodes = [{"name": "A"}]
         hyperedges = [{"node_list": nodes, "title": "edge"}]
 
-        result = normalize_hypergraph(
+        result = format_data_for_ui(
             nodes=nodes,
             hyperedges=hyperedges,
             node_name_extractor="name",

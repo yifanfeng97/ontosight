@@ -28,7 +28,7 @@ Example:
     ... ]
 """
 
-from typing import Any, Generic, List, Optional, TypeVar
+from typing import Any, Generic, List, TypeVar
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -41,9 +41,8 @@ class Node(BaseModel, Generic[T]):
     Attributes:
         id: Unique node identifier
         data: Domain-specific data (can be any type T)
-        label: Display label for UI rendering
-            - Computed by key_extractor function at runtime
-            - Should be human-readable, unique among siblings if hierarchical
+            - Contains 'label' for display text
+            - Contains 'raw' for original object data
 
     Example:
         >>> class Person:
@@ -54,16 +53,14 @@ class Node(BaseModel, Generic[T]):
         >>> person = Person("Alice", 30)
         >>> node = Node(
         ...     id="person_1",
-        ...     data=person,
-        ...     label="Alice (age 30)"
+        ...     data={"label": "Alice (age 30)", "raw": {"name": "Alice", "age": 30}}
         ... )
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: str = Field(..., description="Unique node identifier within the graph")
-    data: Any = Field(..., description="Domain-specific data (type depends on use case)")
-    label: str = Field(..., description="Display label for UI rendering")
+    data: Any = Field(..., description="Domain-specific data with 'label' and 'raw' fields")
 
 
 class Edge(BaseModel, Generic[T]):
@@ -73,14 +70,14 @@ class Edge(BaseModel, Generic[T]):
         source: Source node id
         target: Target node id
         data: Domain-specific edge metadata
-        label: Display label for edge (e.g., "friend", "parent")
+            - Contains 'label' for display text
+            - Contains 'raw' for original object data
 
     Example:
         >>> edge = Edge(
         ...     source="person_1",
         ...     target="person_2",
-        ...     data={"relation": "friend", "since": 2020},
-        ...     label="friend since 2020"
+        ...     data={"label": "friend since 2020", "raw": {"relation": "friend", "since": 2020}},
         ... )
     """
 
@@ -88,8 +85,7 @@ class Edge(BaseModel, Generic[T]):
 
     source: str = Field(..., description="Source node identifier")
     target: str = Field(..., description="Target node identifier")
-    data: Any = Field(..., description="Edge metadata")
-    label: str = Field(..., description="Display label for edge")
+    data: Any = Field(..., description="Edge metadata with 'label' and 'raw' fields")
 
 
 class TreeNode(BaseModel, Generic[T]):
@@ -98,19 +94,16 @@ class TreeNode(BaseModel, Generic[T]):
     Attributes:
         id: Unique node identifier
         data: Domain-specific data
-        label: Display label
         children: Child nodes (recursive structure)
 
     Example:
         >>> root = TreeNode(
         ...     id="root",
-        ...     data={"name": "Root"},
-        ...     label="Root",
+        ...     data={"label": "Root", "raw": {"name": "Root"}},
         ...     children=[
         ...         TreeNode(
         ...             id="child_1",
-        ...             data={"name": "Child 1"},
-        ...             label="Child 1",
+        ...             data={"label": "Child 1", "raw": {"name": "Child 1"}},
         ...             children=[]
         ...         )
         ...     ]
@@ -120,8 +113,7 @@ class TreeNode(BaseModel, Generic[T]):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     id: str = Field(..., description="Unique node identifier")
-    data: Any = Field(..., description="Node data")
-    label: str = Field(..., description="Display label")
+    data: Any = Field(..., description="Node data with 'label' and 'raw' fields")
     children: List["TreeNode[T]"] = Field(default_factory=list, description="Child nodes")
 
 
@@ -129,33 +121,32 @@ class TreeNode(BaseModel, Generic[T]):
 TreeNode.model_rebuild()
 
 
-class HyperEdge(BaseModel, Generic[T]):
+class Hyperedge(BaseModel, Generic[T]):
     """Multi-node edge connecting more than 2 nodes.
 
     Attributes:
         nodes: List of node IDs connected by this hyperedge
         data: Hyperedge metadata
-        label: Display label
+            - Contains 'label' for display text
+            - Contains 'raw' for original object data
 
     Example:
         >>> # A collaboration between 3 researchers
-        >>> hyperedge = HyperEdge(
+        >>> hyperedge = Hyperedge(
         ...     nodes=["researcher_1", "researcher_2", "researcher_3"],
-        ...     data={"project": "AI Safety"},
-        ...     label="AI Safety collaboration"
+        ...     data={"label": "AI Safety collaboration", "raw": {"project": "AI Safety"}}
         ... )
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     nodes: List[str] = Field(..., description="List of node IDs in this hyperedge", min_length=2)
-    data: Any = Field(..., description="Hyperedge metadata")
-    label: str = Field(..., description="Display label")
+    data: Any = Field(..., description="Hyperedge metadata with 'label' and 'raw' fields")
 
 
 __all__ = [
     "Node",
     "Edge",
     "TreeNode",
-    "HyperEdge",
+    "Hyperedge",
 ]

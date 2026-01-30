@@ -8,29 +8,28 @@ from pydantic import BaseModel, Field
 
 
 class NodeSchema(BaseModel):
-    id: str = Field(..., description="Unique identifier for the node")
-    label: str = Field(..., description="Label of the node")
+    name: str = Field(..., description="Name of the node")
     role: str = Field(..., description="Role of the node")
 
 
 class EdgeSchema(BaseModel):
-    source: str = Field(..., description="Source node ID")
-    target: str = Field(..., description="Target node ID")
-    label: str = Field(..., description="Label of the edge")
+    source: str = Field(..., description="Source node name")
+    target: str = Field(..., description="Target node name")
+    action: str = Field(..., description="Label of the edge")
 
 
 nodes = [
-    NodeSchema(id="1", label="Alice", role="Admin"),
-    NodeSchema(id="2", label="Bob", role="User"),
-    NodeSchema(id="3", label="Charlie", role="User"),
-    NodeSchema(id="4", label="Diana", role="Admin"),
+    NodeSchema(name="Alice", role="Admin"),
+    NodeSchema(name="Bob", role="User"),
+    NodeSchema(name="Charlie", role="User"),
+    NodeSchema(name="Diana", role="Admin"),
 ]
 
 edges = [
-    EdgeSchema(source="1", target="2", label="manages"),
-    EdgeSchema(source="1", target="3", label="manages"),
-    EdgeSchema(source="2", target="4", label="reports_to"),
-    EdgeSchema(source="3", target="4", label="reports_to"),
+    EdgeSchema(source="Alice", target="Bob", action="manages"),
+    EdgeSchema(source="Alice", target="Charlie", action="manages"),
+    EdgeSchema(source="Bob", target="Diana", action="reports_to"),
+    EdgeSchema(source="Charlie", target="Diana", action="reports_to"),
 ]
 
 if __name__ == "__main__":
@@ -40,8 +39,8 @@ if __name__ == "__main__":
         edge_list=edges,
         node_schema=NodeSchema,
         edge_schema=EdgeSchema,
-        node_name_extractor=lambda node: node.label,
-        edge_name_extractor=lambda edge: edge.label,
+        node_label_extractor=lambda node: node.name,
+        edge_label_extractor=lambda edge: edge.action,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
     )
 

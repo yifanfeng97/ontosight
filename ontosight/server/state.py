@@ -70,14 +70,6 @@ class GlobalState:
 
         logger.info("GlobalState initialized (singleton)")
 
-    def clear(self) -> None:
-        """Reset all state (data, callbacks, context)."""
-        with self._state_lock:
-            self._callbacks.clear()
-            self._visualization_data.clear()
-            self._context.clear()
-            logger.info("Global state cleared")
-
     def register_callbacks(self, callbacks: Dict[str, Callable]) -> None:
         """Register callback functions for user-defined operations.
 

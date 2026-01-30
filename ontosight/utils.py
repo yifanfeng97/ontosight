@@ -4,13 +4,15 @@ Provides extractors for getting values from objects and conversion helpers
 for common data formats like NetworkX graphs.
 """
 
-from typing import Any, Callable, Dict, List, Union
+from typing import Any, Callable, Union
 import logging
 import threading
 import time
 import socket
 import webbrowser
 import uvicorn
+
+import hashlib
 
 logger = logging.getLogger(__name__)
 
@@ -35,10 +37,10 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
 
     # Find an available port (handles zombie processes)
     actual_port = _find_available_port(host, port)
-    
+
     _server_host = host
     _server_port = actual_port
-    
+
     if actual_port != port:
         logger.warning(f"Port {port} was busy. Using port {actual_port} instead.")
 
@@ -62,6 +64,14 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
         raise
+
+
+def short_id_from_str(s: str) -> str:
+    """Generate a short identifier from a string input."""
+
+    hash_obj = hashlib.sha256(s.encode("utf-8"))
+    short_id = hash_obj.hexdigest()[:6]
+    return short_id
 
 
 def _find_available_port(host: str, start_port: int, max_retries: int = 10) -> int:

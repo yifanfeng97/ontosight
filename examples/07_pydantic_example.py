@@ -108,8 +108,8 @@ if __name__ == "__main__":
         edge_list=edges,
         node_schema=NodeSchema,
         edge_schema=EdgeSchema,
-        node_name_extractor=lambda node: node.label,
-        edge_name_extractor=lambda edge: edge.label,
+        node_label_extractor=lambda node: node.label,
+        edge_label_extractor=lambda edge: edge.label,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         context={"model": "Person", "type": "organizational_network"}
     )

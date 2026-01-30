@@ -47,7 +47,7 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
     // 构建 Tooltip 内容
     const content = `
       <div class="graph-node-tooltip">
-        <div class="tooltip-title">${nodeData.label || nodeData.id}</div>
+        <div class="tooltip-title">${nodeData.data?.label || nodeData.id}</div>
         <div class="tooltip-id">ID: ${nodeData.id}</div>
         ${nodeData.description ? `<div class="tooltip-desc">${nodeData.description}</div>` : ''}
         ${nodeData.value !== undefined ? `<div class="tooltip-value">Value: ${nodeData.value}</div>` : ''}
@@ -130,6 +130,18 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       height: containerRef.current.clientHeight,
       modes: {
         default: ["drag-canvas", "zoom-canvas", "drag-node"],
+      },
+      node: {
+        style: {
+          labelText: (d: any) => d.data?.label || d.id,
+          fontSize: 12,
+        },
+      },
+      edge: {
+        style: {
+          labelText: (d: any) => d.data?.label || '',
+          fontSize: 10,
+        },
       },
       nodeStateStyles: {
         highlight: {

@@ -72,7 +72,7 @@ def view_hypergraph(
 
     # Normalize data
     try:
-        result = normalize_hypergraph(
+        result = format_data_for_ui(
             nodes=node_list,
             hyperedges=edge_list,
             node_name_extractor=node_name_extractor,
@@ -93,54 +93,56 @@ def view_hypergraph(
         raise
 
 
-def normalize_hypergraph(
+def format_data_for_ui(
     nodes: List[Any],
     hyperedges: List[Any],
-    node_name_extractor: Optional[Extractor] = None,
+    node_name_extractor: Extractor,
     edge_name_extractor: Optional[Extractor] = None,
     nodes_in_edge_extractor: Extractor = "nodes",
 ) -> Dict[str, Any]:
     """Convert lists of nodes and hyperedges into normalized hypergraph format.
 
     A hyperedge can connect multiple nodes (not just pairs).
+    Data structure complies with G6 V5:
+    {
+        "id": "...", 
+        "data": { 
+            "label": "...", 
+            "raw": { ...original_pydantic_dump... } 
+        }
+    }
 
     Args:
         nodes: List of node objects/dicts
         hyperedges: List of hyperedge objects/dicts
-        node_name_extractor: Optional extractor for node display label (default: "label" or str())
-        edge_name_extractor: Optional extractor for edge display label (default: "label" or str())
+        node_name_extractor: Extractor for node display label (required)
+        edge_name_extractor: Optional extractor for edge display label
         nodes_in_edge_extractor: Extractor returning list of nodes in edge (default: "nodes")
 
     Returns:
         Dict with 'nodes' and 'hyperedges' keys
     """
-    # Create a mapping from object id to node ID for edge resolution
+    from ontosight.utils import short_id_from_str
+    
+    # Create a mapping from object to node ID for edge resolution
     node_id_map = {}
 
-    # Normalize nodes (same as in normalize_graph)
+    # Normalize nodes
     normalized_nodes = []
     for node in nodes:
-        # Auto-generate ID using object identity
-        n_id = str(id(node))
+        # Extract display label using required extractor
+        n_label = extract_value(node, node_name_extractor, str(node))
+        # Auto-generate ID using label
+        n_id = short_id_from_str(n_label)
         node_id_map[id(node)] = n_id
 
-        # Extract display label
-        if node_name_extractor is None:
-            # Default: try "label" key, fall back to str(node)
-            if isinstance(node, dict):
-                n_label = node.get("label", str(node))
-            else:
-                n_label = getattr(node, "label", str(node))
-        else:
-            n_label = extract_value(node, node_name_extractor, str(node))
-
-        # Include all fields as data
+        # Include all fields as raw data
         if isinstance(node, dict):
             n_data = {k: v for k, v in node.items()}
         else:
             n_data = {k: v for k, v in vars(node).items() if not k.startswith("_")}
 
-        normalized_nodes.append({"id": n_id, "label": n_label, "data": n_data})
+        normalized_nodes.append({"id": n_id, "data": {"label": n_label, "raw": n_data}})
 
     # Normalize hyperedges
     normalized_hyperedges = []
@@ -157,21 +159,16 @@ def normalize_hypergraph(
             h_node_ids.append(node_id)
 
         # Extract display label
-        if edge_name_extractor is None:
-            # Default: try "label" key, fall back to empty string
-            if isinstance(hedge, dict):
-                h_label = hedge.get("label", "")
-            else:
-                h_label = getattr(hedge, "label", "")
-        else:
+        h_label = ""
+        if edge_name_extractor is not None:
             h_label = extract_value(hedge, edge_name_extractor, "")
 
-        # Include all fields as data
+        # Include all fields as raw data
         if isinstance(hedge, dict):
             h_data = {k: v for k, v in hedge.items()}
         else:
             h_data = {k: v for k, v in vars(hedge).items() if not k.startswith("_")}
 
-        normalized_hyperedges.append({"nodes": h_node_ids, "label": h_label, "data": h_data})
+        normalized_hyperedges.append({"nodes": h_node_ids, "data": {"label": h_label, "raw": h_data}})
 
     return {"nodes": normalized_nodes, "hyperedges": normalized_hyperedges}

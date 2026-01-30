@@ -20,7 +20,7 @@ Example:
     }
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from ontosight.server.state import global_state
 from ontosight.server.models.api import MetaResponse
 

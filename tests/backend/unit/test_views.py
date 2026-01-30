@@ -38,7 +38,7 @@ class TestViewGraph:
         view_graph(
             node_list=nodes,
             edge_list=edges,
-            node_name_extractor="name",
+            node_label_extractor="name",
             nodes_in_edge_extractor=lambda e: (e["source"], e["target"]),
         )
 
@@ -54,7 +54,7 @@ class TestViewGraph:
         view_graph(
             node_list=nodes,
             edge_list=edges,
-            node_name_extractor=lambda n: n["name"].upper(),
+            node_label_extractor=lambda n: n["name"].upper(),
             nodes_in_edge_extractor=lambda e: (e["source"], e["target"]),
         )
 
@@ -162,7 +162,7 @@ class TestExtractors:
         """Test dict key extraction."""
         nodes = [{"title": "Node A"}]
 
-        view_graph(node_list=nodes, node_name_extractor="title")
+        view_graph(node_list=nodes, node_label_extractor="title")
 
         data = global_state.get_all_visualization_data()
         assert data["nodes"][0]["label"] == "Node A"
@@ -171,7 +171,7 @@ class TestExtractors:
         """Test lambda function extraction."""
         nodes = [{"x": 10, "y": 20}]
 
-        view_graph(node_list=nodes, node_name_extractor=lambda n: f"pos_{n['x']}_{n['y']}")
+        view_graph(node_list=nodes, node_label_extractor=lambda n: f"pos_{n['x']}_{n['y']}")
 
         data = global_state.get_all_visualization_data()
         assert data["nodes"][0]["label"] == "pos_10_20"
@@ -185,7 +185,7 @@ class TestExtractors:
 
         nodes = [Node("First"), Node("Second")]
 
-        view_graph(node_list=nodes, node_name_extractor="name")
+        view_graph(node_list=nodes, node_label_extractor="name")
 
         data = global_state.get_all_visualization_data()
         assert data["nodes"][0]["label"] == "First"

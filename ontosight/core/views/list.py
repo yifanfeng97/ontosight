@@ -63,7 +63,7 @@ def view_list(
 
     # Normalize data
     try:
-        result = normalize_dict(
+        result = format_data_for_ui(
             items=item_list,
             name_extractor=item_name_extractor,
         )
@@ -80,42 +80,45 @@ def view_list(
         raise
 
 
-def normalize_dict(
+def format_data_for_ui(
     items: list[Any],
-    name_extractor: Optional[Extractor] = None,
+    name_extractor: Extractor,
 ) -> dict[str, Any]:
     """Convert a list of items into normalized dict format.
 
     Used by view_list.
+    Data structure complies with G6 V5:
+    {
+        "id": "...", 
+        "data": { 
+            "label": "...", 
+            "raw": { ...original_pydantic_dump... } 
+        }
+    }
 
     Args:
         items: List of objects/dicts to normalize
-        name_extractor: Optional extractor for display label (default: "label" or str())
+        name_extractor: Extractor for display label (required)
 
     Returns:
         Dict with 'items' key containing normalized list
 
     Example:
-        >>> normalize_dict([{"name": "A"}, {"name": "B"}])
-        {'items': [{'id': '...', 'label': 'A', 'data': {...}}, ...]}
+        >>> format_data_for_ui([{"name": "A"}, {"name": "B"}], name_extractor="name")
+        {'items': [{'id': '...', 'data': {'label': 'A', 'raw': {...}}}, ...]}
     """
+    from ontosight.utils import short_id_from_str
+    
     normalized_items = []
 
     for idx, item in enumerate(items):
-        # Auto-generate ID using object identity
-        item_id = str(id(item))
+        # Extract display label using required extractor
+        item_label = extract_value(item, name_extractor, str(item))
+        
+        # Auto-generate ID using label
+        item_id = short_id_from_str(item_label)
 
-        # Extract display label
-        if name_extractor is None:
-            # Default: try "label" key, fall back to str(item)
-            if isinstance(item, dict):
-                item_label = item.get("label", str(item))
-            else:
-                item_label = getattr(item, "label", str(item))
-        else:
-            item_label = extract_value(item, name_extractor, str(item))
-
-        # Include all fields as data
+        # Include all fields as raw data
         if isinstance(item, dict):
             item_data = {k: v for k, v in item.items()}
         elif hasattr(item, "__dict__"):
@@ -124,6 +127,6 @@ def normalize_dict(
             # For primitive types (strings, numbers, etc), don't include data
             item_data = {}
 
-        normalized_items.append({"id": item_id, "label": item_label, "data": item_data})
+        normalized_items.append({"id": item_id, "data": {"label": item_label, "raw": item_data}})
 
     return {"items": normalized_items}

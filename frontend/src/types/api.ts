@@ -26,17 +26,21 @@
  * @example
  * const node: Node<PersonData> = {
  *   id: "person_1",
- *   data: { name: "Alice", age: 30 },
- *   label: "Alice (age 30)"
+ *   data: { label: "Alice (age 30)", raw: { name: "Alice", age: 30 } }
  * };
  */
 export interface Node<T> {
   /** Unique node identifier within the graph */
   id: string;
-  /** Domain-specific data (type depends on use case) */
-  data: T;
-  /** Display label for UI rendering */
-  label: string;
+  /** Domain-specific data with label and raw fields */
+  data: {
+    /** Display label for UI rendering */
+    label: string;
+    /** Original object data */
+    raw: T;
+    /** Additional G6 properties (x, y, style, etc.) */
+    [key: string]: any;
+  };
 }
 
 /**
@@ -46,21 +50,28 @@ export interface Node<T> {
  * 
  * @example
  * const edge: Edge<RelationData> = {
+ *   id: "edge_1",
  *   source: "person_1",
  *   target: "person_2",
- *   data: { relation: "friend", since: 2020 },
- *   label: "friend since 2020"
+ *   data: { label: "friend since 2020", raw: { relation: "friend", since: 2020 } }
  * };
  */
 export interface Edge<T> {
+  /** Unique edge identifier */
+  id: string;
   /** Source node identifier */
   source: string;
   /** Target node identifier */
   target: string;
-  /** Edge metadata */
-  data: T;
-  /** Display label for edge */
-  label: string;
+  /** Edge metadata with label and raw fields */
+  data: {
+    /** Display label for edge */
+    label: string;
+    /** Original edge data */
+    raw: T;
+    /** Additional G6 properties */
+    [key: string]: any;
+  };
 }
 
 /**
@@ -71,17 +82,21 @@ export interface Edge<T> {
  * @example
  * const item: Item<PersonData> = {
  *   id: "person_1",
- *   data: { name: "Alice", age: 30 },
- *   label: "Alice"
+ *   data: { label: "Alice", raw: { name: "Alice", age: 30 } }
  * };
  */
 export interface Item<T> {
   /** Unique item identifier */
   id: string;
-  /** Item data */
-  data: T;
-  /** Display label */
-  label: string;
+  /** Item data with label and raw fields */
+  data: {
+    /** Display label */
+    label: string;
+    /** Original item data */
+    raw: T;
+    /** Additional properties */
+    [key: string]: any;
+  };
 }
 
 /**
@@ -93,17 +108,21 @@ export interface Item<T> {
  * @example
  * const hyperedge: Hyperedge<ProjectData> = {
  *   nodes: ["researcher_1", "researcher_2", "researcher_3"],
- *   data: { project: "AI Safety" },
- *   label: "AI Safety collaboration"
+ *   data: { label: "AI Safety collaboration", raw: { project: "AI Safety" } }
  * };
  */
 export interface Hyperedge<T> {
   /** List of node IDs in this hyperedge (minimum 2) */
   nodes: string[];
-  /** Hyperedge metadata */
-  data: T;
-  /** Display label */
-  label: string;
+  /** Hyperedge metadata with label and raw fields */
+  data: {
+    /** Display label */
+    label: string;
+    /** Original hyperedge data */
+    raw: T;
+    /** Additional properties */
+    [key: string]: any;
+  };
 }
 
 // ============================================================================

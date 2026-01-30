@@ -27,7 +27,7 @@ const ListView = memo(function ListView({ data }: ListViewProps) {
             style={{ cursor: "pointer" }}
           >
             <List.Item.Meta
-              title={item.label}
+              title={item.data?.label || item.id}
               description={item.id}
             />
           </List.Item>

@@ -90,7 +90,7 @@ function transformDataToHypergraph(data: { nodes: any[]; edges: any[] }) {
     // 1. Create virtual node for the hyperedge
     g6Nodes.push({
       id: virtualNodeId,
-      label: hedge.label || '',
+      label: hedge.data?.label || '',
       type: 'hyper-edge-node', // Custom shape type
       size: 15,
       // Metadata to identify it
