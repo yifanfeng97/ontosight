@@ -122,7 +122,8 @@ class GraphData(BaseModel):
 class HypergraphData(BaseModel):
     """Data for hypergraph visualization."""
     nodes: List[Dict[str, Any]] = Field(..., description="List of node objects")
-    edges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects")
+    edges: List[Dict[str, Any]] = Field(..., description="List of edge objects (for layout)")
+    hyperedges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects (for bubble sets)")
 
 
 class ListData(BaseModel):

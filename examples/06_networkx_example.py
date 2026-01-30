@@ -33,15 +33,12 @@ nodes = [
     for node in G.nodes()
 ]
 
-edges = [
-    EdgeSchema(source=str(u), target=str(v), label="connected")
-    for u, v in G.edges()
-]
+edges = [EdgeSchema(source=str(u), target=str(v), label="connected") for u, v in G.edges()]
 
 if __name__ == "__main__":
     print(f"Visualizing NetworkX graph: Zachary's Karate Club")
     print(f"Nodes: {len(nodes)}, Edges: {len(edges)}")
-    
+
     view_graph(
         node_list=nodes,
         edge_list=edges,
@@ -51,8 +48,3 @@ if __name__ == "__main__":
         edge_label_extractor=lambda edge: edge.label,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
     )
-    
-    print("\nGraph visualization started!")
-    print("Open your browser to http://localhost:8000")
-    print("\nThis is a famous social network showing relationships")
-    print("between members of a karate club at a US university.")

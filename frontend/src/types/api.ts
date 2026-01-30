@@ -206,7 +206,13 @@ export interface GraphData {
 
 export interface HypergraphData {
     nodes: Node<any>[];
-    edges: Hyperedge<any>[];
+    edges: Edge<any>[];
+    hyperedges: Array<{
+        id: string;
+        label: string;
+        node_set: string[];
+        data: any;
+    }>;
 }
 
 export interface ListData {

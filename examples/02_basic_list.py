@@ -31,6 +31,3 @@ if __name__ == "__main__":
         item_schema=UserSchema,
         item_name_extractor=lambda item: item.name,
     )
-
-    print("List visualization started!")
-    print("Open your browser to http://localhost:8000 to see the list")

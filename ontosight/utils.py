@@ -4,21 +4,16 @@ Provides extractors for getting values from objects and conversion helpers
 for common data formats like NetworkX graphs.
 """
 
-from typing import Any, Callable, Union
 import logging
 import threading
 import time
 import socket
 import webbrowser
 import uvicorn
-
 import hashlib
+import random
 
 logger = logging.getLogger(__name__)
-
-
-# Type for extractors: either a string key/attribute name or a callable
-Extractor = Union[str, Callable[[Any], Any]]
 
 
 # Global server thread handle
@@ -65,13 +60,11 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
         logger.error(f"Failed to start server: {e}")
         raise
 
+def gen_random_id():
+    """Generate a random short hash string."""
 
-def short_id_from_str(s: str) -> str:
-    """Generate a short identifier from a string input."""
-
-    hash_obj = hashlib.sha256(s.encode("utf-8"))
-    short_id = hash_obj.hexdigest()[:6]
-    return short_id
+    timestamp = str(time.time()) + str(random.random())
+    return hashlib.md5(timestamp.encode()).hexdigest()[:6]
 
 
 def _find_available_port(host: str, start_port: int, max_retries: int = 10) -> int:
@@ -143,37 +136,3 @@ def wait_for_user() -> None:
     except KeyboardInterrupt:
         logger.info("\nStopping server...")
         # Server process will be cleaned up by atexit handler
-
-
-def extract_value(obj: Any, extractor: Extractor, default: Any = None) -> Any:
-    """Extract a value from an object using a string key or callable.
-
-    Args:
-        obj: Object to extract from
-        extractor: Either a string (key/attribute name) or callable (lambda)
-        default: Default value if extraction fails
-
-    Returns:
-        Extracted value or default
-
-    Example:
-        >>> extract_value({"id": 1}, "id")
-        1
-        >>> extract_value(obj, lambda x: x.uid)
-        'u123'
-    """
-    if callable(extractor):
-        try:
-            return extractor(obj)
-        except Exception as e:
-            logger.warning(f"Extractor function failed: {e}")
-            return default
-
-    # String key/attribute extraction
-    try:
-        if isinstance(obj, dict):
-            return obj.get(extractor, default)
-        return getattr(obj, extractor, default)
-    except Exception as e:
-        logger.warning(f"Failed to extract '{extractor}' from {type(obj)}: {e}")
-        return default

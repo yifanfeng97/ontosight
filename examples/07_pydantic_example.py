@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field
 from typing import List
 from ontosight.core import view_graph
 
+
 # Define node and edge schemas for visualization
 class NodeSchema(BaseModel):
     id: str = Field(..., description="Unique identifier for the node")
@@ -25,27 +26,31 @@ class EdgeSchema(BaseModel):
 # Define Pydantic models
 class Person(BaseModel):
     """Represents a person in the network."""
+
     id: str
     name: str
     email: str
     department: str
-    
+
     class Config:
         schema_extra = {
             "example": {
                 "id": "p1",
                 "name": "Alice",
                 "email": "alice@example.com",
-                "department": "Engineering"
+                "department": "Engineering",
             }
         }
 
+
 class Relationship(BaseModel):
     """Represents a relationship between two people."""
+
     source_id: str
     target_id: str
     type: str
     since: int = 2020
+
 
 # Create sample data
 people = [
@@ -61,14 +66,17 @@ relationships = [
     Relationship(source_id="p1", target_id="p2", type="collaborates_with"),
 ]
 
+
 # Define extractors
 def extract_person_label(person: Person) -> str:
     """Extract label from Person model."""
     return f"{person.name} ({person.department})"
 
+
 def extract_relationship_label(rel: Relationship) -> str:
     """Extract label from Relationship model."""
     return rel.type.replace("_", " ").title()
+
 
 def extract_relationship_nodes(rel: Relationship):
     """Extract source and target from relationship."""
@@ -77,11 +85,12 @@ def extract_relationship_nodes(rel: Relationship):
     target = next((p for p in people if p.id == rel.target_id), None)
     return (source, target) if source and target else None
 
+
 if __name__ == "__main__":
     print("Visualizing Pydantic models as a graph")
     print(f"People: {len(people)}")
     print(f"Relationships: {len(relationships)}")
-    
+
     # Convert to OntoSight format
     nodes = [
         NodeSchema(
@@ -92,7 +101,7 @@ if __name__ == "__main__":
         )
         for p in people
     ]
-    
+
     edges = [
         EdgeSchema(
             source=r.source_id,
@@ -101,7 +110,7 @@ if __name__ == "__main__":
         )
         for r in relationships
     ]
-    
+
     # Create visualization
     view_graph(
         node_list=nodes,
@@ -111,10 +120,5 @@ if __name__ == "__main__":
         node_label_extractor=lambda node: node.label,
         edge_label_extractor=lambda edge: edge.label,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
-        context={"model": "Person", "type": "organizational_network"}
+        context={"model": "Person", "type": "organizational_network"},
     )
-    
-    print("\nGraph visualization started!")
-    print("Open your browser to http://localhost:8000")
-    print("\nThis example shows how to use Pydantic models")
-    print("with OntoSight for type-safe visualizations.")

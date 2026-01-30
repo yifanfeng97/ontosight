@@ -3,15 +3,14 @@
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
 from pydantic import BaseModel
 import logging
+import hashlib
 
 from ontosight.server.state import global_state
 from ontosight.utils import (
-    Extractor,
-    extract_value,
     ensure_server_running,
     open_browser,
     wait_for_user,
-    short_id_from_str,
+    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -25,9 +24,9 @@ def view_graph(
     edge_list: List[EdgeSchema],
     node_schema: Type[NodeSchema],
     edge_schema: Type[EdgeSchema],
-    node_label_extractor: Callable[[NodeSchema], str] | str,
-    edge_label_extractor: Callable[[EdgeSchema], str] | str,
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str]] | str,
+    node_label_extractor: Callable[[NodeSchema], str],
+    edge_label_extractor: Callable[[EdgeSchema], str],
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
     on_search: Optional[Callable[[str, Dict], Any]] = None,
     on_chat: Optional[Callable[[str, Dict], Any]] = None,
     context: Optional[Dict[str, Any]] = None,
@@ -42,9 +41,9 @@ def view_graph(
         edge_list: List of edge objects/dicts connecting nodes
         node_schema: Schema describing node structure (for detail view)
         edge_schema: Schema describing edge structure (for detail view)
-        node_label_extractor: Extractor for node display label
-        edge_label_extractor: Extractor for edge display label
-        nodes_in_edge_extractor: Extractor returning (source_obj, target_obj) tuple
+        node_label_extractor: Function to extract display label from a node object (required)
+        edge_label_extractor: Function to extract display label from an edge object (required)
+        nodes_in_edge_extractor: Function returning (source_id, target_id) tuple from an edge object (required)
         on_search: Optional callback for search queries
         on_chat: Optional callback for chat queries
         context: Optional context data to store with visualization
@@ -96,49 +95,46 @@ def view_graph(
 def format_data_for_ui(
     nodes: List[BaseModel],
     edges: List[BaseModel],
-    node_label_extractor: Callable[[NodeSchema], str] | str,
-    edge_label_extractor: Callable[[EdgeSchema], str] | str,
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str]] | str,
+    node_label_extractor: Callable[[NodeSchema], str],
+    edge_label_extractor: Callable[[EdgeSchema], str],
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
 ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
     """Convert lists of nodes and edges into normalized graph format.
 
     Args:
         nodes: List of node objects/dicts
-        edges: List of edge objects/dicts (optional)
-        node_name_extractor: Optional extractor for node display label (default: "label" or str())
-        edge_name_extractor: Optional extractor for edge display label (default: "label" or str())
-        nodes_in_edge_extractor: Extractor returning (source_obj, target_obj) tuple (auto-detects if None)
-
-    Returns:
-        Tuple of (list of normalized nodes, list of normalized edges)
-
-    Example:
-        >>> nodes = [{"name": "A"}, {"name": "B"}]
-        >>> edges = [{"source": nodes[0], "target": nodes[1]}]
-        >>> schema2vis_data(nodes, edges, node_name_extractor="name")
-        ( [...], [...] )
+        edges: List of edge objects/dicts
+        node_label_extractor: Function to extract display label from a node object (required)
+        edge_label_extractor: Function to extract display label from an edge object (required)
+        nodes_in_edge_extractor: Function returning (source_id, target_id) tuple from an edge object (required)
     """
+
+    label_id_map = {}
 
     # Formalize nodes
     formated_nodes = []
     for node in nodes:
         # Auto-generate ID using object identity
-        _label = extract_value(node, node_label_extractor)
-        _id = _label
+        _label = node_label_extractor(node)
+        _id = gen_random_id()
+        label_id_map[_label] = _id
         _data = node.model_dump()
         formated_nodes.append({"id": _id, "data": {"label": _label, "raw": _data}})
 
     # Formalize edges
     formated_edges = []
     for edge in edges:
-        _label = extract_value(edge, edge_label_extractor)
+        _label = edge_label_extractor(edge)
         # Extract source and target node objects
-        _source, _target = extract_value(edge, nodes_in_edge_extractor)
+        _source, _target = nodes_in_edge_extractor(edge)
+        assert _source in label_id_map, f"Source node '{_source}' not found"
+        assert _target in label_id_map, f"Target node '{_target}' not found"
         _data = edge.model_dump()
         formated_edges.append(
             {
-                "source": _source,
-                "target": _target,
+                "id": gen_random_id(),
+                "source": label_id_map[_source],
+                "target": label_id_map[_target],
                 "data": {"label": _label, "raw": _data},
             }
         )

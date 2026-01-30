@@ -1,192 +1,346 @@
-import React, { useEffect, useRef, memo } from 'react';
-import * as G6 from '@antv/g6';
-import { useSearch } from '../../hooks/useSearch';
-import { message } from 'antd';
-import './HypergraphView.css';
+import { useEffect, useRef, useCallback, memo } from "react";
+import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
+import { useVisualization } from "@/hooks/useVisualization";
+import { useSearch } from "@/hooks/useSearch";
+import { message } from "antd";
+import "@/components/views/HypergraphView.css";
 
 interface HypergraphViewProps {
   data: {
     nodes: any[];
     edges: any[];
+    hyperedges: Array<{
+      id: string;
+      label: string;
+      node_set: string[];
+      data: any;
+    }>;
   };
   meta: any;
 }
 
-interface HyperEdgeInfo {
-  id: string;
-  nodes: string[];
+// 颜色调色板，为每个超边生成不同颜色
+const HYPEREDGE_COLORS = [
+  { fill: "#1890FF", stroke: "#0050B3" },
+  { fill: "#52C41A", stroke: "#274704" },
+  { fill: "#FA8C16", stroke: "#872000" },
+  { fill: "#EB2F96", stroke: "#780C56" },
+  { fill: "#13C2C2", stroke: "#0C464C" },
+  { fill: "#722ED1", stroke: "#38165F" },
+  { fill: "#F5222D", stroke: "#7F0000" },
+  { fill: "#FA541C", stroke: "#7F2C00" },
+  { fill: "#FFC53D", stroke: "#7F6400" },
+  { fill: "#45B39D", stroke: "#0F5C4C" },
+];
+
+function getHyperedgeColor(index: number) {
+  return HYPEREDGE_COLORS[index % HYPEREDGE_COLORS.length];
 }
 
 const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphViewProps) {
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<Graph | null>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const { selectedNodes, selectNode, deselectNode, clearSelection } = useVisualization();
   const { results: searchResults } = useSearch();
 
-  useEffect(() => {
-    if (!canvasRef.current) return;
+  const handleNodeClick = useCallback(
+    (evt: any) => {
+      const nodeId = evt.target?.id;
+      if (!nodeId) return;
+
+      if (selectedNodes.has(nodeId)) {
+        deselectNode(nodeId);
+      } else {
+        selectNode(nodeId);
+      }
+    },
+    [selectedNodes, selectNode, deselectNode]
+  );
+
+  const handleCanvasClick = useCallback(() => {
+    clearSelection();
+  }, [clearSelection]);
+
+  const handleNodeMouseEnter = useCallback((evt: any) => {
+    const nodeId = evt.target?.id;
+    if (!nodeId || !tooltipRef.current || !graphRef.current) return;
 
     try {
-      if (!data || !data.nodes || !data.edges) {
-        return;
-      }
+      const nodeData = graphRef.current.getNodeData(nodeId);
+      if (!nodeData) return;
 
-      // Prepare data: convert hyperedges to virtual nodes + edges
-      const { hyperEdges, transformedData } = transformDataToHypergraph(data);
+      const position = graphRef.current.getElementPosition(nodeId);
+      const [x, y] = position || [0, 0];
 
-      // Init or update Graph
-      if (!graphRef.current) {
-        graphRef.current = createGraph(canvasRef.current, transformedData);
-      } else {
-        graphRef.current.changeData(transformedData);
-      }
+      const content = `
+        <div class="graph-node-tooltip">
+          <div class="tooltip-title">${nodeData.data?.label || nodeData.id}</div>
+          <div class="tooltip-id">ID: ${nodeData.id}</div>
+          ${nodeData.data?.description ? `<div class="tooltip-desc">${nodeData.data.description}</div>` : ''}
+          ${nodeData.data?.value !== undefined ? `<div class="tooltip-value">Value: ${nodeData.data.value}</div>` : ''}
+        </div>
+      `;
 
-      // Bind events
-      if (graphRef.current) {
-        bindInteractions(graphRef.current, hyperEdges);
-      }
+      tooltipRef.current.innerHTML = content;
+      tooltipRef.current.style.display = 'block';
+      tooltipRef.current.style.left = x + 10 + 'px';
+      tooltipRef.current.style.top = y + 10 + 'px';
+    } catch (error) {
+      console.warn("[HypergraphView] Error in handleNodeMouseEnter:", error);
+    }
+  }, []);
 
-      // Highlight search
-      if (searchResults.length > 0 && graphRef.current) {
-        highlightSearchResults(graphRef.current, searchResults);
+  const handleNodeMouseLeave = useCallback(() => {
+    if (tooltipRef.current) {
+      tooltipRef.current.style.display = 'none';
+    }
+  }, []);
+
+  const handleKeyDown = useCallback((evt: KeyboardEvent) => {
+    if (evt.key === 'Escape') {
+      clearSelection();
+    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
+      evt.preventDefault();
+      message.info('搜索面板已激活');
+    } else if (evt.key === 'Delete' && selectedNodes.size > 0) {
+      selectedNodes.forEach((nodeId) => {
+        deselectNode(nodeId);
+      });
+      message.success('已清除选中节点');
+    }
+  }, [selectedNodes, clearSelection, deselectNode]);
+
+  const highlightSearchResults = useCallback((graph: Graph) => {
+    if (!graph) return;
+
+    try {
+      const allNodeData = graph.getNodeData() || [];
+      const searchResultSet = new Set(searchResults);
+
+      allNodeData.forEach((nodeData: any) => {
+        const nodeId = nodeData.id;
+        if (searchResultSet.has(nodeId)) {
+          graph.setElementState(nodeId, ['highlight']);
+        } else {
+          const currentStates = graph.getElementState(nodeId) || [];
+          const newStates = currentStates.filter((state: string) => state !== 'highlight');
+          graph.setElementState(nodeId, newStates);
+        }
+      });
+
+      if (searchResults.length > 0) {
+        graph.focusElement(searchResults[0]);
       }
     } catch (error) {
-      console.error('Hypergraph render error:', error);
-      message.error('Failed to render hypergraph');
+      console.warn("[HypergraphView] Error in highlightSearchResults:", error);
+    }
+  }, [searchResults]);
+
+  useEffect(() => {
+    console.log("[HypergraphView] useEffect triggered");
+    console.log("[HypergraphView] data:", data);
+    console.log("[HypergraphView] data.nodes:", data?.nodes?.length || 0);
+    console.log("[HypergraphView] data.edges:", data?.edges?.length || 0);
+    console.log("[HypergraphView] data.hyperedges:", data?.hyperedges?.length || 0);
+
+    if (!containerRef.current || !data?.nodes) {
+      console.warn("[HypergraphView] Missing containerRef or data.nodes");
+      return;
     }
 
-    return () => {
-      if (graphRef.current) {
+    // Clean up old graph
+    if (graphRef.current) {
+      try {
         graphRef.current.destroy();
-        graphRef.current = null;
+      } catch (e) {
+        console.warn("[HypergraphView] Error destroying previous graph:", e);
       }
-    };
-  }, [data, searchResults]);
-
-  return <div ref={canvasRef} className="hypergraph-view" style={{ width: '100%', height: '100%' }} />;
-});
-
-/**
- * Convert hypergraph data format to G6 bipartite format.
- * Hyperedges in 'data.edges' become virtual nodes.
- */
-function transformDataToHypergraph(data: { nodes: any[]; edges: any[] }) {
-  const hyperEdges: HyperEdgeInfo[] = [];
-  
-  // Clone nodes to avoid mutating props
-  const g6Nodes = data.nodes.map(n => ({
-    ...n,
-    // Add default style if not present
-    size: 30,
-    style: { fill: '#ECF5FF', stroke: '#409EFF' }
-  }));
-  
-  const g6Edges: any[] = [];
-
-  // data.edges contains hyperedges: { nodes: [id1, id2...], label... }
-  data.edges.forEach((hedge, index) => {
-    const virtualNodeId = `__he_${index}`;
-    const participants = hedge.nodes || [];
-    
-    // 1. Create virtual node for the hyperedge
-    g6Nodes.push({
-      id: virtualNodeId,
-      label: hedge.data?.label || '',
-      type: 'hyper-edge-node', // Custom shape type
-      size: 15,
-      // Metadata to identify it
-      isHyperEdge: true
-    });
-
-    // 2. Map for interaction
-    hyperEdges.push({
-      id: virtualNodeId,
-      nodes: participants
-    });
-
-    // 3. Create edges from virtual node to participants
-    participants.forEach((nodeId: string) => {
-      g6Edges.push({
-        source: virtualNodeId,
-        target: nodeId,
-        type: 'line',
-        style: { stroke: '#B4E5FF' }
-      });
-    });
-  });
-
-  return {
-    hyperEdges,
-    transformedData: { nodes: g6Nodes, edges: g6Edges }
-  };
-}
-
-/**
- * Configure and create G6 Graph instance
- */
-function createGraph(container: HTMLDivElement, data: any) {
-  const width = container.clientWidth || 800;
-  const height = container.clientHeight || 600;
-
-  const graph = new G6.Graph({
-    container,
-    width,
-    height,
-    behaviors: ['drag-canvas', 'zoom-canvas', 'drag-node'],
-    layout: {
-      type: 'force',
-      preventOverlap: true,
-      linkDistance: 100,
-      nodeStrength: -30,
-      edgeStrength: 0.1
-    },
-    node: {
-      type: 'circle',
-    },
-    edge: {
-      type: 'line',
+      graphRef.current = null;
     }
-  });
 
-  graph.setData(data);
-  graph.render();
-  
-  return graph;
-}
-
-function bindInteractions(graph: any, hyperEdges: HyperEdgeInfo[]) {
-   graph.on('node:click', (evt: any) => {
-      const node = evt.item;
-      const model = node.getModel();
-      
-      // If clicked a hyperedge virtual node, highlight connected nodes
-      if (model.isHyperEdge) {
-         const info = hyperEdges.find(h => h.id === model.id);
-         if (info) {
-             info.nodes.forEach(nid => {
-                const n = graph.findById(nid);
-                if (n) {
-                   graph.setItemState(n, 'active', true);
-                }
-             });
-         }
-      }
-   });
-   
-   graph.on('canvas:click', () => {
-      graph.getNodes().forEach((n: any) => {
-         graph.clearItemStates(n, 'active');
+    try {
+      // Build bubble-sets plugins from hyperedges
+      const bubbleSetPlugins = (data.hyperedges || []).map((hyperedge, index) => {
+        const colors = getHyperedgeColor(index);
+        return {
+          key: `bubble-sets-${hyperedge.id}`,
+          type: 'bubble-sets',
+          members: hyperedge.node_set,
+          labelText: hyperedge.label,
+          fill: colors.fill,
+          fillOpacity: 0.1,
+          stroke: colors.stroke,
+          strokeOpacity: 1,
+          label: true,
+          labelCloseToPath: false,
+          labelPlacement: 'top',
+          labelBackgroundFill: colors.stroke,
+          labelFill: '#fff',
+          labelPadding: 3,
+          labelBackgroundRadius: 4,
+        };
       });
-   });
-}
 
-function highlightSearchResults(graph: any, results: string[]) {
-   // Implementation similar to GraphView
-   results.forEach(id => {
-      const item = graph.findById(id);
-      if (item) {
-         graph.setItemState(item, 'selected', true);
-      }
-   });
-}
+      // Create new graph with G6 v5 config
+      const graph = new Graph({
+        container: containerRef.current,
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+        layout: {
+          type: 'force',
+          collide: {
+            radius: (d: any) => d.size / 2,
+          },
+          preventOverlap: true,
+        },
+        behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+        node: {
+          style: {
+            labelText: (d: any) => d.data?.label || d.id,
+            fontSize: 12,
+          },
+          state: {
+            highlight: {
+              fill: '#ffd666',
+              stroke: '#faad14',
+              lineWidth: 2,
+              shadowColor: '#faad14',
+              shadowBlur: 10,
+            },
+            selected: {
+              fill: '#1890ff',
+              stroke: '#1890ff',
+              lineWidth: 3,
+              shadowColor: '#1890ff',
+              shadowBlur: 10,
+            },
+          },
+        },
+        edge: {
+          style: {
+            labelText: (d: any) => d.data?.label || '',
+            fontSize: 10,
+            stroke: '#B4E5FF',
+            opacity: 0.6,
+          },
+          state: {
+            highlight: {
+              stroke: '#faad14',
+              lineWidth: 2,
+              opacity: 1,
+            },
+          },
+        },
+        data: {
+          nodes: data.nodes.map((node: any) => ({
+            ...node,
+            style: {
+              ...node.style,
+              fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
+              lineWidth: selectedNodes.has(node.id) ? 3 : 1,
+              stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+            },
+          })),
+          edges: (data.edges || []).map((edge: any) => ({
+            ...edge,
+            style: {
+              stroke: '#B4E5FF',
+              lineWidth: 1,
+              opacity: 0.6,
+              ...edge.style,
+            },
+          })),
+        },
+        plugins: bubbleSetPlugins,
+        autoFit: 'center',
+      });
+
+      // Register event handlers
+      const nodeClickHandler = handleNodeClick;
+      const canvasClickHandler = handleCanvasClick;
+      const nodeEnterHandler = handleNodeMouseEnter;
+      const nodeLeaveHandler = handleNodeMouseLeave;
+
+      graph.on(NodeEvent.CLICK, nodeClickHandler);
+      graph.on(CanvasEvent.CLICK, canvasClickHandler);
+      graph.on(NodeEvent.POINTER_ENTER, nodeEnterHandler);
+      graph.on(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
+
+      // Double-click to highlight neighbors
+      graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+        try {
+          const nodeId = evt.target?.id;
+          if (!nodeId) return;
+          const neighbors = graph.getNeighborNodesData(nodeId) || [];
+          neighbors.forEach((neighbor: any) => {
+            graph.setElementState(neighbor.id, ['highlight']);
+          });
+        } catch (error) {
+          console.warn("[HypergraphView] Error in dblclick handler:", error);
+        }
+      });
+
+      // Render and apply search highlighting
+      graph.render().then(() => {
+        console.log("[HypergraphView] Graph rendered successfully");
+        highlightSearchResults(graph);
+      }).catch((error) => {
+        console.error("[HypergraphView] Error rendering graph:", error);
+      });
+
+      // Handle resize
+      const handleResize = () => {
+        if (containerRef.current && graphRef.current) {
+          try {
+            graphRef.current.resize(
+              containerRef.current.clientWidth,
+              containerRef.current.clientHeight
+            );
+          } catch (error) {
+            console.warn("[HypergraphView] Error resizing graph:", error);
+          }
+        }
+      };
+
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("keydown", handleKeyDown);
+      graphRef.current = graph;
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("keydown", handleKeyDown);
+
+        if (graphRef.current) {
+          try {
+            graphRef.current.off(NodeEvent.CLICK, nodeClickHandler);
+            graphRef.current.off(CanvasEvent.CLICK, canvasClickHandler);
+            graphRef.current.off(NodeEvent.POINTER_ENTER, nodeEnterHandler);
+            graphRef.current.off(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
+            graphRef.current.destroy();
+            graphRef.current = null;
+          } catch (e) {
+            console.warn("[HypergraphView] Error in cleanup:", e);
+          }
+        }
+      };
+    } catch (error) {
+      console.error("[HypergraphView] Error creating graph:", error);
+      return () => { };
+    }
+  }, [data, selectedNodes, handleNodeClick, handleCanvasClick, handleNodeMouseEnter, handleNodeMouseLeave, handleKeyDown, highlightSearchResults]);
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      <div ref={containerRef} className="hypergraph-view" style={{ width: '100%', height: '100%' }} />
+      <div
+        ref={tooltipRef}
+        className="graph-tooltip"
+        style={{ display: 'none' }}
+      />
+    </div>
+  );
+});
 
 export default HypergraphView;

@@ -6,8 +6,6 @@ from pydantic import BaseModel
 
 from ontosight.server.state import global_state
 from ontosight.utils import (
-    Extractor,
-    extract_value,
     ensure_server_running,
     open_browser,
     wait_for_user,
@@ -20,7 +18,7 @@ ItemSchema = TypeVar("ItemSchema", bound=BaseModel)
 def view_list(
     item_list: List[ItemSchema],
     item_schema: Type[ItemSchema],
-    item_name_extractor: Callable[[ItemSchema], str] | str,
+    item_name_extractor: Callable[[ItemSchema], str],
     on_search: Optional[Callable[[str, dict], Any]] = None,
     on_chat: Optional[Callable[[str, dict], Any]] = None,
     context: Optional[dict[str, Any]] = None,
@@ -32,7 +30,7 @@ def view_list(
     Args:
         item_list: List of items to display
         item_schema: Schema describing item structure (for detail view)
-        item_name_extractor: Extractor for item display label
+        item_name_extractor: Function to extract display label from an item object (required)
         on_search: Optional callback for search queries
         on_chat: Optional callback for chat queries
         context: Optional context data to store with visualization
@@ -82,7 +80,7 @@ def view_list(
 
 def format_data_for_ui(
     items: list[Any],
-    name_extractor: Extractor,
+    name_extractor: Callable[[ItemSchema], str],
 ) -> dict[str, Any]:
     """Convert a list of items into normalized dict format.
 
@@ -98,7 +96,7 @@ def format_data_for_ui(
 
     Args:
         items: List of objects/dicts to normalize
-        name_extractor: Extractor for display label (required)
+        name_extractor: Function to extract display label from an item object (required)
 
     Returns:
         Dict with 'items' key containing normalized list
@@ -113,7 +111,7 @@ def format_data_for_ui(
 
     for idx, item in enumerate(items):
         # Extract display label using required extractor
-        item_label = extract_value(item, name_extractor, str(item))
+        item_label = name_extractor(item)
         
         # Auto-generate ID using label
         item_id = short_id_from_str(item_label)

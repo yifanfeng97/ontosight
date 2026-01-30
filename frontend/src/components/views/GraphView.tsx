@@ -1,8 +1,8 @@
 import { useEffect, useRef, useCallback, memo } from "react";
-import * as G6 from "@antv/g6";
+import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useSearch } from "@/hooks/useSearch";
-import { Tooltip, message } from "antd";
+import { message } from "antd";
 import "@/components/views/GraphView.css";
 
 interface GraphViewProps {
@@ -10,19 +10,53 @@ interface GraphViewProps {
   meta: any;
 }
 
+// 处理平行边，给多条边添加不同的 curveOffset
+function processParallelEdges(edges: any[]) {
+  // 统计每对节点之间的边
+  const edgeMap = new Map<string, any[]>();
+  edges.forEach(edge => {
+    const key = edge.source < edge.target
+      ? `${edge.source}|${edge.target}`
+      : `${edge.target}|${edge.source}`;
+    if (!edgeMap.has(key)) edgeMap.set(key, []);
+    edgeMap.get(key)!.push(edge);
+  });
+
+  // 给每组平行边设置不同的 curveOffset
+  edgeMap.forEach(edgeList => {
+    if (edgeList.length === 1) {
+      // 单条边，保持直线
+      edgeList[0].type = 'line';
+      edgeList[0].style = { ...edgeList[0].style, curveOffset: 0 };
+    } else {
+      // 多条边，分配不同的曲率
+      const mid = (edgeList.length - 1) / 2;
+      edgeList.forEach((edge, i) => {
+        edge.type = 'quadratic'; // 二次贝塞尔曲线
+        // 正负交错分布
+        edge.style = {
+          ...edge.style,
+          curveOffset: (i - mid) * 30 // 30 可调整，越大弯曲越明显
+        };
+      });
+    }
+  });
+
+  return edges;
+}
+
 const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<any>(null);
+  const graphRef = useRef<Graph | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const { selectedNodes, selectNode, deselectNode, clearSelection } = useVisualization();
   const { results: searchResults } = useSearch();
 
   const handleNodeClick = useCallback(
     (evt: any) => {
-      const nodeModel = evt.item;
-      if (!nodeModel) return;
+      const nodeId = evt.target?.id;
+      if (!nodeId) return;
 
-      const nodeId = nodeModel.get("id");
       if (selectedNodes.has(nodeId)) {
         deselectNode(nodeId);
       } else {
@@ -38,26 +72,33 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
   // 处理节点悬停时的 Tooltip
   const handleNodeMouseEnter = useCallback((evt: any) => {
-    const nodeModel = evt.item;
-    if (!nodeModel || !tooltipRef.current) return;
+    const nodeId = evt.target?.id;
+    if (!nodeId || !tooltipRef.current || !graphRef.current) return;
 
-    const nodeData = nodeModel.getModel();
-    const { x, y } = nodeModel.getModel();
-    
-    // 构建 Tooltip 内容
-    const content = `
-      <div class="graph-node-tooltip">
-        <div class="tooltip-title">${nodeData.data?.label || nodeData.id}</div>
-        <div class="tooltip-id">ID: ${nodeData.id}</div>
-        ${nodeData.description ? `<div class="tooltip-desc">${nodeData.description}</div>` : ''}
-        ${nodeData.value !== undefined ? `<div class="tooltip-value">Value: ${nodeData.value}</div>` : ''}
-      </div>
-    `;
+    try {
+      const nodeData = graphRef.current.getNodeData(nodeId);
+      if (!nodeData) return;
 
-    tooltipRef.current.innerHTML = content;
-    tooltipRef.current.style.display = 'block';
-    tooltipRef.current.style.left = (x ?? 0) + 10 + 'px';
-    tooltipRef.current.style.top = (y ?? 0) + 10 + 'px';
+      const position = graphRef.current.getElementPosition(nodeId);
+      const [x, y] = position || [0, 0];
+
+      // 构建 Tooltip 内容
+      const content = `
+        <div class="graph-node-tooltip">
+          <div class="tooltip-title">${nodeData.data?.label || nodeData.id}</div>
+          <div class="tooltip-id">ID: ${nodeData.id}</div>
+          ${nodeData.data?.description ? `<div class="tooltip-desc">${nodeData.data.description}</div>` : ''}
+          ${nodeData.data?.value !== undefined ? `<div class="tooltip-value">Value: ${nodeData.data.value}</div>` : ''}
+        </div>
+      `;
+
+      tooltipRef.current.innerHTML = content;
+      tooltipRef.current.style.display = 'block';
+      tooltipRef.current.style.left = x + 10 + 'px';
+      tooltipRef.current.style.top = y + 10 + 'px';
+    } catch (error) {
+      console.warn("[GraphView] Error in handleNodeMouseEnter:", error);
+    }
   }, []);
 
   const handleNodeMouseLeave = useCallback(() => {
@@ -82,28 +123,31 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   }, [selectedNodes, clearSelection, deselectNode]);
 
   // 高亮搜索结果
-  const highlightSearchResults = useCallback((graph: any) => {
+  const highlightSearchResults = useCallback((graph: Graph) => {
     if (!graph) return;
 
-    const allNodes = (graph as any).getNodes();
-    const searchResultSet = new Set(searchResults);
+    try {
+      const allNodeData = graph.getNodeData() || [];
+      const searchResultSet = new Set(searchResults);
 
-    allNodes.forEach((node: any) => {
-      const nodeId = node.getID();
-      if (searchResultSet.has(nodeId)) {
-        node.toFront();
-        (graph as any).setItemState(node, 'highlight', true);
-      } else {
-        (graph as any).setItemState(node, 'highlight', false);
-      }
-    });
+      allNodeData.forEach((nodeData: any) => {
+        const nodeId = nodeData.id;
+        if (searchResultSet.has(nodeId)) {
+          graph.setElementState(nodeId, ['highlight']);
+        } else {
+          // 清除节点的高亮状态（保留其他状态如selected）
+          const currentStates = graph.getElementState(nodeId) || [];
+          const newStates = currentStates.filter((state: string) => state !== 'highlight');
+          graph.setElementState(nodeId, newStates);
+        }
+      });
 
-    // 如果有搜索结果，聚焦到第一个
-    if (searchResults.length > 0) {
-      const firstResult = (graph as any).findById(searchResults[0]);
-      if (firstResult) {
-        (graph as any).focusItem(firstResult, true);
+      // 如果有搜索结果，聚焦到第一个
+      if (searchResults.length > 0) {
+        graph.focusElement(searchResults[0]);
       }
+    } catch (error) {
+      console.warn("[GraphView] Error in highlightSearchResults:", error);
     }
   }, [searchResults]);
 
@@ -112,7 +156,7 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
     console.log("[GraphView] data:", data);
     console.log("[GraphView] data.nodes:", data?.nodes?.length || 0);
     console.log("[GraphView] data.edges:", data?.edges?.length || 0);
-    
+
     if (!containerRef.current || !data?.nodes) {
       console.warn("[GraphView] Missing containerRef or data.nodes");
       return;
@@ -120,113 +164,166 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
     // Clean up old graph
     if (graphRef.current) {
-      graphRef.current.destroy();
+      try {
+        graphRef.current.destroy();
+      } catch (e) {
+        console.warn("[GraphView] Error destroying previous graph:", e);
+      }
+      graphRef.current = null;
     }
 
-    // Create new graph with state styles and data
-    const graph = new (G6 as any).Graph({
-      container: containerRef.current,
-      width: containerRef.current.clientWidth,
-      height: containerRef.current.clientHeight,
-      modes: {
-        default: ["drag-canvas", "zoom-canvas", "drag-node"],
-      },
-      node: {
-        style: {
-          labelText: (d: any) => d.data?.label || d.id,
-          fontSize: 12,
-        },
-      },
-      edge: {
-        style: {
-          labelText: (d: any) => d.data?.label || '',
-          fontSize: 10,
-        },
-      },
-      nodeStateStyles: {
-        highlight: {
-          fill: '#ffd666',
-          stroke: '#faad14',
-          lineWidth: 2,
-          shadowColor: '#faad14',
-          shadowBlur: 10,
-        },
-        selected: {
-          fill: '#1890ff',
-          stroke: '#1890ff',
-          lineWidth: 3,
-          shadowColor: '#1890ff',
-          shadowBlur: 10,
-        },
-      },
-      edgeStateStyles: {
-        highlight: {
-          stroke: '#faad14',
-          lineWidth: 2,
-          opacity: 1,
-        },
-      },
-      data: {
-        nodes: data.nodes.map((node: any) => ({
-          ...node,
-          size: 30,
-          style: {
-            fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
-            lineWidth: selectedNodes.has(node.id) ? 3 : 1,
-            stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+    try {
+      // Create new graph with proper G6 v5 config
+      const graph = new Graph({
+        container: containerRef.current,
+        width: containerRef.current.clientWidth,
+        height: containerRef.current.clientHeight,
+        layout: {
+          type: 'force',
+          collide: {
+            // Prevent nodes from overlapping by specifying a collision radius for each node.
+            radius: (d: any) => d.size / 2,
           },
-        })),
-        edges: (data.edges || []).map((edge: any) => ({
-          ...edge,
+          preventOverlap: true,
+
+          // nodeSpacing: 50,
+          // nodeStrength: -150,
+          // edgeStrength: 0.1,
+          // iterations: 300,
+        },
+        behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+        node: {
           style: {
-            stroke: '#ccc',
-            lineWidth: 1,
+            labelText: (d: any) => d.data?.label || d.id,
+            fontSize: 12,
           },
-        })),
-      },
-    });
-
-    // Event handlers
-    graph.on("node:click", handleNodeClick);
-    graph.on("canvas:click", handleCanvasClick);
-    graph.on("node:mouseenter", handleNodeMouseEnter);
-    graph.on("node:mouseleave", handleNodeMouseLeave);
-
-    // 双击节点展开相邻节点
-    graph.on("node:dblclick", (evt: any) => {
-      const nodeModel = evt.item;
-      if (!nodeModel) return;
-      const neighbors = (graph as any).getNeighbors(nodeModel);
-      neighbors.forEach((neighbor: any) => {
-        (graph as any).setItemState(neighbor, 'highlight', true);
+          state: {
+            highlight: {
+              fill: '#ffd666',
+              stroke: '#faad14',
+              lineWidth: 2,
+              shadowColor: '#faad14',
+              shadowBlur: 10,
+            },
+            selected: {
+              fill: '#1890ff',
+              stroke: '#1890ff',
+              lineWidth: 3,
+              shadowColor: '#1890ff',
+              shadowBlur: 10,
+            },
+          },
+        },
+        edge: {
+          style: {
+            labelText: (d: any) => d.data?.label || '',
+            fontSize: 10,
+          },
+          state: {
+            highlight: {
+              stroke: '#faad14',
+              lineWidth: 2,
+              opacity: 1,
+            },
+          },
+        },
+        data: {
+          nodes: data.nodes.map((node: any) => ({
+            ...node,
+            style: {
+              ...node.style,
+              fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
+              lineWidth: selectedNodes.has(node.id) ? 3 : 1,
+              stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+            },
+          })),
+          edges: processParallelEdges((data.edges || []).map((edge: any) => ({
+            ...edge,
+            style: {
+              stroke: '#ccc',
+              lineWidth: 1,
+              ...edge.style,
+            },
+          }))),
+        },
       });
-    });
 
-    // Render
-    graph.render();
+      // Register event handlers with proper G6 v5 API
+      const nodeClickHandler = handleNodeClick;
+      const canvasClickHandler = handleCanvasClick;
+      const nodeEnterHandler = handleNodeMouseEnter;
+      const nodeLeaveHandler = handleNodeMouseLeave;
 
-    // 应用搜索高亮
-    highlightSearchResults(graph);
+      graph.on(NodeEvent.CLICK, nodeClickHandler);
+      graph.on(CanvasEvent.CLICK, canvasClickHandler);
+      graph.on(NodeEvent.POINTER_ENTER, nodeEnterHandler);
+      graph.on(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
 
-    // Handle resize
-    const handleResize = () => {
-      if (containerRef.current) {
-        (graph as any).changeSize(
-          containerRef.current.clientWidth,
-          containerRef.current.clientHeight
-        );
-      }
-    };
+      // 双击节点展开相邻节点
+      graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+        try {
+          const nodeId = evt.target?.id;
+          if (!nodeId) return;
+          const neighbors = graph.getNeighborNodesData(nodeId) || [];
+          neighbors.forEach((neighbor: any) => {
+            graph.setElementState(neighbor.id, ['highlight']);
+          });
+        } catch (error) {
+          console.warn("[GraphView] Error in dblclick handler:", error);
+        }
+      });
 
-    window.addEventListener("resize", handleResize);
-    window.addEventListener("keydown", handleKeyDown);
-    graphRef.current = graph;
+      // Render and then apply search highlighting
+      graph.render().then(() => {
+        console.log("[GraphView] Graph rendered successfully");
+        highlightSearchResults(graph);
+      }).catch((error) => {
+        console.error("[GraphView] Error rendering graph:", error);
+      });
 
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      window.removeEventListener("keydown", handleKeyDown);
-      graph.destroy();
-    };
+      // Handle resize
+      const handleResize = () => {
+        if (containerRef.current && graphRef.current) {
+          try {
+            graphRef.current.resize(
+              containerRef.current.clientWidth,
+              containerRef.current.clientHeight
+            );
+          } catch (error) {
+            console.warn("[GraphView] Error resizing graph:", error);
+          }
+        }
+      };
+
+      window.addEventListener("resize", handleResize);
+      window.addEventListener("keydown", handleKeyDown);
+      graphRef.current = graph;
+
+      // Cleanup function
+      return () => {
+        window.removeEventListener("resize", handleResize);
+        window.removeEventListener("keydown", handleKeyDown);
+
+        if (graphRef.current) {
+          try {
+            // Unregister event handlers
+            graphRef.current.off(NodeEvent.CLICK, nodeClickHandler);
+            graphRef.current.off(CanvasEvent.CLICK, canvasClickHandler);
+            graphRef.current.off(NodeEvent.POINTER_ENTER, nodeEnterHandler);
+            graphRef.current.off(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
+
+            // Destroy graph
+            graphRef.current.destroy();
+            graphRef.current = null;
+          } catch (e) {
+            console.warn("[GraphView] Error in cleanup:", e);
+          }
+        }
+      };
+    } catch (error) {
+      console.error("[GraphView] Error creating graph:", error);
+      return () => { }; // Return empty cleanup
+    }
   }, [data, selectedNodes, handleNodeClick, handleCanvasClick, handleNodeMouseEnter, handleNodeMouseLeave, handleKeyDown, highlightSearchResults]);
 
   return (

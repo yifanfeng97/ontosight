@@ -44,5 +44,3 @@ if __name__ == "__main__":
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
     )
 
-    print("Graph visualization started!")
-    print("Open your browser to http://localhost:8000 to see the graph")

@@ -3,14 +3,14 @@
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
 from pydantic import BaseModel
 import logging
+import hashlib
 
 from ontosight.server.state import global_state
 from ontosight.utils import (
-    Extractor,
-    extract_value,
     ensure_server_running,
     open_browser,
     wait_for_user,
+    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -24,9 +24,9 @@ def view_hypergraph(
     edge_list: List[EdgeSchema],
     node_schema: Type[NodeSchema],
     edge_schema: Type[EdgeSchema],
-    node_name_extractor: Callable[[NodeSchema], str] | str,
-    edge_name_extractor: Callable[[EdgeSchema], str] | str,
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str]] | str,
+    node_name_extractor: Callable[[NodeSchema], str],
+    edge_name_extractor: Callable[[EdgeSchema], str],
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
     on_search: Optional[Callable[[str, Dict], Any]] = None,
     on_chat: Optional[Callable[[str, Dict], Any]] = None,
     context: Optional[Dict[str, Any]] = None,
@@ -41,9 +41,9 @@ def view_hypergraph(
         edge_list: List of edge objects/dicts connecting multiple nodes
         node_schema: Schema describing node structure (for detail view)
         edge_schema: Schema describing edge structure (for detail view)
-        node_name_extractor: Extractor for node display label
-        edge_name_extractor: Extractor for edge display label
-        nodes_in_edge_extractor: Extractor returning list of nodes in edge
+        node_name_extractor: Function to extract display label from a node object (required)
+        edge_name_extractor: Function to extract display label from an edge object (required)
+        nodes_in_edge_extractor: Function returning tuple of node IDs in hyperedge (required)
         on_search: Optional callback for search queries
         on_chat: Optional callback for chat queries
         context: Optional context data to store with visualization
@@ -72,16 +72,17 @@ def view_hypergraph(
 
     # Normalize data
     try:
-        result = format_data_for_ui(
+        nodes, edges, hyperedges = format_data_for_ui(
             nodes=node_list,
-            hyperedges=edge_list,
+            edges=edge_list,
             node_name_extractor=node_name_extractor,
             edge_name_extractor=edge_name_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
         global_state.set_visualization_type("hypergraph")
-        global_state.set_visualization_data("nodes", result.get("nodes", []))
-        global_state.set_visualization_data("edges", result.get("hyperedges", []))
+        global_state.set_visualization_data("nodes", nodes)
+        global_state.set_visualization_data("edges", edges)
+        global_state.set_visualization_data("hyperedges", hyperedges)
 
         logger.info("Hypergraph visualization setup complete")
 
@@ -94,81 +95,67 @@ def view_hypergraph(
 
 
 def format_data_for_ui(
-    nodes: List[Any],
-    hyperedges: List[Any],
-    node_name_extractor: Extractor,
-    edge_name_extractor: Optional[Extractor] = None,
-    nodes_in_edge_extractor: Extractor = "nodes",
-) -> Dict[str, Any]:
+    nodes: List[NodeSchema],
+    edges: List[EdgeSchema],
+    node_name_extractor: Callable[[NodeSchema], str],
+    edge_name_extractor: Optional[Callable[[EdgeSchema], str]],
+    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
+) -> Tuple[
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+    List[Dict[str, Any]],
+]:
     """Convert lists of nodes and hyperedges into normalized hypergraph format.
-
-    A hyperedge can connect multiple nodes (not just pairs).
-    Data structure complies with G6 V5:
-    {
-        "id": "...", 
-        "data": { 
-            "label": "...", 
-            "raw": { ...original_pydantic_dump... } 
-        }
-    }
 
     Args:
         nodes: List of node objects/dicts
-        hyperedges: List of hyperedge objects/dicts
+        edges: List of edge objects/dicts
         node_name_extractor: Extractor for node display label (required)
         edge_name_extractor: Optional extractor for edge display label
         nodes_in_edge_extractor: Extractor returning list of nodes in edge (default: "nodes")
 
     Returns:
-        Dict with 'nodes' and 'hyperedges' keys
+        Tuple of (formatted_nodes, formatted_edges, formatted_hyperedges)
     """
-    from ontosight.utils import short_id_from_str
-    
-    # Create a mapping from object to node ID for edge resolution
-    node_id_map = {}
-
-    # Normalize nodes
-    normalized_nodes = []
+    label_id_map = {}
+    node_deg = {}
     for node in nodes:
-        # Extract display label using required extractor
-        n_label = extract_value(node, node_name_extractor, str(node))
-        # Auto-generate ID using label
-        n_id = short_id_from_str(n_label)
-        node_id_map[id(node)] = n_id
+        node_deg[node_name_extractor(node)] = 0
 
-        # Include all fields as raw data
-        if isinstance(node, dict):
-            n_data = {k: v for k, v in node.items()}
-        else:
-            n_data = {k: v for k, v in vars(node).items() if not k.startswith("_")}
+    for edge in edges:
+        for node in nodes_in_edge_extractor(edge):
+            node_deg[node] += 1
 
-        normalized_nodes.append({"id": n_id, "data": {"label": n_label, "raw": n_data}})
+    formated_nodes, formated_edges, formated_hyperedges = [], [], []
+    for node in nodes:
+        _label = node_name_extractor(node)
+        _id = gen_random_id()
+        label_id_map[_label] = _id
+        _data = node.model_dump()
+        formated_nodes.append({"id": _id, "data": {"label": _label, "raw": _data}})
 
-    # Normalize hyperedges
-    normalized_hyperedges = []
-    for hedge in hyperedges:
-        # Extract nodes in hyperedge
-        h_nodes_list = extract_value(hedge, nodes_in_edge_extractor, [])
-        if not isinstance(h_nodes_list, (list, tuple)):
-            h_nodes_list = [h_nodes_list]
+    for edge in edges:
+        _label = edge_name_extractor(edge)
+        _nodes = nodes_in_edge_extractor(edge)
+        _node_degs = [node_deg[n] for n in _nodes]
+        _core_node = _nodes[_node_degs.index(min(_node_degs))]
+        for _node in _nodes:
+            if _node != _core_node:
+                formated_edges.append(
+                    {
+                        "id": gen_random_id(),
+                        "source": label_id_map[_core_node],
+                        "target": label_id_map[_node],
+                    }
+                )
+        _data = edge.model_dump()
+        formated_hyperedges.append(
+            {
+                "id": gen_random_id(),
+                "label": _label,
+                "node_set": [label_id_map[_node] for _node in _nodes],
+                "data": _data,
+            }
+        )
 
-        # Map node objects to their IDs
-        h_node_ids = []
-        for node_obj in h_nodes_list:
-            node_id = node_id_map.get(id(node_obj), str(id(node_obj)))
-            h_node_ids.append(node_id)
-
-        # Extract display label
-        h_label = ""
-        if edge_name_extractor is not None:
-            h_label = extract_value(hedge, edge_name_extractor, "")
-
-        # Include all fields as raw data
-        if isinstance(hedge, dict):
-            h_data = {k: v for k, v in hedge.items()}
-        else:
-            h_data = {k: v for k, v in vars(hedge).items() if not k.startswith("_")}
-
-        normalized_hyperedges.append({"nodes": h_node_ids, "data": {"label": h_label, "raw": h_data}})
-
-    return {"nodes": normalized_nodes, "hyperedges": normalized_hyperedges}
+    return formated_nodes, formated_edges, formated_hyperedges

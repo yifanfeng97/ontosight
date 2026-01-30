@@ -71,12 +71,14 @@ async def get_data() -> VisualizationData:
             logger.info("[/api/data] Building HypergraphPayload")
             nodes = to_dict_list(all_data.get("nodes"))
             edges = to_dict_list(all_data.get("edges"))
-            logger.info(f"[/api/data] Hypergraph: {len(nodes)} nodes, {len(edges)} edges")
+            hyperedges = to_dict_list(all_data.get("hyperedges"))
+            logger.info(f"[/api/data] Hypergraph: {len(nodes)} nodes, {len(edges)} edges, {len(hyperedges)} hyperedges")
             
             payload = HypergraphPayload(
                 data=HypergraphData(
                     nodes=nodes,
                     edges=edges,
+                    hyperedges=hyperedges,
                 )
             )
         elif viz_type == "list":
