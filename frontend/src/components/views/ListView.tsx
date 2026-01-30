@@ -1,7 +1,6 @@
 import { memo } from "react";
 import { List, Empty } from "antd";
 import { useVisualization } from "@/hooks/useVisualization";
-import "@/components/views/ListView.css";
 
 interface ListViewProps {
   data: any;

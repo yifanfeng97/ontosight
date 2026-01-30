@@ -23,7 +23,7 @@ Example:
     ... )
 """
 
-from typing import Any, Dict, List, Optional, Literal, Union
+from typing import Any, Dict, List, Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -45,23 +45,31 @@ class SchemaUnit(BaseModel):
 class MetaResponse(BaseModel):
     """Metadata response for /api/meta endpoint.
 
-    Contains schemas for all visualization data types, allowing the frontend
-    to dynamically render property panels based on the schema.
+    Contains visualization type, available features, and schemas for data types.
+    The frontend uses this to:
+    1. Determine which visualization component to render
+    2. Decide which UI features (search, chat) to enable
+    3. Dynamically render property panels based on schemas
 
     Attributes:
-        node_schema: JSON Schema for node properties
-        edge_schema: JSON Schema for edge properties
-        item_schema: JSON Schema for individual items (for lists/tables)
-        hyperedge_schema: JSON Schema for hyperedge properties
+        type: Visualization type (graph, list, or hypergraph)
+        features: Dict of feature flags (e.g., {"search": true, "chat": false})
+        schemas: Dict mapping element types to their JSON Schemas
+                 For graph: {"nodes": {...}, "edges": {...}}
+                 For list: {"items": {...}}
+                 For hypergraph: {"nodes": {...}, "edges": {...}, "hyperedges": {...}}
     """
 
-    node_schema: Optional[Dict[str, Any]] = Field(None, description="JSON Schema for nodes")
-    edge_schema: Optional[Dict[str, Any]] = Field(None, description="JSON Schema for edges")
-    item_schema: Optional[Dict[str, Any]] = Field(
-        None, description="JSON Schema for individual items"
+    type: Literal["graph", "list", "hypergraph"] = Field(
+        ..., description="Type of visualization"
     )
-    hyperedge_schema: Optional[Dict[str, Any]] = Field(
-        None, description="JSON Schema for hyperedges"
+    features: Dict[str, bool] = Field(
+        default_factory=dict,
+        description="Feature availability flags (e.g., search, chat)",
+    )
+    schemas: Dict[str, Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Map of element types to their JSON Schemas",
     )
 
 
@@ -131,31 +139,17 @@ class ListData(BaseModel):
     items: List[Dict[str, Any]] = Field(..., description="List of items")
 
 
-class GraphPayload(BaseModel):
-    """Payload for graph visualization."""
-    type: Literal["graph"] = Field("graph", description="Type of visualization")
-    data: GraphData = Field(..., description="Graph data")
-
-
-class HypergraphPayload(BaseModel):
-    """Payload for hypergraph visualization."""
-    type: Literal["hypergraph"] = Field("hypergraph", description="Type of visualization")
-    data: HypergraphData = Field(..., description="Hypergraph data")
-
-
-class ListPayload(BaseModel):
-    """Payload for list visualization."""
-    type: Literal["list"] = Field("list", description="Type of visualization")
-    data: ListData = Field(..., description="List data")
-
-
 class VisualizationData(BaseModel):
     """Complete visualization data payload for /api/data endpoint.
     
-    Uses a discriminated union to strictly type the data based on visualization type.
-    """
+    This is a type hint only - the actual response will be one of the data types below
+    without additional wrapping, since type information is already provided by /api/meta.
     
-    payload: Union[GraphPayload, HypergraphPayload, ListPayload] = Field(..., discriminator="type")
+    The response model for /api/data endpoint is not enforced at the type level;
+    instead, it returns GraphData, HypergraphData, or ListData directly based on
+    the visualization type stored in global_state.
+    """
+    pass  # Unused - for backwards compatibility only
 
 
 __all__ = [
@@ -165,5 +159,8 @@ __all__ = [
     "SearchResponse",
     "ChatRequest",
     "ChatResponse",
+    "GraphData",
+    "HypergraphData",
+    "ListData",
     "VisualizationData",
 ]

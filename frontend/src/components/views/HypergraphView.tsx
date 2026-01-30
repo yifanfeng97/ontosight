@@ -3,7 +3,6 @@ import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useSearch } from "@/hooks/useSearch";
 import { message } from "antd";
-import "@/components/views/HypergraphView.css";
 
 interface HypergraphViewProps {
   data: {

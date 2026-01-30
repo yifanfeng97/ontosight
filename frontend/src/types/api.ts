@@ -139,19 +139,31 @@ export interface SchemaUnit {
 
 /**
  * Metadata response for /api/meta endpoint.
- * Contains JSON schemas for all visualization data types.
  * 
- * Frontend uses these schemas to dynamically render property panels.
+ * Provides visualization type, available features, and dynamic schemas.
+ * The frontend uses this to:
+ * 1. Route to the correct visualization component
+ * 2. Enable/disable UI features (search, chat, etc.)
+ * 3. Dynamically render property panels
+ * 
+ * @example
+ * const meta = await fetch('/api/meta').then(r => r.json());
+ * // {
+ * //   type: "graph",
+ * //   features: { search: true, chat: true },
+ * //   schemas: {
+ * //     nodes: { title: "Node", properties: {...} },
+ * //     edges: { title: "Edge", properties: {...} }
+ * //   }
+ * // }
  */
-export interface Meta {
-  /** JSON Schema for nodes */
-  node_schema?: Record<string, any>;
-  /** JSON Schema for edges */
-  edge_schema?: Record<string, any>;
-  /** JSON Schema for individual items (lists/tables) */
-  item_schema?: Record<string, any>;
-  /** JSON Schema for hyperedges */
-  hyperedge_schema?: Record<string, any>;
+export interface MetaResponse {
+  /** Visualization type: determines which component to render */
+  type: "graph" | "list" | "hypergraph";
+  /** Feature availability flags (e.g., {"search": true, "chat": false}) */
+  features: Record<string, boolean>;
+  /** Map of element types to their JSON Schemas */
+  schemas: Record<string, Record<string, any>>;
 }
 
 /**
@@ -194,42 +206,34 @@ export interface ChatResponse {
 
 /**
  * Complete visualization data payload for /api/data endpoint.
+ * 
+ * Returns raw data without type wrapping (type is known from /api/meta).
+ * The actual response will be one of: GraphData, HypergraphData, or ListData
  */
-export interface VisualizationData {
-    payload: GraphPayload | HypergraphPayload | ListPayload;
-}
+export type VisualizationData = GraphData | HypergraphData | ListData;
 
 export interface GraphData {
-    nodes: Node<any>[];
-    edges: Edge<any>[];
+  /** List of nodes in the graph */
+  nodes: Array<Node<any>>;
+  /** List of edges connecting nodes */
+  edges: Array<Edge<any>>;
 }
 
 export interface HypergraphData {
-    nodes: Node<any>[];
-    edges: Edge<any>[];
-    hyperedges: Array<{
-        id: string;
-        label: string;
-        node_set: string[];
-        data: any;
-    }>;
+  /** List of nodes */
+  nodes: Array<Node<any>>;
+  /** List of regular edges (for layout) */
+  edges: Array<Edge<any>>;
+  /** List of hyperedges connecting multiple nodes */
+  hyperedges: Array<{
+    id: string;
+    label: string;
+    node_set: string[];
+    data: any;
+  }>;
 }
 
 export interface ListData {
-    items: Item<any>[];
-}
-
-export interface GraphPayload {
-    type: "graph";
-    data: GraphData;
-}
-
-export interface HypergraphPayload {
-    type: "hypergraph";
-    data: HypergraphData;
-}
-
-export interface ListPayload {
-    type: "list";
-    data: ListData;
+  /** List of items */
+  items: Array<Item<any>>;
 }

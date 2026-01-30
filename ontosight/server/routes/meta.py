@@ -1,22 +1,31 @@
-"""FastAPI route for /api/meta - returns JSON schemas for visualization.
+"""FastAPI route for /api/meta - returns metadata for visualization.
 
-This endpoint provides Pydantic-generated JSON schemas for all data types
-used in visualization. The frontend uses these schemas to dynamically render
-property panels for nodes, edges, and items.
+This endpoint provides:
+1. Visualization type (graph, list, hypergraph)
+2. Available features (search, chat, etc.)
+3. JSON schemas for each data element type
+
+The frontend uses this information to:
+- Route to the correct visualization component
+- Enable/disable UI features
+- Dynamically render property panels
 
 Endpoint:
     GET /api/meta
 
 Response:
-    MetaResponse with JSON Schema objects for each data type
+    MetaResponse with type, features, and schemas
 
 Example:
     GET http://localhost:8000/api/meta
 
     {
-        "node_schema": {...},
-        "edge_schema": {...},
-        "item_schema": {...}
+        "type": "graph",
+        "features": {"search": true, "chat": true},
+        "schemas": {
+            "nodes": {...},
+            "edges": {...}
+        }
     }
 """
 
@@ -29,18 +38,44 @@ router = APIRouter()
 
 @router.get("/meta", response_model=MetaResponse)
 async def get_meta() -> MetaResponse:
-    """Get metadata including JSON schemas for all visualization types.
+    """Get metadata including visualization type, features, and schemas.
 
     Returns:
-        MetaResponse with schemas from registered data models
+        MetaResponse with type, features, and schemas
     """
+    # Get visualization type
+    viz_type = global_state.get_visualization_type()
+    
+    # Get all visualization data
     data = global_state.get_all_visualization_data()
-
-    # Return metadata regardless of whether visualization data exists
-    # (metadata describes the schema, not the data itself)
+    
+    # Build features dict from registered callbacks
+    callbacks = global_state.get_callbacks()
+    features = callbacks  # e.g. {"search": True, "chat": True}
+    
+    # Build schemas dict based on visualization type
+    schemas = {}
+    
+    if viz_type == "graph":
+        if "node_schema" in data and data["node_schema"] is not None:
+            schemas["nodes"] = data["node_schema"]
+        if "edge_schema" in data and data["edge_schema"] is not None:
+            schemas["edges"] = data["edge_schema"]
+    
+    elif viz_type == "hypergraph":
+        if "node_schema" in data and data["node_schema"] is not None:
+            schemas["nodes"] = data["node_schema"]
+        if "edge_schema" in data and data["edge_schema"] is not None:
+            schemas["edges"] = data["edge_schema"]
+        if "hyperedge_schema" in data and data["hyperedge_schema"] is not None:
+            schemas["hyperedges"] = data["hyperedge_schema"]
+    
+    elif viz_type == "list":
+        if "item_schema" in data and data["item_schema"] is not None:
+            schemas["items"] = data["item_schema"]
+    
     return MetaResponse(
-        node_schema=data.get("node_schema"),
-        edge_schema=data.get("edge_schema"),
-        item_schema=data.get("item_schema"),
-        hyperedge_schema=data.get("hyperedge_schema"),
+        type=viz_type,
+        features=features,
+        schemas=schemas,
     )

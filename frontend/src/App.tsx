@@ -21,9 +21,8 @@ export default function App() {
         const data = await apiClient.getData();
         console.log("[App] Data response:", data);
         console.log("[App] Data structure:", {
-          hasPayload: !!data?.payload,
-          payloadType: data?.payload?.type,
-          dataKeys: data ? Object.keys(data) : "N/A"
+          dataKeys: data ? Object.keys(data) : "N/A",
+          type: meta?.type
         });
         setData(data);
       } catch (err) {

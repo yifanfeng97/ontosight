@@ -1,5 +1,7 @@
 import React, { ReactNode } from "react";
-import { Result, Button } from "antd";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface Props {
   children: ReactNode;
@@ -31,16 +33,20 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   render() {
     if (this.state.hasError) {
       return (
-        <Result
-          status="error"
-          title="Something went wrong"
-          subTitle={this.state.error?.message || "An unexpected error occurred"}
-          extra={
-            <Button type="primary" onClick={this.handleReset}>
+        <div className="flex items-center justify-center min-h-screen bg-background p-4">
+          <div className="w-full max-w-md space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Something went wrong</AlertTitle>
+              <AlertDescription>
+                {this.state.error?.message || "An unexpected error occurred"}
+              </AlertDescription>
+            </Alert>
+            <Button onClick={this.handleReset} className="w-full">
               Retry
             </Button>
-          }
-        />
+          </div>
+        </div>
       );
     }
 

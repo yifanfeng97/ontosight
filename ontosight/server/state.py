@@ -100,6 +100,19 @@ class GlobalState:
 
             logger.info(f"Registered {len(callbacks)} callbacks: {list(callbacks.keys())}")
 
+    def get_callbacks(self) -> Dict[str, str]:
+        """Get a dict of registered callback names with their availability.
+
+        Returns:
+            Dict mapping callback names to True (since they exist)
+
+        Example:
+            >>> callbacks = global_state.get_callbacks()
+            >>> # Returns: {"search": True, "chat": True}
+        """
+        with self._state_lock:
+            return {name: True for name in self._callbacks.keys()}
+
     def execute_callback(self, callback_name: str, *args, **kwargs) -> Any:
         """Execute a registered callback with error handling.
 

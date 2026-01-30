@@ -1,8 +1,7 @@
 .specify/*
 .ruff_cache/
 .vscode/
-specs/
-.github/*/speckit*
+temp/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

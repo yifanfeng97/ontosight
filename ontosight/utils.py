@@ -22,6 +22,13 @@ _server_host = "127.0.0.1"
 _server_port = 8000
 
 
+def gen_random_id():
+    """Generate a random short hash string."""
+
+    timestamp = str(time.time()) + str(random.random())
+    return hashlib.md5(timestamp.encode()).hexdigest()[:6]
+
+
 def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
     """Ensure the visualization server is running in a background thread."""
     global _server_thread, _server_host, _server_port
@@ -59,12 +66,6 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
         raise
-
-def gen_random_id():
-    """Generate a random short hash string."""
-
-    timestamp = str(time.time()) + str(random.random())
-    return hashlib.md5(timestamp.encode()).hexdigest()[:6]
 
 
 def _find_available_port(host: str, start_port: int, max_retries: int = 10) -> int:

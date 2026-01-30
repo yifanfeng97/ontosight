@@ -1,9 +1,10 @@
 import { useState, useCallback } from "react";
-import { Input, Button, Spin, List, Empty, Space, Tag, Tooltip } from "antd";
-import { SearchOutlined, ArrowUpOutlined, ArrowDownOutlined } from "@ant-design/icons";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
-import "@/components/SearchPanel.css";
 
 export default function SearchPanel() {
   const [query, setQuery] = useState("");
@@ -46,80 +47,90 @@ export default function SearchPanel() {
   };
 
   return (
-    <div className="search-panel">
-      <h3>🔍 搜索</h3>
-      <div className="search-input-group">
-        <Input.Search
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">🔍 搜索</h3>
+      
+      <div className="flex gap-2">
+        <Input
           placeholder="搜索节点..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          onSearch={handleSearch}
-          onPressEnter={handleSearch}
-          prefix={<SearchOutlined />}
-          allowClear
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch();
+          }}
+          className="flex-1"
         />
-        <Button onClick={handleClear} type="link" size="small">
-          清除
+        <Button
+          onClick={handleClear}
+          variant="outline"
+          size="sm"
+          title="清除搜索"
+        >
+          <X className="w-4 h-4" />
         </Button>
       </div>
 
       {loading && (
-        <div className="search-loading">
-          <Spin size="small" tip="搜索中..." />
+        <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+          <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+          搜索中...
         </div>
       )}
 
       {!loading && results.length === 0 && query && (
-        <Empty description="未找到结果" />
+        <div className="text-sm text-muted-foreground text-center py-4">未找到结果</div>
       )}
 
       {results.length > 0 && (
-        <div className="search-results-container">
-          <div className="search-stats">
-            <Tag color="blue">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary">
               共 {results.length} 个结果 (第 {currentResultIndex + 1} 个)
-            </Tag>
+            </Badge>
           </div>
 
-          <div className="search-navigation">
-            <Tooltip title="上一个结果 (↑)">
-              <Button
-                size="small"
-                icon={<ArrowUpOutlined />}
-                onClick={handlePreviousResult}
-                disabled={results.length === 0}
-              />
-            </Tooltip>
-            <Tooltip title="下一个结果 (↓)">
-              <Button
-                size="small"
-                icon={<ArrowDownOutlined />}
-                onClick={handleNextResult}
-                disabled={results.length === 0}
-              />
-            </Tooltip>
+          <div className="flex gap-2 justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handlePreviousResult}
+              disabled={results.length === 0}
+              title="上一个结果 (↑)"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleNextResult}
+              disabled={results.length === 0}
+              title="下一个结果 (↓)"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </Button>
           </div>
 
-          <List
-            size="small"
-            dataSource={results}
-            className="search-results-list"
-            renderItem={(item, index) => (
-              <List.Item
+          <div className="space-y-1 max-h-96 overflow-y-auto border rounded-md">
+            {results.map((item, index) => (
+              <div
                 key={index}
-                className={`search-result-item ${index === currentResultIndex ? 'active' : ''}`}
                 onClick={() => handleResultClick(item, index)}
+                className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
+                  index === currentResultIndex
+                    ? "bg-primary text-primary-foreground"
+                    : "hover:bg-muted"
+                }`}
               >
-                <div className="result-item-content">
-                  <span className="result-index">#{index + 1}</span>
-                  <span className="result-text">{item}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono opacity-75">#{index + 1}</span>
+                  <span className="flex-1 truncate">{item}</span>
                   {index === currentResultIndex && (
-                    <Tag color="gold" className="current-indicator">当前</Tag>
+                    <Badge variant="default" className="text-xs">当前</Badge>
                   )}
                 </div>
-              </List.Item>
-            )}
-          />
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

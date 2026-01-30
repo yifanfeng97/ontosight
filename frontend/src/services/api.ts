@@ -14,7 +14,7 @@
  */
 
 import {
-  Meta,
+  MetaResponse,
   SearchRequest,
   SearchResponse,
   ChatRequest,
@@ -109,13 +109,13 @@ async function fetchWithRetry<T>(
  */
 export const apiClient = {
   /**
-   * Get metadata including JSON schemas for all visualization types.
+   * Get metadata including visualization type, features, and schemas.
    *
    * GET /api/meta
    */
-  async getMeta(): Promise<Meta> {
+  async getMeta(): Promise<MetaResponse> {
     try {
-      return await fetchWithRetry<Meta>(`${API_BASE_URL}/api/meta`);
+      return await fetchWithRetry<MetaResponse>(`${API_BASE_URL}/api/meta`);
     } catch (error) {
       if (error instanceof ApiError) {
         if (error.status === 404) {

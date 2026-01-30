@@ -1,13 +1,20 @@
-"""API route: GET /api/data - Retrieve visualization data."""
+"""API route: GET /api/data - Retrieve visualization data.
+
+This endpoint returns the actual visualization data (nodes, edges, items, etc.).
+The type and schema information is already provided by /api/meta, so this
+endpoint returns raw data without type wrapping.
+
+Endpoint:
+    GET /api/data
+
+Response:
+    GraphData | HypergraphData | ListData depending on visualization type
+"""
 
 import logging
 from fastapi import APIRouter, HTTPException
 
 from ontosight.server.models.api import (
-    VisualizationData,
-    GraphPayload,
-    HypergraphPayload,
-    ListPayload,
     GraphData,
     HypergraphData,
     ListData,
@@ -18,12 +25,27 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.get("/data", response_model=VisualizationData)
-async def get_data() -> VisualizationData:
+def to_dict_list(items):
+    """Convert list of objects to dicts, handling Pydantic models."""
+    if not items:
+        return []
+    result = []
+    for item in items:
+        if hasattr(item, "model_dump"):
+            result.append(item.model_dump())
+        elif isinstance(item, dict):
+            result.append(item)
+        else:
+            result.append(item)
+    return result
+
+
+@router.get("/data")
+async def get_data():
     """Get current visualization data.
 
     Returns:
-        Visualization payload with nodes, edges, items wrapped in typed payload.
+        Data payload (GraphData, HypergraphData, or ListData) based on type.
 
     Raises:
         HTTPException: 404 if no visualization loaded
@@ -41,63 +63,34 @@ async def get_data() -> VisualizationData:
             logger.warning("[/api/data] No visualization data found")
             raise RuntimeError("No visualization data")
 
-        # Convert Node/Edge objects to dicts if needed
-        def to_dict_list(items):
-            if not items:
-                return []
-            result = []
-            for item in items:
-                if hasattr(item, "model_dump"):
-                    result.append(item.model_dump())
-                elif isinstance(item, dict):
-                    result.append(item)
-                else:
-                    result.append(item)
-            return result
-
         if viz_type == "graph":
-            logger.info("[/api/data] Building GraphPayload")
+            logger.info("[/api/data] Building GraphData")
             nodes = to_dict_list(all_data.get("nodes"))
             edges = to_dict_list(all_data.get("edges"))
             logger.info(f"[/api/data] Graph: {len(nodes)} nodes, {len(edges)} edges")
             
-            payload = GraphPayload(
-                data=GraphData(
-                    nodes=nodes,
-                    edges=edges,
-                )
-            )
+            return GraphData(nodes=nodes, edges=edges)
+        
         elif viz_type == "hypergraph":
-            logger.info("[/api/data] Building HypergraphPayload")
+            logger.info("[/api/data] Building HypergraphData")
             nodes = to_dict_list(all_data.get("nodes"))
             edges = to_dict_list(all_data.get("edges"))
             hyperedges = to_dict_list(all_data.get("hyperedges"))
             logger.info(f"[/api/data] Hypergraph: {len(nodes)} nodes, {len(edges)} edges, {len(hyperedges)} hyperedges")
             
-            payload = HypergraphPayload(
-                data=HypergraphData(
-                    nodes=nodes,
-                    edges=edges,
-                    hyperedges=hyperedges,
-                )
-            )
+            return HypergraphData(nodes=nodes, edges=edges, hyperedges=hyperedges)
+        
         elif viz_type == "list":
-            logger.info("[/api/data] Building ListPayload")
+            logger.info("[/api/data] Building ListData")
             items = to_dict_list(all_data.get("items"))
             logger.info(f"[/api/data] List: {len(items)} items")
             
-            payload = ListPayload(
-                data=ListData(
-                    items=items,
-                )
-            )
+            return ListData(items=items)
+        
         else:
             logger.error(f"[/api/data] Unknown visualization type: {viz_type}")
             raise ValueError(f"Unknown visualization type: {viz_type}")
 
-        response = VisualizationData(payload=payload)
-        logger.info(f"[/api/data] Response payload type: {response.payload.type}")
-        return response
     except RuntimeError as e:
         logger.error(f"[/api/data] RuntimeError: {e}")
         raise HTTPException(

@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react";
-import { Empty } from "antd";
-import "@/components/VisualizationRouter.css";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const GraphView = lazy(() => import("@/components/views/GraphView"));
 const ListView = lazy(() => import("@/components/views/ListView"));
@@ -15,28 +15,45 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
   console.log("[VisualizationRouter] Received data:", data);
   console.log("[VisualizationRouter] Data keys:", data ? Object.keys(data) : "null");
   
-  // Determine view type from payload
-  const payload = data?.payload;
-  console.log("[VisualizationRouter] Payload:", payload);
-  console.log("[VisualizationRouter] Payload type:", payload?.type);
+  // Get visualization type from meta
+  const vizType = meta?.type;
+  console.log("[VisualizationRouter] Visualization type from meta:", vizType);
   
-  if (!payload) {
-    console.warn("[VisualizationRouter] No payload found, showing empty");
-    return <Empty description="No data to visualize" />;
+  if (!data) {
+    console.warn("[VisualizationRouter] No data found, showing empty");
+    return (
+      <Alert>
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>No data available</AlertTitle>
+        <AlertDescription>No data to visualize</AlertDescription>
+      </Alert>
+    );
   }
 
-  const viewType = payload.type;
-  const viewData = payload.data;
-  
-  console.log("[VisualizationRouter] View type:", viewType);
-  console.log("[VisualizationRouter] View data:", viewData);
+  if (!vizType) {
+    console.warn("[VisualizationRouter] No visualization type in meta, showing empty");
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Invalid metadata</AlertTitle>
+        <AlertDescription>Invalid visualization metadata</AlertDescription>
+      </Alert>
+    );
+  }
+
+  console.log("[VisualizationRouter] Rendering view type:", vizType);
+  console.log("[VisualizationRouter] View data:", data);
 
   return (
-    <div className="visualization-router">
-      <Suspense fallback={<div>Loading visualization...</div>}>
-        {viewType === "graph" && <GraphView data={viewData} meta={meta} />}
-        {viewType === "list" && <ListView data={viewData} meta={meta} />}
-        {viewType === "hypergraph" && <HypergraphView data={viewData} meta={meta} />}
+    <div className="w-full h-full overflow-auto">
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-full">
+          <div className="text-sm text-muted-foreground">Loading visualization...</div>
+        </div>
+      }>
+        {vizType === "graph" && <GraphView data={data} meta={meta} />}
+        {vizType === "list" && <ListView data={data} meta={meta} />}
+        {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
       </Suspense>
     </div>
   );

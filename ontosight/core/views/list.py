@@ -9,11 +9,13 @@ from ontosight.utils import (
     ensure_server_running,
     open_browser,
     wait_for_user,
+    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
 
 ItemSchema = TypeVar("ItemSchema", bound=BaseModel)
+
 
 def view_list(
     item_list: List[ItemSchema],
@@ -61,12 +63,12 @@ def view_list(
 
     # Normalize data
     try:
-        result = format_data_for_ui(
+        items_for_ui = format_data_for_ui(
             items=item_list,
             name_extractor=item_name_extractor,
         )
         global_state.set_visualization_type("list")
-        global_state.set_visualization_data("items", result.get("items", []))
+        global_state.set_visualization_data("items", items_for_ui)
 
         logger.info("List visualization setup complete")
 
@@ -79,7 +81,7 @@ def view_list(
 
 
 def format_data_for_ui(
-    items: list[Any],
+    items: List[ItemSchema],
     name_extractor: Callable[[ItemSchema], str],
 ) -> dict[str, Any]:
     """Convert a list of items into normalized dict format.
@@ -87,10 +89,10 @@ def format_data_for_ui(
     Used by view_list.
     Data structure complies with G6 V5:
     {
-        "id": "...", 
-        "data": { 
-            "label": "...", 
-            "raw": { ...original_pydantic_dump... } 
+        "id": "...",
+        "data": {
+            "label": "...",
+            "raw": { ...original_pydantic_dump... }
         }
     }
 
@@ -105,26 +107,15 @@ def format_data_for_ui(
         >>> format_data_for_ui([{"name": "A"}, {"name": "B"}], name_extractor="name")
         {'items': [{'id': '...', 'data': {'label': 'A', 'raw': {...}}}, ...]}
     """
-    from ontosight.utils import short_id_from_str
-    
     normalized_items = []
 
     for idx, item in enumerate(items):
         # Extract display label using required extractor
-        item_label = name_extractor(item)
-        
-        # Auto-generate ID using label
-        item_id = short_id_from_str(item_label)
+        _label = name_extractor(item)
 
-        # Include all fields as raw data
-        if isinstance(item, dict):
-            item_data = {k: v for k, v in item.items()}
-        elif hasattr(item, "__dict__"):
-            item_data = {k: v for k, v in vars(item).items() if not k.startswith("_")}
-        else:
-            # For primitive types (strings, numbers, etc), don't include data
-            item_data = {}
+        _id = gen_random_id()
+        _data = item.model_dump()
 
-        normalized_items.append({"id": item_id, "data": {"label": item_label, "raw": item_data}})
+        normalized_items.append({"id": _id, "data": {"label": _label, "raw": _data}})
 
-    return {"items": normalized_items}
+    return normalized_items
