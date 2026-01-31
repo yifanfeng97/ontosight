@@ -71,6 +71,10 @@ class MetaResponse(BaseModel):
         default_factory=dict,
         description="Map of element types to their JSON Schemas",
     )
+    stats: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="Statistics about the data (e.g. node count, edge count)",
+    )
 
 
 class SearchRequest(BaseModel):

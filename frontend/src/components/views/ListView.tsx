@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useMemo } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useVisualization } from "@/hooks/useVisualization";
 
@@ -8,10 +8,22 @@ interface ListViewProps {
 }
 
 const ListView = memo(function ListView({ data }: ListViewProps) {
-  const { selectedNodes, selectNode } = useVisualization();
+  const { selectedItems, selectItem, resetTrigger } = useVisualization();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  if (!data.items || data.items.length === 0) {
+  // Shuffle items when reset is triggered
+  const shuffledItems = useMemo(() => {
+    if (!data.items || data.items.length === 0) return [];
+    // Create a copy and shuffle it
+    const items = [...data.items];
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+    return items;
+  }, [data.items, resetTrigger]);
+
+  if (!shuffledItems || shuffledItems.length === 0) {
     return (
       <div className="flex items-center justify-center h-96 text-muted-foreground">
         <p>No items to display</p>
@@ -27,13 +39,13 @@ const ListView = memo(function ListView({ data }: ListViewProps) {
     <div className="w-full h-full flex flex-col overflow-hidden">
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-1">
-          {data.items.map((item: any) => (
+          {shuffledItems.map((item: any) => (
             <ListItemRow
               key={item.id}
               item={item}
-              isSelected={selectedNodes.has(item.id)}
+              isSelected={selectedItems.has(item.id)}
               isExpanded={expandedId === item.id}
-              onSelect={() => selectNode(item.id)}
+              onSelect={() => selectItem(item.id, "item")}
               onToggleExpand={() => toggleExpand(item.id)}
             />
           ))}

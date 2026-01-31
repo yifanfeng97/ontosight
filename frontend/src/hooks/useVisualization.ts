@@ -1,27 +1,35 @@
 import { create } from "zustand";
 
+export interface SelectedItem {
+  id: string;
+  type: "node" | "edge" | "item" | "hyperedge";
+}
+
 export interface VisualizationState {
   meta: any | null;
   data: any | null;
   loading: boolean;
   error: string | null;
-  selectedNodes: Set<string>;
+  selectedItems: Map<string, SelectedItem>;
   highlightedNodes: Set<string>;
   viewMode: "graph" | "list" | "hypergraph";
   zoomLevel: number;
+  resetTrigger: number; // Trigger for resetting visualization
 
   // Actions
   setMeta: (meta: any) => void;
   setData: (data: any) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  selectNode: (nodeId: string) => void;
-  deselectNode: (nodeId: string) => void;
+  selectItem: (itemId: string, itemType?: "node" | "edge" | "item" | "hyperedge") => void;
+  deselectItem: (itemId: string) => void;
   clearSelection: () => void;
   highlightNodes: (nodeIds: string[]) => void;
   clearHighlight: () => void;
   setViewMode: (mode: VisualizationState["viewMode"]) => void;
   setZoomLevel: (level: number) => void;
+  resetVisualization: () => void; // Reset visualization layout and state
+  triggerLayoutReset: () => void; // Only reset layout without clearing selection
 }
 
 export const useVisualization = create<VisualizationState>((set) => ({
@@ -29,29 +37,38 @@ export const useVisualization = create<VisualizationState>((set) => ({
   data: null,
   loading: false,
   error: null,
-  selectedNodes: new Set(),
+  selectedItems: new Map(),
   highlightedNodes: new Set(),
   viewMode: "graph",
   zoomLevel: 1,
+  resetTrigger: 0,
 
   setMeta: (meta) => set({ meta }),
   setData: (data) => set({ data }),
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
-  selectNode: (nodeId) =>
-    set((state) => ({
-      selectedNodes: new Set([...state.selectedNodes, nodeId]),
-    })),
-
-  deselectNode: (nodeId) =>
+  selectItem: (itemId, itemType = "node") =>
     set((state) => {
-      const newSelected = new Set(state.selectedNodes);
-      newSelected.delete(nodeId);
-      return { selectedNodes: newSelected };
+      const newSelectedItems = new Map();
+      newSelectedItems.set(itemId, { id: itemId, type: itemType });
+      // Add remaining items (excluding the one we just added to keep it at front)
+      for (const [key, value] of state.selectedItems) {
+        if (key !== itemId) {
+          newSelectedItems.set(key, value);
+        }
+      }
+      return { selectedItems: newSelectedItems };
     }),
 
-  clearSelection: () => set({ selectedNodes: new Set() }),
+  deselectItem: (itemId) =>
+    set((state) => {
+      const newSelectedItems = new Map(state.selectedItems);
+      newSelectedItems.delete(itemId);
+      return { selectedItems: newSelectedItems };
+    }),
+
+  clearSelection: () => set({ selectedItems: new Map() }),
 
   highlightNodes: (nodeIds) =>
     set({ highlightedNodes: new Set(nodeIds) }),
@@ -61,4 +78,13 @@ export const useVisualization = create<VisualizationState>((set) => ({
   setViewMode: (viewMode) => set({ viewMode }),
 
   setZoomLevel: (zoomLevel) => set({ zoomLevel }),
+
+  resetVisualization: () => set((state) => ({
+    selectedItems: new Map(),
+    resetTrigger: state.resetTrigger + 1,
+  })),
+
+  triggerLayoutReset: () => set((state) => ({
+    resetTrigger: state.resetTrigger + 1,
+  })),
 }));

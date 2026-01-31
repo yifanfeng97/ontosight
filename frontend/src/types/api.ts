@@ -164,6 +164,8 @@ export interface MetaResponse {
   features: Record<string, boolean>;
   /** Map of element types to their JSON Schemas */
   schemas: Record<string, Record<string, any>>;
+  /** Statistics about the data (e.g. node count, edge count) */
+  stats: Record<string, any>;
 }
 
 /**

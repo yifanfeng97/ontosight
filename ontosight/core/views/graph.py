@@ -3,7 +3,6 @@
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
 from pydantic import BaseModel
 import logging
-import hashlib
 
 from ontosight.server.state import global_state
 from ontosight.utils import (
@@ -72,7 +71,7 @@ def view_graph(
 
     # Normalize data
     try:
-        vis_nodes, vis_edges = format_data_for_ui(
+        vis_nodes, vis_edges, meta_data = format_data_for_ui(
             nodes=node_list,
             edges=edge_list,
             node_label_extractor=node_label_extractor,
@@ -82,6 +81,7 @@ def view_graph(
         global_state.set_visualization_type("graph")
         global_state.set_visualization_data("nodes", vis_nodes)
         global_state.set_visualization_data("edges", vis_edges)
+        global_state.set_visualization_data("meta_data", meta_data)
         logger.info("Graph visualization setup complete")
 
         open_browser()
@@ -138,5 +138,12 @@ def format_data_for_ui(
                 "data": {"label": _label, "raw": _data},
             }
         )
+    
+    meta_data = {
+        "Nodes": len(nodes),
+        "Edges": len(edges),
+        "Average Node Degree": len(edges) / len(nodes) if len(nodes) > 0 else 0,
+        "Average Edge Degree": 2
+    }
 
-    return formated_nodes, formated_edges
+    return formated_nodes, formated_edges, meta_data

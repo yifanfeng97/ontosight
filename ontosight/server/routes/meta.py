@@ -78,4 +78,5 @@ async def get_meta() -> MetaResponse:
         type=viz_type,
         features=features,
         schemas=schemas,
+        stats=data.get("meta_data", {}),
     )

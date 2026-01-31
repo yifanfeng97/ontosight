@@ -72,7 +72,7 @@ def view_hypergraph(
 
     # Normalize data
     try:
-        nodes, edges, hyperedges = format_data_for_ui(
+        nodes, edges, hyperedges, meta_data = format_data_for_ui(
             nodes=node_list,
             edges=edge_list,
             node_name_extractor=node_name_extractor,
@@ -83,6 +83,7 @@ def view_hypergraph(
         global_state.set_visualization_data("nodes", nodes)
         global_state.set_visualization_data("edges", edges)
         global_state.set_visualization_data("hyperedges", hyperedges)
+        global_state.set_visualization_data("meta_data", meta_data)
 
         logger.info("Hypergraph visualization setup complete")
 
@@ -117,6 +118,7 @@ def format_data_for_ui(
     Returns:
         Tuple of (formatted_nodes, formatted_edges, formatted_hyperedges)
     """
+    avg_edge_degree = 0
     label_id_map = {}
     node_deg = {}
     for node in nodes:
@@ -137,6 +139,7 @@ def format_data_for_ui(
     for edge in edges:
         _label = edge_name_extractor(edge)
         _nodes = nodes_in_edge_extractor(edge)
+        avg_edge_degree += len(_nodes)
         _node_degs = [node_deg[n] for n in _nodes]
         _core_node = _nodes[_node_degs.index(min(_node_degs))]
         for _node in _nodes:
@@ -157,5 +160,11 @@ def format_data_for_ui(
                 "data": _data,
             }
         )
+    meta_data = {
+        "Nodes": len(nodes),
+        "Hyperedges": len(edges),
+        "Average Node Degree": sum(node_deg.values()) / len(nodes) if len(nodes) > 0 else 0,
+        "Average Hyperedge Degree": avg_edge_degree / len(edges) if len(edges) > 0 else 0,
+    }
 
-    return formated_nodes, formated_edges, formated_hyperedges
+    return formated_nodes, formated_edges, formated_hyperedges, meta_data

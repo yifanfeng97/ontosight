@@ -63,12 +63,13 @@ def view_list(
 
     # Normalize data
     try:
-        items_for_ui = format_data_for_ui(
+        items_for_ui, meta_data = format_data_for_ui(
             items=item_list,
             name_extractor=item_name_extractor,
         )
         global_state.set_visualization_type("list")
         global_state.set_visualization_data("items", items_for_ui)
+        global_state.set_visualization_data("meta_data", meta_data)
 
         logger.info("List visualization setup complete")
 
@@ -118,4 +119,6 @@ def format_data_for_ui(
 
         normalized_items.append({"id": _id, "data": {"label": _label, "raw": _data}})
 
-    return normalized_items
+    meta_data = {"Items": len(items), "Fields": len(_data)}
+
+    return normalized_items, meta_data

@@ -10,7 +10,7 @@ export default function SearchPanel() {
   const [query, setQuery] = useState("");
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
   const { results, loading, search, clear } = useSearch();
-  const { selectNode } = useVisualization();
+  const { selectItem } = useVisualization();
 
   const handleSearch = async () => {
     if (query.trim()) {
@@ -29,30 +29,30 @@ export default function SearchPanel() {
     if (results.length === 0) return;
     setCurrentResultIndex((prev) => (prev === 0 ? results.length - 1 : prev - 1));
     if (results.length > 0) {
-      selectNode(results[currentResultIndex === 0 ? results.length - 1 : currentResultIndex - 1]);
+      selectItem(results[currentResultIndex === 0 ? results.length - 1 : currentResultIndex - 1], "node");
     }
-  }, [results, currentResultIndex, selectNode]);
+  }, [results, currentResultIndex, selectItem]);
 
   const handleNextResult = useCallback(() => {
     if (results.length === 0) return;
     setCurrentResultIndex((prev) => (prev === results.length - 1 ? 0 : prev + 1));
     if (results.length > 0) {
-      selectNode(results[currentResultIndex === results.length - 1 ? 0 : currentResultIndex + 1]);
+      selectItem(results[currentResultIndex === results.length - 1 ? 0 : currentResultIndex + 1], "node");
     }
-  }, [results, currentResultIndex, selectNode]);
+  }, [results, currentResultIndex, selectItem]);
 
   const handleResultClick = (resultId: string, index: number) => {
-    selectNode(resultId);
+    selectItem(resultId, "node");
     setCurrentResultIndex(index);
   };
 
   return (
     <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">🔍 搜索</h3>
+      <h3 className="text-sm font-semibold text-foreground">Search</h3>
       
       <div className="flex gap-2">
         <Input
-          placeholder="搜索节点..."
+          placeholder="Search nodes..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
@@ -64,7 +64,7 @@ export default function SearchPanel() {
           onClick={handleClear}
           variant="outline"
           size="sm"
-          title="清除搜索"
+          title="Clear search"
         >
           <X className="w-4 h-4" />
         </Button>
@@ -73,19 +73,19 @@ export default function SearchPanel() {
       {loading && (
         <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
           <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
-          搜索中...
+          Searching...
         </div>
       )}
 
       {!loading && results.length === 0 && query && (
-        <div className="text-sm text-muted-foreground text-center py-4">未找到结果</div>
+        <div className="text-sm text-muted-foreground text-center py-4">No results found</div>
       )}
 
       {results.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              共 {results.length} 个结果 (第 {currentResultIndex + 1} 个)
+              {results.length} results ({currentResultIndex + 1}/{results.length})
             </Badge>
           </div>
 
@@ -95,7 +95,7 @@ export default function SearchPanel() {
               variant="outline"
               onClick={handlePreviousResult}
               disabled={results.length === 0}
-              title="上一个结果 (↑)"
+              title="Previous result (↑)"
             >
               <ChevronUp className="w-4 h-4" />
             </Button>
@@ -104,7 +104,7 @@ export default function SearchPanel() {
               variant="outline"
               onClick={handleNextResult}
               disabled={results.length === 0}
-              title="下一个结果 (↓)"
+              title="Next result (↓)"
             >
               <ChevronDown className="w-4 h-4" />
             </Button>
@@ -125,7 +125,7 @@ export default function SearchPanel() {
                   <span className="text-xs font-mono opacity-75">#{index + 1}</span>
                   <span className="flex-1 truncate">{item}</span>
                   {index === currentResultIndex && (
-                    <Badge variant="default" className="text-xs">当前</Badge>
+                    <Badge variant="default" className="text-xs">Current</Badge>
                   )}
                 </div>
               </div>

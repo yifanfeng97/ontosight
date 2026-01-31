@@ -39,62 +39,48 @@ function getHyperedgeColor(index: number) {
 const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<Graph | null>(null);
-  const tooltipRef = useRef<HTMLDivElement>(null);
-  const { selectedNodes, selectNode, deselectNode, clearSelection } = useVisualization();
+  const hyperedgesRef = useRef<Map<string, any>>(new Map()); // Store hyperedges for click detection
+  const selectedItemsRef = useRef(new Map());
+  const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
   const { results: searchResults } = useSearch();
   const { addToast } = useToast();
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    selectedItemsRef.current = selectedItems;
+  }, [selectedItems]);
 
   const handleNodeClick = useCallback(
     (evt: any) => {
       const nodeId = evt.target?.id;
       if (!nodeId) return;
 
-      if (selectedNodes.has(nodeId)) {
-        deselectNode(nodeId);
+      if (selectedItemsRef.current.has(nodeId)) {
+        deselectItem(nodeId);
       } else {
-        selectNode(nodeId);
+        selectItem(nodeId, "node");
       }
     },
-    [selectedNodes, selectNode, deselectNode]
+    [selectItem, deselectItem]
+  );
+
+  const handleHyperedgeClick = useCallback(
+    (hyperedgeId: string) => {
+      if (selectedItemsRef.current.has(hyperedgeId)) {
+        deselectItem(hyperedgeId);
+      } else {
+        selectItem(hyperedgeId, "hyperedge");
+      }
+    },
+    [selectItem, deselectItem]
   );
 
   const handleCanvasClick = useCallback(() => {
     clearSelection();
   }, [clearSelection]);
 
-  const handleNodeMouseEnter = useCallback((evt: any) => {
-    const nodeId = evt.target?.id;
-    if (!nodeId || !tooltipRef.current || !graphRef.current) return;
-
-    try {
-      const nodeData = graphRef.current.getNodeData(nodeId);
-      if (!nodeData) return;
-
-      const position = graphRef.current.getElementPosition(nodeId);
-      const [x, y] = position || [0, 0];
-
-      const content = `
-        <div class="graph-node-tooltip">
-          <div class="tooltip-title">${nodeData.data?.label || nodeData.id}</div>
-          <div class="tooltip-id">ID: ${nodeData.id}</div>
-          ${nodeData.data?.description ? `<div class="tooltip-desc">${nodeData.data.description}</div>` : ''}
-          ${nodeData.data?.value !== undefined ? `<div class="tooltip-value">Value: ${nodeData.data.value}</div>` : ''}
-        </div>
-      `;
-
-      tooltipRef.current.innerHTML = content;
-      tooltipRef.current.style.display = 'block';
-      tooltipRef.current.style.left = x + 10 + 'px';
-      tooltipRef.current.style.top = y + 10 + 'px';
-    } catch (error) {
-      console.warn("[HypergraphView] Error in handleNodeMouseEnter:", error);
-    }
-  }, []);
-
   const handleNodeMouseLeave = useCallback(() => {
-    if (tooltipRef.current) {
-      tooltipRef.current.style.display = 'none';
-    }
+    // Tooltip removed
   }, []);
 
   const handleKeyDown = useCallback((evt: KeyboardEvent) => {
@@ -103,13 +89,13 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
       addToast('搜索面板已激活', 'info');
-    } else if (evt.key === 'Delete' && selectedNodes.size > 0) {
-      selectedNodes.forEach((nodeId) => {
-        deselectNode(nodeId);
+    } else if (evt.key === 'Delete' && selectedItemsRef.current.size > 0) {
+      selectedItemsRef.current.forEach((item) => {
+        deselectItem(item.id);
       });
-      addToast('已清除选中节点', 'success');
+      addToast('已清除选中项', 'success');
     }
-  }, [selectedNodes, clearSelection, deselectNode, addToast]);
+  }, [clearSelection, deselectItem, addToast]);
 
   const highlightSearchResults = useCallback((graph: Graph) => {
     if (!graph) return;
@@ -156,6 +142,8 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       // Build bubble-sets plugins from hyperedges
       const bubbleSetPlugins = (data.hyperedges || []).map((hyperedge, index) => {
         const colors = getHyperedgeColor(index);
+        // Store hyperedge metadata for click detection
+        hyperedgesRef.current.set(hyperedge.id, hyperedge);
         return {
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
@@ -164,7 +152,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           fill: colors.fill,
           fillOpacity: 0.1,
           stroke: colors.stroke,
-          strokeOpacity: 1,
+          strokeOpacity: 0.6,
           label: true,
           labelCloseToPath: false,
           labelPlacement: 'top',
@@ -226,15 +214,18 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           },
         },
         data: {
-          nodes: data.nodes.map((node: any) => ({
-            ...node,
-            style: {
-              ...node.style,
-              fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
-              lineWidth: selectedNodes.has(node.id) ? 3 : 1,
-              stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
-            },
-          })),
+          nodes: data.nodes.map((node: any) => {
+            const isSelected = selectedItems.has(node.id);
+            return {
+              ...node,
+              style: {
+                ...node.style,
+                fill: isSelected ? "#1890ff" : "#87d068",
+                lineWidth: isSelected ? 3 : 1,
+                stroke: isSelected ? "#1890ff" : "#666",
+              },
+            };
+          }),
           edges: (data.edges || []).map((edge: any) => ({
             ...edge,
             style: {
@@ -251,14 +242,24 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
       // Register event handlers
       const nodeClickHandler = handleNodeClick;
-      const canvasClickHandler = handleCanvasClick;
-      const nodeEnterHandler = handleNodeMouseEnter;
-      const nodeLeaveHandler = handleNodeMouseLeave;
+      const canvasClickHandler = (evt: any) => {
+        // Check if clicked on a hyperedge label
+        const target = evt.target;
+        if (target && target.textContent) {
+          // Try to find which hyperedge this label belongs to
+          for (const [hyperedgeId, hyperedgeData] of hyperedgesRef.current.entries()) {
+            if (target.textContent.includes(hyperedgeData.label)) {
+              handleHyperedgeClick(hyperedgeId);
+              return;
+            }
+          }
+        }
+        // Otherwise, clear selection
+        clearSelection();
+      };
 
       graph.on(NodeEvent.CLICK, nodeClickHandler);
       graph.on(CanvasEvent.CLICK, canvasClickHandler);
-      graph.on(NodeEvent.POINTER_ENTER, nodeEnterHandler);
-      graph.on(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
 
       // Double-click to highlight neighbors
       graph.on(NodeEvent.DBLCLICK, (evt: any) => {
@@ -299,7 +300,8 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       window.addEventListener("resize", handleResize);
       window.addEventListener("keydown", handleKeyDown);
       graphRef.current = graph;
-
+  hyperedgesRef.current.clear();
+          
       // Cleanup function
       return () => {
         window.removeEventListener("resize", handleResize);
@@ -309,8 +311,6 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           try {
             graphRef.current.off(NodeEvent.CLICK, nodeClickHandler);
             graphRef.current.off(CanvasEvent.CLICK, canvasClickHandler);
-            graphRef.current.off(NodeEvent.POINTER_ENTER, nodeEnterHandler);
-            graphRef.current.off(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
             graphRef.current.destroy();
             graphRef.current = null;
           } catch (e) {
@@ -322,16 +322,60 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       console.error("[HypergraphView] Error creating graph:", error);
       return () => { };
     }
-  }, [data, selectedNodes, handleNodeClick, handleCanvasClick, handleNodeMouseEnter, handleNodeMouseLeave, handleKeyDown, highlightSearchResults]);
+  }, [data, handleNodeClick, handleHyperedgeClick, handleKeyDown, highlightSearchResults]);
+
+  // Re-layout graph when reset is triggered
+  useEffect(() => {
+    if (!graphRef.current || resetTrigger === 0) return;
+
+    const relayout = async () => {
+      try {
+        console.log("[HypergraphView] Relayouting graph...");
+        // Stop any ongoing layout
+        graphRef.current?.stopLayout();
+        // Trigger new layout calculation
+        await graphRef.current?.layout();
+        console.log("[HypergraphView] Relayout completed");
+      } catch (error) {
+        console.warn("[HypergraphView] Error relayouting graph on reset:", error);
+      }
+    };
+
+    relayout();
+  }, [resetTrigger]);
+
+  // Update hyperedge and node styles when selection changes (without redrawing)
+  useEffect(() => {
+    if (!graphRef.current || !data) return;
+
+    const updateStyles = async () => {
+      try {
+        // Update node styles based on selection
+        data.nodes?.forEach((node: any) => {
+          const isSelected = selectedItems.has(node.id);
+          graphRef.current?.updateNodeData([{
+            id: node.id,
+            style: {
+              fill: isSelected ? "#1890ff" : "#87d068",
+              lineWidth: isSelected ? 3 : 1,
+              stroke: isSelected ? "#1890ff" : "#666",
+            },
+          }]);
+        });
+
+        // Draw immediately to show style changes
+        await graphRef.current?.draw();
+      } catch (error) {
+        console.warn("[HypergraphView] Error updating selection styles:", error);
+      }
+    };
+
+    updateStyles();
+  }, [selectedItems, data]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
       <div ref={containerRef} className="hypergraph-view flex-1" />
-      <div
-        ref={tooltipRef}
-        className="graph-tooltip"
-        style={{ display: 'none' }}
-      />
     </div>
   );
 });
