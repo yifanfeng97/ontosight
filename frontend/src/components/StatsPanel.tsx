@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { NodeIndexOutlined, BranchesOutlined, UnorderedListOutlined } from "@ant-design/icons";
+import { Circle, GitBranch, List } from "lucide-react";
 
 interface StatsPanelProps {
   data: any;
@@ -27,8 +27,8 @@ export default function StatsPanel({ data, vizType }: StatsPanelProps) {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">基础信息</h3>
           <Card className="p-4 space-y-4">
-            <StatItem label="节点数" value={data.nodes?.length || 0} icon={NodeIndexOutlined} />
-            <StatItem label="边数" value={data.edges?.length || 0} icon={BranchesOutlined} />
+            <StatItem label="节点数" value={data.nodes?.length || 0} icon={Circle} />
+            <StatItem label="边数" value={data.edges?.length || 0} icon={GitBranch} />
           </Card>
         </div>
       );
@@ -37,8 +37,8 @@ export default function StatsPanel({ data, vizType }: StatsPanelProps) {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">基础信息</h3>
           <Card className="p-4 space-y-4">
-            <StatItem label="节点数" value={data.nodes?.length || 0} icon={NodeIndexOutlined} />
-            <StatItem label="超边数" value={data.hyperedges?.length || 0} icon={BranchesOutlined} />
+            <StatItem label="节点数" value={data.nodes?.length || 0} icon={Circle} />
+            <StatItem label="超边数" value={data.hyperedges?.length || 0} icon={GitBranch} />
           </Card>
         </div>
       );
@@ -47,7 +47,7 @@ export default function StatsPanel({ data, vizType }: StatsPanelProps) {
         <div className="space-y-3">
           <h3 className="text-sm font-semibold text-foreground">基础信息</h3>
           <Card className="p-4 space-y-4">
-            <StatItem label="项目数" value={data.items?.length || 0} icon={UnorderedListOutlined} />
+            <StatItem label="项目数" value={data.items?.length || 0} icon={List} />
           </Card>
         </div>
       );

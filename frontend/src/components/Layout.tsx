@@ -43,7 +43,7 @@ export default function Layout() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 flex items-center justify-center bg-background relative overflow-hidden">
+        <div className="flex-1 flex bg-background relative overflow-hidden">
           <LoadingSpinner loading={loading} tip="加载中...">
             {error && (
               <div className="absolute inset-0 flex items-center justify-center">

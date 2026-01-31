@@ -45,35 +45,35 @@ async def get_meta() -> MetaResponse:
     """
     # Get visualization type
     viz_type = global_state.get_visualization_type()
-    
+
     # Get all visualization data
     data = global_state.get_all_visualization_data()
-    
+
     # Build features dict from registered callbacks
     callbacks = global_state.get_callbacks()
     features = callbacks  # e.g. {"search": True, "chat": True}
-    
+
     # Build schemas dict based on visualization type
     schemas = {}
-    
+
     if viz_type == "graph":
         if "node_schema" in data and data["node_schema"] is not None:
-            schemas["nodes"] = data["node_schema"]
+            schemas["nodes"] = data["node_schema"].model_json_schema()
         if "edge_schema" in data and data["edge_schema"] is not None:
-            schemas["edges"] = data["edge_schema"]
-    
+            schemas["edges"] = data["edge_schema"].model_json_schema()
+
     elif viz_type == "hypergraph":
         if "node_schema" in data and data["node_schema"] is not None:
-            schemas["nodes"] = data["node_schema"]
+            schemas["nodes"] = data["node_schema"].model_json_schema()
         if "edge_schema" in data and data["edge_schema"] is not None:
-            schemas["edges"] = data["edge_schema"]
+            schemas["edges"] = data["edge_schema"].model_json_schema()
         if "hyperedge_schema" in data and data["hyperedge_schema"] is not None:
-            schemas["hyperedges"] = data["hyperedge_schema"]
-    
+            schemas["hyperedges"] = data["hyperedge_schema"].model_json_schema()
+
     elif viz_type == "list":
         if "item_schema" in data and data["item_schema"] is not None:
-            schemas["items"] = data["item_schema"]
-    
+            schemas["items"] = data["item_schema"].model_json_schema()
+
     return MetaResponse(
         type=viz_type,
         features=features,

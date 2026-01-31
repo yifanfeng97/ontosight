@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useSearch } from "@/hooks/useSearch";
-import { message } from "antd";
+import { useToast } from "@/components/ui/toast";
 
 interface HypergraphViewProps {
   data: {
@@ -42,6 +42,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   const tooltipRef = useRef<HTMLDivElement>(null);
   const { selectedNodes, selectNode, deselectNode, clearSelection } = useVisualization();
   const { results: searchResults } = useSearch();
+  const { addToast } = useToast();
 
   const handleNodeClick = useCallback(
     (evt: any) => {
@@ -101,14 +102,14 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       clearSelection();
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
-      message.info('搜索面板已激活');
+      addToast('搜索面板已激活', 'info');
     } else if (evt.key === 'Delete' && selectedNodes.size > 0) {
       selectedNodes.forEach((nodeId) => {
         deselectNode(nodeId);
       });
-      message.success('已清除选中节点');
+      addToast('已清除选中节点', 'success');
     }
-  }, [selectedNodes, clearSelection, deselectNode]);
+  }, [selectedNodes, clearSelection, deselectNode, addToast]);
 
   const highlightSearchResults = useCallback((graph: Graph) => {
     if (!graph) return;
@@ -137,14 +138,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   }, [searchResults]);
 
   useEffect(() => {
-    console.log("[HypergraphView] useEffect triggered");
-    console.log("[HypergraphView] data:", data);
-    console.log("[HypergraphView] data.nodes:", data?.nodes?.length || 0);
-    console.log("[HypergraphView] data.edges:", data?.edges?.length || 0);
-    console.log("[HypergraphView] data.hyperedges:", data?.hyperedges?.length || 0);
-
     if (!containerRef.current || !data?.nodes) {
-      console.warn("[HypergraphView] Missing containerRef or data.nodes");
       return;
     }
 
@@ -331,8 +325,8 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   }, [data, selectedNodes, handleNodeClick, handleCanvasClick, handleNodeMouseEnter, handleNodeMouseLeave, handleKeyDown, highlightSearchResults]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={containerRef} className="hypergraph-view" style={{ width: '100%', height: '100%' }} />
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <div ref={containerRef} className="hypergraph-view flex-1" />
       <div
         ref={tooltipRef}
         className="graph-tooltip"

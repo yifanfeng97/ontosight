@@ -12,15 +12,10 @@ interface VisualizationRouterProps {
 }
 
 export default function VisualizationRouter({ data, meta }: VisualizationRouterProps) {
-  console.log("[VisualizationRouter] Received data:", data);
-  console.log("[VisualizationRouter] Data keys:", data ? Object.keys(data) : "null");
-  
   // Get visualization type from meta
   const vizType = meta?.type;
-  console.log("[VisualizationRouter] Visualization type from meta:", vizType);
   
   if (!data) {
-    console.warn("[VisualizationRouter] No data found, showing empty");
     return (
       <Alert>
         <AlertCircle className="h-4 w-4" />
@@ -31,7 +26,6 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
   }
 
   if (!vizType) {
-    console.warn("[VisualizationRouter] No visualization type in meta, showing empty");
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
@@ -40,9 +34,6 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
       </Alert>
     );
   }
-
-  console.log("[VisualizationRouter] Rendering view type:", vizType);
-  console.log("[VisualizationRouter] View data:", data);
 
   return (
     <div className="w-full h-full overflow-auto">

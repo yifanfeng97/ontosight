@@ -1,11 +1,11 @@
-import { ConfigProvider } from "antd";
 import { useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
+import { ToastProvider } from "@/components/ui/toast";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
 
-export default function App() {
+function AppContent() {
   const { setMeta, setData, setLoading, setError } = useVisualization();
 
   useEffect(() => {
@@ -39,9 +39,15 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ConfigProvider theme={{ token: { colorPrimary: "#1890ff" } }}>
-        <Layout />
-      </ConfigProvider>
+      <Layout />
     </ErrorBoundary>
+  );
+}
+
+export default function App() {
+  return (
+    <ToastProvider>
+      <AppContent />
+    </ToastProvider>
   );
 }

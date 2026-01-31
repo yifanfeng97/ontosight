@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useSearch } from "@/hooks/useSearch";
-import { message } from "antd";
+import { useToast } from "@/components/ui/toast";
 
 interface GraphViewProps {
   data: any;
@@ -50,6 +50,7 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const { selectedNodes, selectNode, deselectNode, clearSelection } = useVisualization();
   const { results: searchResults } = useSearch();
+  const { addToast } = useToast();
 
   const handleNodeClick = useCallback(
     (evt: any) => {
@@ -112,14 +113,14 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       clearSelection();
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
-      message.info('搜索面板已激活');
+      addToast('搜索面板已激活', 'info');
     } else if (evt.key === 'Delete' && selectedNodes.size > 0) {
       selectedNodes.forEach((nodeId) => {
         deselectNode(nodeId);
       });
-      message.success('已清除选中节点');
+      addToast('已清除选中节点', 'success');
     }
-  }, [selectedNodes, clearSelection, deselectNode]);
+  }, [selectedNodes, clearSelection, deselectNode, addToast]);
 
   // 高亮搜索结果
   const highlightSearchResults = useCallback((graph: Graph) => {
@@ -151,13 +152,7 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   }, [searchResults]);
 
   useEffect(() => {
-    console.log("[GraphView] useEffect triggered");
-    console.log("[GraphView] data:", data);
-    console.log("[GraphView] data.nodes:", data?.nodes?.length || 0);
-    console.log("[GraphView] data.edges:", data?.edges?.length || 0);
-
     if (!containerRef.current || !data?.nodes) {
-      console.warn("[GraphView] Missing containerRef or data.nodes");
       return;
     }
 
@@ -177,100 +172,100 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         container: containerRef.current,
         width: containerRef.current.clientWidth,
         height: containerRef.current.clientHeight,
-        layout: {
-          type: 'force',
-          collide: {
-            // Prevent nodes from overlapping by specifying a collision radius for each node.
-            radius: (d: any) => d.size / 2,
-          },
-          preventOverlap: true,
+          layout: {
+            type: 'force',
+            collide: {
+              // Prevent nodes from overlapping by specifying a collision radius for each node.
+              radius: (d: any) => d.size / 2,
+            },
+            preventOverlap: true,
 
-          // nodeSpacing: 50,
-          // nodeStrength: -150,
-          // edgeStrength: 0.1,
-          // iterations: 300,
-        },
-        behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
-        node: {
-          style: {
-            labelText: (d: any) => d.data?.label || d.id,
-            fontSize: 12,
+            // nodeSpacing: 50,
+            // nodeStrength: -150,
+            // edgeStrength: 0.1,
+            // iterations: 300,
           },
-          state: {
-            highlight: {
-              fill: '#ffd666',
-              stroke: '#faad14',
-              lineWidth: 2,
-              shadowColor: '#faad14',
-              shadowBlur: 10,
-            },
-            selected: {
-              fill: '#1890ff',
-              stroke: '#1890ff',
-              lineWidth: 3,
-              shadowColor: '#1890ff',
-              shadowBlur: 10,
-            },
-          },
-        },
-        edge: {
-          style: {
-            labelText: (d: any) => d.data?.label || '',
-            fontSize: 10,
-          },
-          state: {
-            highlight: {
-              stroke: '#faad14',
-              lineWidth: 2,
-              opacity: 1,
-            },
-          },
-        },
-        data: {
-          nodes: data.nodes.map((node: any) => ({
-            ...node,
+          behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+          node: {
             style: {
-              ...node.style,
-              fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
-              lineWidth: selectedNodes.has(node.id) ? 3 : 1,
-              stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+              labelText: (d: any) => d.data?.label || d.id,
+              fontSize: 12,
             },
-          })),
-          edges: processParallelEdges((data.edges || []).map((edge: any) => ({
-            ...edge,
+            state: {
+              highlight: {
+                fill: '#ffd666',
+                stroke: '#faad14',
+                lineWidth: 2,
+                shadowColor: '#faad14',
+                shadowBlur: 10,
+              },
+              selected: {
+                fill: '#1890ff',
+                stroke: '#1890ff',
+                lineWidth: 3,
+                shadowColor: '#1890ff',
+                shadowBlur: 10,
+              },
+            },
+          },
+          edge: {
             style: {
-              stroke: '#ccc',
-              lineWidth: 1,
-              ...edge.style,
+              labelText: (d: any) => d.data?.label || '',
+              fontSize: 10,
             },
-          }))),
-        },
-      });
+            state: {
+              highlight: {
+                stroke: '#faad14',
+                lineWidth: 2,
+                opacity: 1,
+              },
+            },
+          },
+          data: {
+            nodes: data.nodes.map((node: any) => ({
+              ...node,
+              style: {
+                ...node.style,
+                fill: selectedNodes.has(node.id) ? "#1890ff" : "#87d068",
+                lineWidth: selectedNodes.has(node.id) ? 3 : 1,
+                stroke: selectedNodes.has(node.id) ? "#1890ff" : "#666",
+              },
+            })),
+            edges: processParallelEdges((data.edges || []).map((edge: any) => ({
+              ...edge,
+              style: {
+                stroke: '#ccc',
+                lineWidth: 1,
+                ...edge.style,
+              },
+            }))),
+          },
+        });
 
-      // Register event handlers with proper G6 v5 API
-      const nodeClickHandler = handleNodeClick;
-      const canvasClickHandler = handleCanvasClick;
-      const nodeEnterHandler = handleNodeMouseEnter;
-      const nodeLeaveHandler = handleNodeMouseLeave;
+        // Register event handlers with proper G6 v5 API
+        const nodeClickHandler = handleNodeClick;
+        const canvasClickHandler = handleCanvasClick;
+        const nodeEnterHandler = handleNodeMouseEnter;
+        const nodeLeaveHandler = handleNodeMouseLeave;
 
-      graph.on(NodeEvent.CLICK, nodeClickHandler);
-      graph.on(CanvasEvent.CLICK, canvasClickHandler);
-      graph.on(NodeEvent.POINTER_ENTER, nodeEnterHandler);
-      graph.on(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
+        graph.on(NodeEvent.CLICK, nodeClickHandler);
+        graph.on(CanvasEvent.CLICK, canvasClickHandler);
+        graph.on(NodeEvent.POINTER_ENTER, nodeEnterHandler);
+        graph.on(NodeEvent.POINTER_LEAVE, nodeLeaveHandler);
 
-      // 双击节点展开相邻节点
-      graph.on(NodeEvent.DBLCLICK, (evt: any) => {
-        try {
-          const nodeId = evt.target?.id;
-          if (!nodeId) return;
-          const neighbors = graph.getNeighborNodesData(nodeId) || [];
-          neighbors.forEach((neighbor: any) => {
-            graph.setElementState(neighbor.id, ['highlight']);
-          });
-        } catch (error) {
-          console.warn("[GraphView] Error in dblclick handler:", error);
-        }
-      });
+        // 双击节点展开相邻节点
+        graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+          try {
+            const nodeId = evt.target?.id;
+            if (!nodeId) return;
+            const neighbors = graph.getNeighborNodesData(nodeId) || [];
+            neighbors.forEach((neighbor: any) => {
+              graph.setElementState(neighbor.id, ['highlight']);
+            });
+          } catch (error) {
+            console.warn("[GraphView] Error in dblclick handler:", error);
+          }
+        });
 
       // Render and then apply search highlighting
       graph.render().then(() => {
@@ -326,8 +321,8 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   }, [data, selectedNodes, handleNodeClick, handleCanvasClick, handleNodeMouseEnter, handleNodeMouseLeave, handleKeyDown, highlightSearchResults]);
 
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
-      <div ref={containerRef} className="graph-view" />
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <div ref={containerRef} className="graph-view flex-1" />
       <div
         ref={tooltipRef}
         className="graph-tooltip"
