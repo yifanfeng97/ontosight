@@ -1,8 +1,14 @@
 import { useEffect, useRef, useCallback, memo } from "react";
-import { Graph, NodeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useSearch } from "@/hooks/useSearch";
 import { useToast } from "@/components/ui/toast";
+
+// 使用全局 G6（通过 index.html 中的 script 标签引入 g6.min.js）
+declare global {
+  interface Window {
+    G6: any;
+  }
+}
 
 interface HypergraphViewProps {
   data: {
@@ -36,10 +42,14 @@ function getHyperedgeColor(index: number) {
   return HYPEREDGE_COLORS[index % HYPEREDGE_COLORS.length];
 }
 
+// 选中状态的超边颜色
+const SELECTED_HYPEREDGE_COLOR = { fill: "#1890ff", stroke: "#0050b3" };
+
 const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const graphRef = useRef<Graph | null>(null);
+  const graphRef = useRef<any>(null);
   const hyperedgesRef = useRef<Map<string, any>>(new Map()); // Store hyperedges for click detection
+  const hyperedgeColorsRef = useRef<Map<string, { fill: string; stroke: string }>>(new Map()); // Store original colors
   const selectedItemsRef = useRef(new Map());
   const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
   const { results: searchResults } = useSearch();
@@ -75,14 +85,6 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     [selectItem, deselectItem]
   );
 
-  const handleCanvasClick = useCallback(() => {
-    clearSelection();
-  }, [clearSelection]);
-
-  const handleNodeMouseLeave = useCallback(() => {
-    // Tooltip removed
-  }, []);
-
   const handleKeyDown = useCallback((evt: KeyboardEvent) => {
     if (evt.key === 'Escape') {
       clearSelection();
@@ -97,7 +99,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     }
   }, [clearSelection, deselectItem, addToast]);
 
-  const highlightSearchResults = useCallback((graph: Graph) => {
+  const highlightSearchResults = useCallback((graph: any) => {
     if (!graph) return;
 
     try {
@@ -124,7 +126,8 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   }, [searchResults]);
 
   useEffect(() => {
-    if (!containerRef.current || !data?.nodes) {
+    // 检查 G6 是否已加载（通过 index.html 中的 script 标签引入）
+    if (!containerRef.current || !data?.nodes || !window.G6) {
       return;
     }
 
@@ -139,32 +142,44 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     }
 
     try {
+      // Clear old hyperedge data before rebuilding
+      hyperedgesRef.current.clear();
+      hyperedgeColorsRef.current.clear();
+
       // Build bubble-sets plugins from hyperedges
       const bubbleSetPlugins = (data.hyperedges || []).map((hyperedge, index) => {
         const colors = getHyperedgeColor(index);
-        // Store hyperedge metadata for click detection
+        // Store hyperedge metadata and original colors for click detection and style updates
         hyperedgesRef.current.set(hyperedge.id, hyperedge);
+        hyperedgeColorsRef.current.set(hyperedge.id, colors);
+
+        // Check if this hyperedge is already selected
+        const isSelected = selectedItems.has(hyperedge.id);
+        const activeColors = isSelected ? SELECTED_HYPEREDGE_COLOR : colors;
+
         return {
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
           members: hyperedge.node_set,
           labelText: hyperedge.label,
-          fill: colors.fill,
-          fillOpacity: 0.1,
-          stroke: colors.stroke,
-          strokeOpacity: 0.6,
+          fill: activeColors.fill,
+          fillOpacity: isSelected ? 0.3 : 0.1,
+          stroke: activeColors.stroke,
+          strokeOpacity: isSelected ? 1 : 0.6,
           label: true,
           labelCloseToPath: false,
           labelPlacement: 'top',
-          labelBackgroundFill: colors.stroke,
+          labelBackgroundFill: activeColors.stroke,
           labelFill: '#fff',
           labelPadding: 3,
           labelBackgroundRadius: 4,
+          // Store hyperedge data for click event detection (reference: HypergraphViewer)
+          hyperedge: hyperedge,
         };
       });
 
-      // Create new graph with G6 v5 config
-      const graph = new Graph({
+      // Create new graph with G6 (使用全局 window.G6，参考 HypergraphViewer)
+      const graph = new window.G6.Graph({
         container: containerRef.current,
         width: containerRef.current.clientWidth,
         height: containerRef.current.clientHeight,
@@ -240,29 +255,87 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         autoFit: 'center',
       });
 
-      // Register event handlers
-      const nodeClickHandler = handleNodeClick;
-      const canvasClickHandler = (evt: any) => {
-        // Check if clicked on a hyperedge label
-        const target = evt.target;
-        if (target && target.textContent) {
-          // Try to find which hyperedge this label belongs to
-          for (const [hyperedgeId, hyperedgeData] of hyperedgesRef.current.entries()) {
-            if (target.textContent.includes(hyperedgeData.label)) {
-              handleHyperedgeClick(hyperedgeId);
-              return;
+      // Register event handlers for nodes
+      graph.on("node:click", handleNodeClick);
+
+      // Helper function to handle bubble-sets click
+      const handleBubbleSetsEvent = (evt: any) => {
+        if (evt.targetType === "bubble-sets") {
+          const target = evt.target?.options || evt.target;
+          console.log("[HypergraphView] Bubble-sets event:", target);
+          if (target) {
+            // Try to get hyperedge id directly from stored hyperedge data
+            if (target.hyperedge?.id) {
+              handleHyperedgeClick(target.hyperedge.id);
+              return true;
+            }
+            // Fallback: find hyperedge by key
+            const key = target.key?.replace('bubble-sets-', '');
+            if (key && hyperedgesRef.current.has(key)) {
+              handleHyperedgeClick(key);
+              return true;
+            }
+            // Fallback: find by members
+            for (const [hyperedgeId, hyperedgeData] of hyperedgesRef.current.entries()) {
+              const targetMembers = target.members || [];
+              if (hyperedgeData.node_set &&
+                  targetMembers.length === hyperedgeData.node_set.length &&
+                  targetMembers.every((m: string) => hyperedgeData.node_set.includes(m))) {
+                handleHyperedgeClick(hyperedgeId);
+                return true;
+              }
             }
           }
         }
-        // Otherwise, clear selection
-        clearSelection();
+        return false;
       };
 
-      graph.on(NodeEvent.CLICK, nodeClickHandler);
-      graph.on(CanvasEvent.CLICK, canvasClickHandler);
+      // Register global click handler to detect bubble-sets clicks
+      // Reference: HypergraphViewer uses graph.on("pointermove", ...) with targetType === "bubble-sets"
+      graph.on("click", (evt: any) => {
+        console.log("[HypergraphView] Click event:", evt.targetType, evt.target);
+
+        // Check if clicked on a bubble-sets (hyperedge)
+        if (handleBubbleSetsEvent(evt)) {
+          return;
+        }
+
+        // Check if clicked on node (already handled by NodeEvent.CLICK, but just in case)
+        if (evt.targetType === "node") {
+          return; // Let NodeEvent.CLICK handle it
+        }
+
+        // Check if clicked on canvas (empty area)
+        if (evt.targetType === "canvas") {
+          clearSelection();
+          return;
+        }
+      });
+
+      // Also listen to pointerdown for bubble-sets (some versions of G6 may use this)
+      graph.on("pointerdown", (evt: any) => {
+        if (evt.targetType === "bubble-sets") {
+          console.log("[HypergraphView] Pointerdown on bubble-sets:", evt.target);
+          handleBubbleSetsEvent(evt);
+        }
+      });
+
+      // Listen to pointermove to detect hovering over bubble-sets (like HypergraphViewer)
+      graph.on("pointermove", (evt: any) => {
+        if (evt.targetType === "bubble-sets") {
+          // Set cursor to pointer when hovering over hyperedge
+          if (containerRef.current) {
+            containerRef.current.style.cursor = "pointer";
+          }
+        } else if (evt.targetType === "canvas") {
+          if (containerRef.current) {
+            containerRef.current.style.cursor = "default";
+          }
+        }
+      });
 
       // Double-click to highlight neighbors
-      graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+      graph.on("node:dblclick", (evt: any) => {
         try {
           const nodeId = evt.target?.id;
           if (!nodeId) return;
@@ -279,7 +352,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       graph.render().then(() => {
         console.log("[HypergraphView] Graph rendered successfully");
         highlightSearchResults(graph);
-      }).catch((error) => {
+      }).catch((error: any) => {
         console.error("[HypergraphView] Error rendering graph:", error);
       });
 
@@ -300,7 +373,6 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       window.addEventListener("resize", handleResize);
       window.addEventListener("keydown", handleKeyDown);
       graphRef.current = graph;
-  hyperedgesRef.current.clear();
           
       // Cleanup function
       return () => {
@@ -309,8 +381,6 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
         if (graphRef.current) {
           try {
-            graphRef.current.off(NodeEvent.CLICK, nodeClickHandler);
-            graphRef.current.off(CanvasEvent.CLICK, canvasClickHandler);
             graphRef.current.destroy();
             graphRef.current = null;
           } catch (e) {
@@ -361,6 +431,29 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
               stroke: isSelected ? "#1890ff" : "#666",
             },
           }]);
+        });
+
+        // Update hyperedge (bubble-sets) styles based on selection
+        data.hyperedges?.forEach((hyperedge: any) => {
+          const isSelected = selectedItems.has(hyperedge.id);
+          const originalColors = hyperedgeColorsRef.current.get(hyperedge.id);
+          if (!originalColors) return;
+
+          const activeColors = isSelected ? SELECTED_HYPEREDGE_COLOR : originalColors;
+          const pluginKey = `bubble-sets-${hyperedge.id}`;
+
+          try {
+            graphRef.current?.updatePlugin({
+              key: pluginKey,
+              fill: activeColors.fill,
+              fillOpacity: isSelected ? 0.3 : 0.1,
+              stroke: activeColors.stroke,
+              strokeOpacity: isSelected ? 1 : 0.6,
+              labelBackgroundFill: activeColors.stroke,
+            });
+          } catch (e) {
+            console.warn("[HypergraphView] Error updating plugin:", pluginKey, e);
+          }
         });
 
         // Draw immediately to show style changes
