@@ -237,9 +237,9 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           edges: (data.edges || []).map((edge: any) => ({
             ...edge,
             style: {
-              stroke: '#B4E5FF',
-              lineWidth: 1,
-              opacity: 0.6,
+              stroke: 'transparent',
+              lineWidth: 0,
+              opacity: 0,
               ...edge.style,
             },
           })),
