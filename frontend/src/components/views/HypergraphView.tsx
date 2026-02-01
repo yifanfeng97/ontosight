@@ -161,18 +161,11 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
           members: hyperedge.node_set,
-          labelText: hyperedge.label,
           fill: activeColors.fill,
           fillOpacity: isSelected ? 0.3 : 0.1,
           stroke: activeColors.stroke,
           strokeOpacity: isSelected ? 1 : 0.6,
-          label: true,
-          labelCloseToPath: false,
-          labelPlacement: 'top',
-          labelBackgroundFill: activeColors.stroke,
-          labelFill: '#fff',
-          labelPadding: 3,
-          labelBackgroundRadius: 4,
+          label: false,
           // Store hyperedge data for click event detection (reference: HypergraphViewer)
           hyperedge: hyperedge,
         };
@@ -394,25 +387,43 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     }
   }, [data, handleNodeClick, handleHyperedgeClick, handleKeyDown, highlightSearchResults]);
 
-  // Re-layout graph when reset is triggered
+  // Re-render graph when reset is triggered (full refresh with cold-start layout)
   useEffect(() => {
     if (!graphRef.current || resetTrigger === 0) return;
 
-    const relayout = async () => {
+    const fullRerender = async () => {
       try {
-        console.log("[HypergraphView] Relayouting graph...");
+        console.log("[HypergraphView] Full re-render with cold-start layout...");
+        
         // Stop any ongoing layout
         graphRef.current?.stopLayout();
-        // Trigger new layout calculation
-        await graphRef.current?.layout();
-        console.log("[HypergraphView] Relayout completed");
+        
+        // Clear node coordinates for cold-start layout (not based on current positions)
+        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+        
+        // Re-set data with cleaned coordinates
+        graphRef.current?.setData({
+          nodes: cleanNodes,
+          edges: data.edges || [],
+        });
+        
+        // Full render: triggers data reconciliation -> layout calculation -> drawing
+        // This will also recalculate BubbleSet hyperedge paths
+        await graphRef.current?.render();
+        
+        // Re-apply search highlighting after render completes
+        if (graphRef.current) {
+          highlightSearchResults(graphRef.current);
+        }
+        
+        console.log("[HypergraphView] Full re-render completed");
       } catch (error) {
-        console.warn("[HypergraphView] Error relayouting graph on reset:", error);
+        console.warn("[HypergraphView] Error during full re-render:", error);
       }
     };
 
-    relayout();
-  }, [resetTrigger]);
+    fullRerender();
+  }, [resetTrigger, data, highlightSearchResults]);
 
   // Update hyperedge and node styles when selection changes (without redrawing)
   useEffect(() => {

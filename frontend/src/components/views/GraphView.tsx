@@ -89,10 +89,6 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
     clearSelection();
   }, [clearSelection]);
 
-  const handleNodeMouseLeave = useCallback(() => {
-    // Tooltip removed
-  }, []);
-
   // 键盘快捷键处理
   const handleKeyDown = useCallback((evt: KeyboardEvent) => {
     if (evt.key === 'Escape') {
@@ -283,25 +279,42 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
     }
   }, [data, handleNodeClick, handleEdgeClick, handleCanvasClick, handleKeyDown, highlightSearchResults]);
 
-  // Re-layout graph when reset is triggered
+  // Re-render graph when reset is triggered (full refresh with cold-start layout)
   useEffect(() => {
     if (!graphRef.current || resetTrigger === 0) return;
 
-    const relayout = async () => {
+    const fullRerender = async () => {
       try {
-        console.log("[GraphView] Relayouting graph...");
+        console.log("[GraphView] Full re-render with cold-start layout...");
+        
         // Stop any ongoing layout
         graphRef.current?.stopLayout();
-        // Trigger new layout calculation
-        await graphRef.current?.layout();
-        console.log("[GraphView] Relayout completed");
+        
+        // Clear node coordinates for cold-start layout (not based on current positions)
+        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+        
+        // Re-set data with cleaned coordinates and re-processed parallel edges
+        graphRef.current?.setData({
+          nodes: cleanNodes,
+          edges: processParallelEdges(data.edges || []),
+        });
+        
+        // Full render: triggers data reconciliation -> layout calculation -> drawing
+        await graphRef.current?.render();
+        
+        // Re-apply search highlighting after render completes
+        if (graphRef.current) {
+          highlightSearchResults(graphRef.current);
+        }
+        
+        console.log("[GraphView] Full re-render completed");
       } catch (error) {
-        console.warn("[GraphView] Error relayouting graph on reset:", error);
+        console.warn("[GraphView] Error during full re-render:", error);
       }
     };
 
-    relayout();
-  }, [resetTrigger]);
+    fullRerender();
+  }, [resetTrigger, data, highlightSearchResults]);
 
   // Update node/edge styles when selection changes (without redrawing graph)
   useEffect(() => {
