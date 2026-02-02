@@ -78,7 +78,7 @@ def view_hypergraph(
             edge_name_extractor=edge_name_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
-        
+
         # Get stats for metadata
         stats = storage.get_stats()
         meta_data = {
@@ -87,10 +87,10 @@ def view_hypergraph(
             "Average Node Degree": stats["avg_node_degree"],
             "Average Hyperedge Degree": stats["avg_hyperedge_degree"],
         }
-        
+
         # Register storage globally for API access
         global_state.set_storage(storage)
-        
+
         global_state.set_visualization_type("hypergraph")
         global_state.set_visualization_data("meta_data", meta_data)
 

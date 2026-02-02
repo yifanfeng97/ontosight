@@ -18,14 +18,14 @@ from ontosight.core.views import (
     view_hypergraph,
 )
 
-__all__ = ["view_graph", "view_list", "view_hypergraph"]
-
+from .storage import BaseStorage, GraphStorage, HypergraphStorage, ListStorage
 
 __all__ = [
     "view_graph",
     "view_list",
     "view_hypergraph",
-    "start_daemon",
-    "stop_daemon",
-    "is_daemon_running",
+    "BaseStorage",
+    "GraphStorage",
+    "HypergraphStorage",
+    "ListStorage",
 ]

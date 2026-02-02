@@ -80,16 +80,16 @@ def view_graph(
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
         global_state.set_storage(storage)
-        
+
         # Get formatted data from storage for metadata
         stats = storage.get_stats()
         meta_data = {
             "Nodes": stats["total_nodes"],
             "Edges": stats["total_edges"],
             "Average Node Degree": stats["avg_degree"],
-            "Average Edge Degree": 2
+            "Average Edge Degree": 2,
         }
-        
+
         global_state.set_visualization_type("graph")
         global_state.set_visualization_data("meta_data", meta_data)
         logger.info("Graph visualization setup complete")
@@ -100,6 +100,3 @@ def view_graph(
     except Exception as e:
         logger.error(f"Failed to setup graph visualization: {e}")
         raise
-
-
-# Removed: format_data_for_ui function - now handled by GraphStorage constructor

@@ -5,11 +5,11 @@ from typing import Any, Callable, Optional, TypeVar, List, Type
 from pydantic import BaseModel
 
 from ontosight.server.state import global_state
+from ontosight.core.storage import ListStorage
 from ontosight.utils import (
     ensure_server_running,
     open_browser,
     wait_for_user,
-    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -61,14 +61,27 @@ def view_list(
     if item_schema is not None:
         global_state.set_context(item_schema=item_schema)
 
-    # Normalize data
+    # Normalize data and create storage
     try:
-        items_for_ui, meta_data = format_data_for_ui(
-            items=item_list,
-            name_extractor=item_name_extractor,
+        # Create storage directly from raw schema items
+        storage = ListStorage(
+            item_list=item_list,
+            item_name_extractor=item_name_extractor,
         )
+        global_state.set_storage(storage)
+
+        # Get formatted data from storage for metadata
+        stats = storage.get_stats()
+        meta_data = {
+            "Items": stats["total_items"],
+            "Fields": stats.get("fields", 0),
+        }
+
+        # Get all items for initial display
+        items_data = storage.get_all_items_paginated(page=0, page_size=1000)
+
         global_state.set_visualization_type("list")
-        global_state.set_visualization_data("items", items_for_ui)
+        global_state.set_visualization_data("items", items_data["items"])
         global_state.set_visualization_data("meta_data", meta_data)
 
         logger.info("List visualization setup complete")
