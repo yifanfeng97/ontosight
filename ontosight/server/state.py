@@ -26,7 +26,10 @@ Example:
 import logging
 import threading
 from collections.abc import Callable
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from ontosight.core.storage import BaseStorage
 
 logger = logging.getLogger(__name__)
 
@@ -67,6 +70,7 @@ class GlobalState:
         self._visualization_data: Dict[str, Any] = {}
         self._visualization_type: str = "graph"  # Default type
         self._context: Dict[str, Any] = {}
+        self._storage: Optional["BaseStorage"] = None  # Storage engine instance
 
         logger.info("GlobalState initialized (singleton)")
 
@@ -250,6 +254,7 @@ class GlobalState:
             self._callbacks.clear()
             self._visualization_data.clear()
             self._context.clear()
+            self._storage = None
             logger.warning("GlobalState cleared (all callbacks and data removed)")
 
     def get_state_summary(self) -> Dict[str, Any]:
@@ -266,6 +271,24 @@ class GlobalState:
                 "context_keys": list(self._context.keys()),
             }
 
+    def set_storage(self, storage: "BaseStorage") -> None:
+        """Set the storage engine (GraphStorage or HypergraphStorage).
+        
+        Args:
+            storage: Storage engine instance
+        """
+        with self._state_lock:
+            self._storage = storage
+            logger.debug(f"Set storage: {type(storage).__name__}")
+
+    def get_storage(self) -> Optional["BaseStorage"]:
+        """Get the storage engine instance.
+        
+        Returns:
+            Storage instance or None if not set
+        """
+        with self._state_lock:
+            return self._storage
 
 # Global singleton instance
 global_state = GlobalState()

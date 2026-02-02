@@ -1,35 +1,27 @@
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { useVisualization } from "@/hooks/useVisualization";
-import { X } from "lucide-react";
+import { X, Loader2 } from "lucide-react";
 
 export default function DetailPanel() {
-  const { selectedItems, data, meta, deselectItem, clearSelection } = useVisualization();
+  const { viewedHistory, removeFromHistory, clearHistory, fetchDetails, detailLoading } =
+    useVisualization();
+  const [detailsCache, setDetailsCache] = useState<Map<string, any>>(new Map());
 
-  const selectedItemsList = useMemo(() => {
-    return Array.from(selectedItems.values());
-  }, [selectedItems]);
-
-  if (selectedItemsList.length === 0) {
-    return null;
-  }
-
-  const getItemData = (itemId: string, itemType: string): any => {
-    if (!data) return null;
-
-    switch (itemType) {
-      case "node":
-        return data.nodes?.find((n: any) => n.id === itemId);
-      case "edge":
-        return data.edges?.find((e: any) => e.id === itemId);
-      case "item":
-        return data.items?.find((i: any) => i.id === itemId);
-      case "hyperedge":
-        return data.hyperedges?.find((he: any) => he.id === itemId);
-      default:
-        return null;
-    }
-  };
+  // Fetch details when viewed history changes
+  useEffect(() => {
+    viewedHistory.forEach((item) => {
+      if (!detailsCache.has(item.id)) {
+        fetchDetails(item.id)
+          .then((details) => {
+            setDetailsCache((prev) => new Map(prev).set(item.id, details));
+          })
+          .catch((error) => {
+            console.error(`Failed to fetch details for ${item.id}:`, error);
+          });
+      }
+    });
+  }, [viewedHistory, fetchDetails, detailsCache]);
 
   const getTypeLabel = (type: string): string => {
     const labels: Record<string, string> = {
@@ -41,93 +33,125 @@ export default function DetailPanel() {
     return labels[type] || type;
   };
 
+  const getItemDetails = (itemId: string) => {
+    return detailsCache.get(itemId);
+  };
+
+  if (viewedHistory.length === 0) {
+    return null;
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between flex-shrink-0 px-3 py-2">
+      <div className="flex items-center justify-between shrink-0 px-3 py-2 border-b border-border">
         <h3 className="text-sm font-semibold text-foreground">Details</h3>
         <button
-          onClick={clearSelection}
+          onClick={clearHistory}
           className="p-1 hover:bg-muted rounded transition-colors"
-          title="Clear all selections"
+          title="Clear all details"
         >
           <X className="w-4 h-4 text-muted-foreground" />
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        <div className="space-y-2 p-3">
-        {selectedItemsList.map((item) => {
-          const itemData = getItemData(item.id, item.type);
-          if (!itemData) return null;
+        <div className="space-y-3 p-3">
+          {viewedHistory.map((item) => {
+            const itemDetails = getItemDetails(item.id);
 
-          const rawData = itemData.data?.raw || itemData.data || {};
-
-          return (
-            <Card
-              key={item.id}
-              className="p-3 space-y-2"
-            >
-              {/* Header with type and close button */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase">
-                    {getTypeLabel(item.type)}
-                  </p>
-                  <p className="text-sm font-medium text-foreground truncate">
-                    {itemData.data?.label || item.id}
-                  </p>
+            return (
+              <Card
+                key={item.id}
+                className="p-3 space-y-2 bg-card border border-border"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    {/* Display label as title */}
+                    <h4 className="font-semibold text-sm text-foreground">
+                      {itemDetails?.data?.label || itemDetails?.label || itemDetails?.id || "Unknown"}
+                    </h4>
+                    {/* Display type as small subtitle */}
+                    <p className="text-xs text-muted-foreground">
+                      {getTypeLabel(item.type)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => removeFromHistory(item.id)}
+                    className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
+                    title="Remove from history"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
                 </div>
-                <button
-                  onClick={() => deselectItem(item.id)}
-                  className="p-1 hover:bg-muted rounded transition-colors flex-shrink-0"
-                  title="Remove selection"
-                >
-                  <X className="w-3 h-3 text-muted-foreground" />
-                </button>
-              </div>
 
-              {/* Data Table */}
-              {Object.keys(rawData).length > 0 && (
-                <div className="pt-2 border-t border-border/50">
-                  <DataTable data={rawData} />
-                </div>
-              )}
-            </Card>
-          );
-        })}
+                {detailLoading && !itemDetails ? (
+                  <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
+                    <Loader2 className="w-3 h-3 mr-2 animate-spin" />
+                    Loading details...
+                  </div>
+                ) : itemDetails ? (
+                  <div className="space-y-1 text-xs border-t border-border pt-2 mt-2">
+                    {/* Display raw data fields as key-value pairs */}
+                    {itemDetails?.data?.raw ? (
+                      // Display raw data fields
+                      Object.entries(itemDetails.data.raw)
+                        .map(([key, value]) => (
+                          <div key={key} className="flex justify-between py-1">
+                            <span className="text-muted-foreground font-medium">{key}:</span>
+                            <span className="font-medium text-foreground text-right break-words">
+                              {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                            </span>
+                          </div>
+                        ))
+                    ) : itemDetails?.data ? (
+                      // Fallback: display data fields except label
+                      Object.entries(itemDetails.data)
+                        .filter(([key]) => key !== "label")
+                        .map(([key, value]) => (
+                          <div key={key} className="flex justify-between py-1">
+                            <span className="text-muted-foreground font-medium">{key}:</span>
+                            <span className="font-medium text-foreground text-right break-words">
+                              {typeof value === "object" ? JSON.stringify(value) : String(value)}
+                            </span>
+                          </div>
+                        ))
+                    ) : (
+                      // Final fallback: display top-level fields
+                      Object.entries(itemDetails)
+                        .filter(
+                          ([key]) =>
+                            ![
+                              "id",
+                              "label",
+                              "type",
+                              "linked_nodes",
+                              "node_set",
+                              "source",
+                              "target",
+                              "x",
+                              "y",
+                              "data",
+                            ].includes(key)
+                        )
+                        .slice(0, 5)
+                        .map(([key, value]) => (
+                          <div key={key} className="flex justify-between py-1">
+                            <span className="text-muted-foreground font-medium">{key}:</span>
+                            <span className="font-medium text-foreground text-right break-words">
+                              {String(value)}
+                            </span>
+                          </div>
+                        ))
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground py-2">No details available</p>
+                )}
+              </Card>
+            );
+          })}
         </div>
       </div>
     </div>
   );
-}
-
-interface DataTableProps {
-  data: Record<string, any>;
-}
-
-function DataTable({ data }: DataTableProps) {
-  return (
-    <div className="space-y-1">
-      {Object.entries(data).map(([key, value]) => (
-        <div key={key} className="flex gap-2 text-xs">
-          <span className="font-mono font-semibold text-muted-foreground min-w-20 flex-shrink-0">
-            {key}:
-          </span>
-          <span className="text-foreground break-words flex-1">
-            {formatValue(value)}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function formatValue(value: any): string {
-  if (value === null || value === undefined) {
-    return "—";
-  }
-  if (typeof value === "object") {
-    return JSON.stringify(value);
-  }
-  return String(value);
 }

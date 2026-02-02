@@ -17,7 +17,7 @@ interface HypergraphViewProps {
     hyperedges: Array<{
       id: string;
       label: string;
-      node_set: string[];
+      linked_nodes: string[];
       data: any;
     }>;
   };
@@ -65,24 +65,16 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       const nodeId = evt.target?.id;
       if (!nodeId) return;
 
-      if (selectedItemsRef.current.has(nodeId)) {
-        deselectItem(nodeId);
-      } else {
-        selectItem(nodeId, "node");
-      }
+      selectItem(nodeId, "node");
     },
-    [selectItem, deselectItem]
+    [selectItem]
   );
 
   const handleHyperedgeClick = useCallback(
     (hyperedgeId: string) => {
-      if (selectedItemsRef.current.has(hyperedgeId)) {
-        deselectItem(hyperedgeId);
-      } else {
-        selectItem(hyperedgeId, "hyperedge");
-      }
+      selectItem(hyperedgeId, "hyperedge");
     },
-    [selectItem, deselectItem]
+    [selectItem]
   );
 
   const handleKeyDown = useCallback((evt: KeyboardEvent) => {
@@ -160,7 +152,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         return {
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
-          members: hyperedge.node_set,
+          members: hyperedge.linked_nodes,
           fill: activeColors.fill,
           fillOpacity: isSelected ? 0.3 : 0.1,
           stroke: activeColors.stroke,

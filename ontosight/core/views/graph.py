@@ -5,11 +5,11 @@ from pydantic import BaseModel
 import logging
 
 from ontosight.server.state import global_state
+from ontosight.core.storage import GraphStorage
 from ontosight.utils import (
     ensure_server_running,
     open_browser,
     wait_for_user,
-    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -69,18 +69,28 @@ def view_graph(
     if edge_schema is not None:
         global_state.set_context(edge_schema=edge_schema)
 
-    # Normalize data
+    # Normalize data and create storage
     try:
-        vis_nodes, vis_edges, meta_data = format_data_for_ui(
-            nodes=node_list,
-            edges=edge_list,
+        # Create storage directly from raw schema items
+        storage = GraphStorage(
+            node_list=node_list,
+            edge_list=edge_list,
             node_label_extractor=node_label_extractor,
             edge_label_extractor=edge_label_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
+        global_state.set_storage(storage)
+        
+        # Get formatted data from storage for metadata
+        stats = storage.get_stats()
+        meta_data = {
+            "Nodes": stats["total_nodes"],
+            "Edges": stats["total_edges"],
+            "Average Node Degree": stats["avg_degree"],
+            "Average Edge Degree": 2
+        }
+        
         global_state.set_visualization_type("graph")
-        global_state.set_visualization_data("nodes", vis_nodes)
-        global_state.set_visualization_data("edges", vis_edges)
         global_state.set_visualization_data("meta_data", meta_data)
         logger.info("Graph visualization setup complete")
 
@@ -92,58 +102,4 @@ def view_graph(
         raise
 
 
-def format_data_for_ui(
-    nodes: List[BaseModel],
-    edges: List[BaseModel],
-    node_label_extractor: Callable[[NodeSchema], str],
-    edge_label_extractor: Callable[[EdgeSchema], str],
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
-) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]]]:
-    """Convert lists of nodes and edges into normalized graph format.
-
-    Args:
-        nodes: List of node objects/dicts
-        edges: List of edge objects/dicts
-        node_label_extractor: Function to extract display label from a node object (required)
-        edge_label_extractor: Function to extract display label from an edge object (required)
-        nodes_in_edge_extractor: Function returning (source_id, target_id) tuple from an edge object (required)
-    """
-
-    label_id_map = {}
-
-    # Formalize nodes
-    formated_nodes = []
-    for node in nodes:
-        # Auto-generate ID using object identity
-        _label = node_label_extractor(node)
-        _id = gen_random_id()
-        label_id_map[_label] = _id
-        _data = node.model_dump()
-        formated_nodes.append({"id": _id, "data": {"label": _label, "raw": _data}})
-
-    # Formalize edges
-    formated_edges = []
-    for edge in edges:
-        _label = edge_label_extractor(edge)
-        # Extract source and target node objects
-        _source, _target = nodes_in_edge_extractor(edge)
-        assert _source in label_id_map, f"Source node '{_source}' not found"
-        assert _target in label_id_map, f"Target node '{_target}' not found"
-        _data = edge.model_dump()
-        formated_edges.append(
-            {
-                "id": gen_random_id(),
-                "source": label_id_map[_source],
-                "target": label_id_map[_target],
-                "data": {"label": _label, "raw": _data},
-            }
-        )
-    
-    meta_data = {
-        "Nodes": len(nodes),
-        "Edges": len(edges),
-        "Average Node Degree": len(edges) / len(nodes) if len(nodes) > 0 else 0,
-        "Average Edge Degree": 2
-    }
-
-    return formated_nodes, formated_edges, meta_data
+# Removed: format_data_for_ui function - now handled by GraphStorage constructor

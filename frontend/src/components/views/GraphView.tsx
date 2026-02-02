@@ -62,13 +62,9 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       const nodeId = evt.target?.id;
       if (!nodeId) return;
 
-      if (selectedItemsRef.current.has(nodeId)) {
-        deselectItem(nodeId);
-      } else {
-        selectItem(nodeId, "node");
-      }
+      selectItem(nodeId, "node");
     },
-    [selectItem, deselectItem]
+    [selectItem]
   );
 
   const handleEdgeClick = useCallback(
@@ -76,13 +72,9 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       const edgeId = evt.target?.id;
       if (!edgeId) return;
 
-      if (selectedItemsRef.current.has(edgeId)) {
-        deselectItem(edgeId);
-      } else {
-        selectItem(edgeId, "edge");
-      }
+      selectItem(edgeId, "edge");
     },
-    [selectItem, deselectItem]
+    [selectItem]
   );
 
   const handleCanvasClick = useCallback(() => {
@@ -287,20 +279,21 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       try {
         console.log("[GraphView] Full re-render with cold-start layout...");
         
-        // Stop any ongoing layout
-        graphRef.current?.stopLayout();
+        // Check if graphRef.current is still valid before proceeding
+        if (!graphRef.current) return;
         
         // Clear node coordinates for cold-start layout (not based on current positions)
         const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
         
         // Re-set data with cleaned coordinates and re-processed parallel edges
-        graphRef.current?.setData({
+        // G6's render() will automatically recalculate layout, no need for explicit stopLayout()
+        graphRef.current.setData({
           nodes: cleanNodes,
           edges: processParallelEdges(data.edges || []),
         });
         
         // Full render: triggers data reconciliation -> layout calculation -> drawing
-        await graphRef.current?.render();
+        await graphRef.current.render();
         
         // Re-apply search highlighting after render completes
         if (graphRef.current) {

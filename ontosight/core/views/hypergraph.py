@@ -3,14 +3,13 @@
 from typing import Any, Callable, Dict, List, Optional, TypeVar, Type, Tuple
 from pydantic import BaseModel
 import logging
-import hashlib
 
 from ontosight.server.state import global_state
+from ontosight.core.storage import HypergraphStorage
 from ontosight.utils import (
     ensure_server_running,
     open_browser,
     wait_for_user,
-    gen_random_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -70,19 +69,29 @@ def view_hypergraph(
     if edge_schema is not None:
         global_state.set_context(edge_schema=edge_schema)
 
-    # Normalize data
+    # Create storage with raw items and extractors
     try:
-        nodes, edges, hyperedges, meta_data = format_data_for_ui(
-            nodes=node_list,
-            edges=edge_list,
+        storage = HypergraphStorage(
+            node_list=node_list,
+            edge_list=edge_list,
             node_name_extractor=node_name_extractor,
             edge_name_extractor=edge_name_extractor,
             nodes_in_edge_extractor=nodes_in_edge_extractor,
         )
+        
+        # Get stats for metadata
+        stats = storage.get_stats()
+        meta_data = {
+            "Nodes": stats["total_nodes"],
+            "Hyperedges": stats["total_hyperedges"],
+            "Average Node Degree": stats["avg_node_degree"],
+            "Average Hyperedge Degree": stats["avg_hyperedge_degree"],
+        }
+        
+        # Register storage globally for API access
+        global_state.set_storage(storage)
+        
         global_state.set_visualization_type("hypergraph")
-        global_state.set_visualization_data("nodes", nodes)
-        global_state.set_visualization_data("edges", edges)
-        global_state.set_visualization_data("hyperedges", hyperedges)
         global_state.set_visualization_data("meta_data", meta_data)
 
         logger.info("Hypergraph visualization setup complete")
@@ -93,78 +102,3 @@ def view_hypergraph(
     except Exception as e:
         logger.error(f"Failed to setup hypergraph visualization: {e}")
         raise
-
-
-def format_data_for_ui(
-    nodes: List[NodeSchema],
-    edges: List[EdgeSchema],
-    node_name_extractor: Callable[[NodeSchema], str],
-    edge_name_extractor: Optional[Callable[[EdgeSchema], str]],
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
-) -> Tuple[
-    List[Dict[str, Any]],
-    List[Dict[str, Any]],
-    List[Dict[str, Any]],
-]:
-    """Convert lists of nodes and hyperedges into normalized hypergraph format.
-
-    Args:
-        nodes: List of node objects/dicts
-        edges: List of edge objects/dicts
-        node_name_extractor: Extractor for node display label (required)
-        edge_name_extractor: Optional extractor for edge display label
-        nodes_in_edge_extractor: Extractor returning list of nodes in edge (default: "nodes")
-
-    Returns:
-        Tuple of (formatted_nodes, formatted_edges, formatted_hyperedges)
-    """
-    avg_edge_degree = 0
-    label_id_map = {}
-    node_deg = {}
-    for node in nodes:
-        node_deg[node_name_extractor(node)] = 0
-
-    for edge in edges:
-        for node in nodes_in_edge_extractor(edge):
-            node_deg[node] += 1
-
-    formated_nodes, formated_edges, formated_hyperedges = [], [], []
-    for node in nodes:
-        _label = node_name_extractor(node)
-        _id = gen_random_id()
-        label_id_map[_label] = _id
-        _data = node.model_dump()
-        formated_nodes.append({"id": _id, "data": {"label": _label, "raw": _data}})
-
-    for edge in edges:
-        _label = edge_name_extractor(edge)
-        _nodes = nodes_in_edge_extractor(edge)
-        avg_edge_degree += len(_nodes)
-        _node_degs = [node_deg[n] for n in _nodes]
-        _core_node = _nodes[_node_degs.index(min(_node_degs))]
-        for _node in _nodes:
-            if _node != _core_node:
-                formated_edges.append(
-                    {
-                        "id": gen_random_id(),
-                        "source": label_id_map[_core_node],
-                        "target": label_id_map[_node],
-                    }
-                )
-        _data = edge.model_dump()
-        formated_hyperedges.append(
-            {
-                "id": gen_random_id(),
-                "label": _label,
-                "node_set": [label_id_map[_node] for _node in _nodes],
-                "data": _data,
-            }
-        )
-    meta_data = {
-        "Nodes": len(nodes),
-        "Hyperedges": len(edges),
-        "Average Node Degree": sum(node_deg.values()) / len(nodes) if len(nodes) > 0 else 0,
-        "Average Hyperedge Degree": avg_edge_degree / len(edges) if len(edges) > 0 else 0,
-    }
-
-    return formated_nodes, formated_edges, formated_hyperedges, meta_data

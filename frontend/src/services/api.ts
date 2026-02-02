@@ -129,15 +129,26 @@ export const apiClient = {
   },
 
   /**
-   * Get visualization data (nodes, edges, items).
+   * Get visualization data (sampled neighborhood or paginated).
    *
    * GET /api/data
+   * 
+   * For graph/hypergraph: returns neighborhood around specified IDs (2 hops)
+   * For list: returns paginated items
    */
-  async getData(): Promise<VisualizationData> {
+  async getData(ids?: string[], page?: number, pageSize?: number): Promise<VisualizationData> {
     try {
-      return await fetchWithRetry<VisualizationData>(
-        `${API_BASE_URL}/api/data`
-      );
+      const url = new URL(`${API_BASE_URL}/api/data`);
+      if (ids && ids.length > 0) {
+        url.searchParams.append("ids", ids.join(","));
+      }
+      if (page !== undefined) {
+        url.searchParams.append("page", page.toString());
+      }
+      if (pageSize !== undefined) {
+        url.searchParams.append("page_size", pageSize.toString());
+      }
+      return await fetchWithRetry<VisualizationData>(url.toString());
     } catch (error) {
       if (error instanceof ApiError && error.status === 404) {
         throw new Error(
@@ -192,6 +203,53 @@ export const apiClient = {
     } catch {
       return false;
     }
+  },
+
+  /**
+   * Get detailed information for a specific element.
+   *
+   * GET /api/details/{element_id}
+   */
+  async getDetails(elementId: string): Promise<any> {
+    return await fetchWithRetry<any>(
+      `${API_BASE_URL}/api/details/${elementId}`
+    );
+  },
+
+  /**
+   * Get paginated list of nodes.
+   *
+   * GET /api/nodes_paginated
+   */
+  async getNodesPaginated(page: number = 0, pageSize: number = 30): Promise<any> {
+    const url = new URL(`${API_BASE_URL}/api/nodes_paginated`);
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("page_size", pageSize.toString());
+    return await fetchWithRetry<any>(url.toString());
+  },
+
+  /**
+   * Get paginated list of edges.
+   *
+   * GET /api/edges_paginated
+   */
+  async getEdgesPaginated(page: number = 0, pageSize: number = 30): Promise<any> {
+    const url = new URL(`${API_BASE_URL}/api/edges_paginated`);
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("page_size", pageSize.toString());
+    return await fetchWithRetry<any>(url.toString());
+  },
+
+  /**
+   * Get paginated list of hyperedges.
+   *
+   * GET /api/hyperedges_paginated
+   */
+  async getHyperedgesPaginated(page: number = 0, pageSize: number = 30): Promise<any> {
+    const url = new URL(`${API_BASE_URL}/api/hyperedges_paginated`);
+    url.searchParams.append("page", page.toString());
+    url.searchParams.append("page_size", pageSize.toString());
+    return await fetchWithRetry<any>(url.toString());
   },
 };
 

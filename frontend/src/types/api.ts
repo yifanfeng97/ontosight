@@ -107,13 +107,16 @@ export interface Item<T> {
  * 
  * @example
  * const hyperedge: Hyperedge<ProjectData> = {
- *   nodes: ["researcher_1", "researcher_2", "researcher_3"],
+ *   id: "he_123",
+ *   node_list: ["researcher_1", "researcher_2", "researcher_3"],
  *   data: { label: "AI Safety collaboration", raw: { project: "AI Safety" } }
  * };
  */
 export interface Hyperedge<T> {
+  /** Unique hyperedge identifier */
+  id: string;
   /** List of node IDs in this hyperedge (minimum 2) */
-  nodes: string[];
+  linked_nodes: string[];
   /** Hyperedge metadata with label and raw fields */
   data: {
     /** Display label */
@@ -238,4 +241,12 @@ export interface HypergraphData {
 export interface ListData {
   /** List of items */
   items: Array<Item<any>>;
+  /** Current page number (0-indexed) */
+  page?: number;
+  /** Items per page */
+  page_size?: number;
+  /** Total number of items */
+  total?: number;
+  /** Whether there is a next page */
+  has_next?: boolean;
 }

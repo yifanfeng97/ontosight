@@ -141,6 +141,10 @@ class HypergraphData(BaseModel):
 class ListData(BaseModel):
     """Data for list/table visualization."""
     items: List[Dict[str, Any]] = Field(..., description="List of items")
+    page: Optional[int] = Field(None, description="Current page number (0-indexed)")
+    page_size: Optional[int] = Field(None, description="Items per page")
+    total: Optional[int] = Field(None, description="Total number of items")
+    has_next: Optional[bool] = Field(None, description="Whether there is a next page")
 
 
 class VisualizationData(BaseModel):

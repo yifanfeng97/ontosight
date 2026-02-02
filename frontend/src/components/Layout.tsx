@@ -10,14 +10,14 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle, RotateCcw } from "lucide-react";
 
 export default function Layout() {
-  const { loading, error, meta, data, selectedItems, triggerLayoutReset } = useVisualization();
+  const { loading, error, meta, data, viewedHistory, triggerLayoutReset } = useVisualization();
 
   // Determine which features are available based on meta
   const hasSearch = meta?.features?.search === true;
   const hasChat = meta?.features?.chat === true;
   const hasSidebar = hasSearch || hasChat;
   const vizType = meta?.type || "graph";
-  const hasSelection = selectedItems.size > 0;
+  const isHistorySelected = viewedHistory.length > 0;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-background">
@@ -39,7 +39,7 @@ export default function Layout() {
         </div>
 
         {/* Bottom: Detail Panel (when selected) */}
-        {hasSelection && (
+        {isHistorySelected && (
           <div className="flex-1 min-h-0 overflow-hidden">
             <DetailPanel />
           </div>
@@ -52,11 +52,12 @@ export default function Layout() {
           {/* Reset Button */}
           {data && (
             <button
-              onClick={triggerLayoutReset}
+              onClick={() => triggerLayoutReset()}
               className="absolute top-4 right-4 z-10 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg"
-              title="Reset view layout"
+              title="Reset view layout and fetch fresh data"
+              disabled={loading}
             >
-              <RotateCcw className="w-4 h-4 hover:rotate-180 transition-transform duration-300" />
+              <RotateCcw className={`w-4 h-4 hover:rotate-180 transition-transform duration-300 ${loading ? 'animate-spin' : ''}`} />
             </button>
           )}
           <LoadingSpinner loading={loading} tip="Loading...">

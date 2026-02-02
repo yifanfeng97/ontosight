@@ -1,10 +1,15 @@
-import { Suspense, lazy } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useVisualization } from "@/hooks/useVisualization";
 
 const GraphView = lazy(() => import("@/components/views/GraphView"));
 const ListView = lazy(() => import("@/components/views/ListView"));
 const HypergraphView = lazy(() => import("@/components/views/HypergraphView"));
+const NodeListView = lazy(() => import("@/components/views/NodeListView"));
+const EdgeListView = lazy(() => import("@/components/views/EdgeListView"));
+const HyperedgeListView = lazy(() => import("@/components/views/HyperedgeListView"));
 
 interface VisualizationRouterProps {
   data: any;
@@ -14,6 +19,20 @@ interface VisualizationRouterProps {
 export default function VisualizationRouter({ data, meta }: VisualizationRouterProps) {
   // Get visualization type from meta
   const vizType = meta?.type;
+  const { setViewMode, viewMode } = useVisualization();
+  const [activeTab, setActiveTab] = useState("graph");
+
+  useEffect(() => {
+    const defaultTab = vizType === "hypergraph" || vizType === "graph" ? "graph" : "list";
+    setActiveTab(defaultTab);
+    setViewMode(defaultTab as any);
+  }, [vizType, setViewMode]);
+
+  const handleTabChange = (tab: string) => {
+    console.log("VisualizationRouter.TabChange", { tab, vizType });
+    setActiveTab(tab);
+    setViewMode(tab as any);
+  };
   
   if (!data) {
     return (
@@ -36,16 +55,72 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
   }
 
   return (
-    <div className="w-full h-full overflow-auto">
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-full">
-          <div className="text-sm text-muted-foreground">Loading visualization...</div>
+    <div className="w-full h-full flex flex-col overflow-hidden">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full h-full flex flex-col">
+        {/* Tab Headers */}
+        <TabsList className="w-full shrink-0 border-b border-border rounded-none bg-muted/50 px-4">
+          {vizType === "graph" && (
+            <>
+              <TabsTrigger value="graph">图视图</TabsTrigger>
+              <TabsTrigger value="nodes">节点列表</TabsTrigger>
+              <TabsTrigger value="edges">边列表</TabsTrigger>
+            </>
+          )}
+          {vizType === "hypergraph" && (
+            <>
+              <TabsTrigger value="graph">超图视图</TabsTrigger>
+              <TabsTrigger value="nodes">节点列表</TabsTrigger>
+              <TabsTrigger value="hyperedges">超边列表</TabsTrigger>
+            </>
+          )}
+          {vizType === "list" && <TabsTrigger value="list">列表视图</TabsTrigger>}
+        </TabsList>
+
+        {/* Tab Contents */}
+        <div className="flex-1 overflow-hidden">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="text-sm text-muted-foreground">加载中...</div>
+              </div>
+            }
+          >
+            {vizType === "graph" && (
+              <>
+                <TabsContent value="graph" className="h-full border-0 p-0">
+                  <GraphView data={data} meta={meta} />
+                </TabsContent>
+                <TabsContent value="nodes" className="h-full border-0 p-0">
+                  <NodeListView data={data} meta={meta} />
+                </TabsContent>
+                <TabsContent value="edges" className="h-full border-0 p-0">
+                  <EdgeListView data={data} meta={meta} />
+                </TabsContent>
+              </>
+            )}
+
+            {vizType === "hypergraph" && (
+              <>
+                <TabsContent value="graph" className="h-full border-0 p-0">
+                  <HypergraphView data={data} meta={meta} />
+                </TabsContent>
+                <TabsContent value="nodes" className="h-full border-0 p-0">
+                  <NodeListView data={data} meta={meta} />
+                </TabsContent>
+                <TabsContent value="hyperedges" className="h-full border-0 p-0">
+                  <HyperedgeListView data={data} meta={meta} />
+                </TabsContent>
+              </>
+            )}
+
+            {vizType === "list" && (
+              <TabsContent value="list" className="h-full border-0 p-0">
+                <ListView data={data} meta={meta} />
+              </TabsContent>
+            )}
+          </Suspense>
         </div>
-      }>
-        {vizType === "graph" && <GraphView data={data} meta={meta} />}
-        {vizType === "list" && <ListView data={data} meta={meta} />}
-        {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
-      </Suspense>
+      </Tabs>
     </div>
   );
 }
