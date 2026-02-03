@@ -8,7 +8,7 @@
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { cn } from "@/utils";
 
 export interface ItemCardProps {
   /** Unique item identifier */
@@ -21,6 +21,8 @@ export interface ItemCardProps {
   metadata?: Record<string, any>;
   /** Whether item is currently selected */
   isSelected?: boolean;
+  /** Whether item is highlighted from search results */
+  isHighlighted?: boolean;
   /** Click handler for selection/deselection */
   onClick?: () => void;
   /** Additional CSS classes */
@@ -46,6 +48,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
   type,
   metadata,
   isSelected = false,
+  isHighlighted = false,
   onClick,
   className,
 }) => {
@@ -86,7 +89,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
         "p-4 cursor-pointer transition-all duration-200 transform hover:scale-105",
         "border-2",
         typeBorders[type],
-        isSelected
+        isHighlighted
+          ? "shadow-lg ring-2 ring-offset-2 ring-yellow-400 bg-yellow-50"
+          : isSelected
           ? "shadow-lg ring-2 ring-offset-2 ring-primary"
           : "shadow hover:shadow-md",
         className

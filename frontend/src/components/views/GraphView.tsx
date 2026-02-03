@@ -1,7 +1,6 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, EdgeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
-import { useSearch } from "@/hooks/useSearch";
 import { useToast } from "@/components/ui/toast";
 
 interface GraphViewProps {
@@ -49,7 +48,6 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   const graphRef = useRef<Graph | null>(null);
   const selectedItemsRef = useRef(new Map());
   const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
-  const { results: searchResults } = useSearch();
   const { addToast } = useToast();
 
   // Keep ref in sync with state
@@ -102,11 +100,11 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
     try {
       const allNodeData = graph.getNodeData() || [];
-      const searchResultSet = new Set(searchResults);
 
       allNodeData.forEach((nodeData: any) => {
         const nodeId = nodeData.id;
-        if (searchResultSet.has(nodeId)) {
+        // 只检查数据中的 highlighted 标志位，不再从搜索结果中获取
+        if (nodeData.highlighted) {
           graph.setElementState(nodeId, ['highlight']);
         } else {
           // 清除节点的高亮状态（保留其他状态如selected）
@@ -115,15 +113,10 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
           graph.setElementState(nodeId, newStates);
         }
       });
-
-      // 如果有搜索结果，聚焦到第一个
-      if (searchResults.length > 0) {
-        graph.focusElement(searchResults[0]);
-      }
     } catch (error) {
       console.warn("[GraphView] Error in highlightSearchResults:", error);
     }
-  }, [searchResults]);
+  }, []);
 
   // Initialize graph when data changes
   useEffect(() => {
@@ -191,8 +184,33 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
           },
         },
         data: {
-          nodes: data.nodes,
-          edges: processParallelEdges(data.edges || []),
+          nodes: data.nodes.map((node: any) => {
+            const isSelected = selectedItems.has(node.id);
+            const isHighlighted = node.highlighted === true;
+            return {
+              ...node,
+              style: {
+                ...node.style,
+                // Highlighted takes precedence to show search results with special color
+                fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
+                lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
+                stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
+              },
+            };
+          }),
+          edges: processParallelEdges(data.edges || []).map((edge: any) => {
+            const isSelected = selectedItems.has(edge.id);
+            const isHighlighted = edge.highlighted === true;
+            return {
+              ...edge,
+              style: {
+                stroke: isHighlighted ? '#FFA500' : (isSelected ? '#1890ff' : '#ccc'),
+                lineWidth: isHighlighted ? 2 : (isSelected ? 2 : 1),
+                opacity: isHighlighted ? 1 : (isSelected ? 1 : 0.6),
+                ...edge.style,
+              },
+            };
+          }),
         },
       });
 
@@ -315,27 +333,30 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
     const updateStyles = async () => {
       try {
-        // Update node styles based on selection
+        // Update node styles based on selection and highlight state
         data.nodes?.forEach((node: any) => {
           const isSelected = selectedItems.has(node.id);
+          const isHighlighted = node.highlighted === true;
           graphRef.current?.updateNodeData([{
             id: node.id,
             style: {
-              fill: isSelected ? "#1890ff" : "#87d068",
-              lineWidth: isSelected ? 3 : 1,
-              stroke: isSelected ? "#1890ff" : "#666",
+              fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
+              lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
+              stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
             },
           }]);
         });
 
-        // Update edge styles based on selection
+        // Update edge styles based on selection and highlight state
         data.edges?.forEach((edge: any) => {
           const isSelected = selectedItems.has(edge.id);
+          const isHighlighted = edge.highlighted === true;
           graphRef.current?.updateEdgeData([{
             id: edge.id,
             style: {
-              stroke: isSelected ? '#1890ff' : '#ccc',
-              lineWidth: isSelected ? 2 : 1,
+              stroke: isHighlighted ? '#FFA500' : (isSelected ? '#1890ff' : '#ccc'),
+              lineWidth: isHighlighted ? 2 : (isSelected ? 2 : 1),
+              opacity: isHighlighted ? 1 : (isSelected ? 1 : 0.6),
             },
           }]);
         });

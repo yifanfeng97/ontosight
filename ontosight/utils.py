@@ -12,6 +12,7 @@ import webbrowser
 import uvicorn
 import hashlib
 import random
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
@@ -22,11 +23,15 @@ _server_host = "127.0.0.1"
 _server_port = 8000
 
 
-def gen_random_id():
-    """Generate a random short hash string."""
+def get_random_id(length: int = 8) -> str:
+    """Generate a random hexadecimal ID of specified length."""
+    return hashlib.md5(f"{random.random()}-{time.time()}".encode()).hexdigest()[:length]
 
-    timestamp = str(time.time()) + str(random.random())
-    return hashlib.md5(timestamp.encode()).hexdigest()[:6]
+
+def get_model_id(model: BaseModel) -> str:
+    """Get a unique ID for a Pydantic model instance."""
+    model_str = model.model_dump_json()
+    return hashlib.md5(model_str.encode()).hexdigest()[:8]
 
 
 def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:

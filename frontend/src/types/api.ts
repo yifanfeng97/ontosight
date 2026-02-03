@@ -32,6 +32,8 @@
 export interface Node<T> {
   /** Unique node identifier within the graph */
   id: string;
+  /** Whether this node should be highlighted (persistent search result) */
+  highlighted?: boolean;
   /** Domain-specific data with label and raw fields */
   data: {
     /** Display label for UI rendering */
@@ -63,6 +65,8 @@ export interface Edge<T> {
   source: string;
   /** Target node identifier */
   target: string;
+  /** Whether this edge should be highlighted (persistent search result) */
+  highlighted?: boolean;
   /** Edge metadata with label and raw fields */
   data: {
     /** Display label for edge */
@@ -88,6 +92,8 @@ export interface Edge<T> {
 export interface Item<T> {
   /** Unique item identifier */
   id: string;
+  /** Whether this item should be highlighted (persistent search result) */
+  highlighted?: boolean;
   /** Item data with label and raw fields */
   data: {
     /** Display label */
@@ -117,6 +123,8 @@ export interface Hyperedge<T> {
   id: string;
   /** List of node IDs in this hyperedge (minimum 2) */
   linked_nodes: string[];
+  /** Whether this hyperedge should be highlighted (persistent search result) */
+  highlighted?: boolean;
   /** Hyperedge metadata with label and raw fields */
   data: {
     /** Display label */
@@ -182,14 +190,6 @@ export interface SearchRequest {
 }
 
 /**
- * Search results response.
- */
-export interface SearchResponse {
-  /** List of matching item IDs */
-  results: string[];
-}
-
-/**
  * Chat query request.
  */
 export interface ChatRequest {
@@ -235,6 +235,7 @@ export interface HypergraphData {
     label: string;
     node_set: string[];
     data: any;
+    highlighted?: boolean;
   }>;
 }
 

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import random
 import logging
 
-from ...utils import gen_random_id
+from ...utils import get_model_id
 from .base import BaseStorage
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class GraphStorage(BaseStorage):
         self.node_label_extractor = node_label_extractor
         self.edge_label_extractor = edge_label_extractor
         self.nodes_in_edge_extractor = nodes_in_edge_extractor
-        
+
         # Create label->ID mapping (stable based on label hash)
         self.label_to_id = {}
         self.nodes = {}  # {id: {"id": id, "data": {"label": label, "raw": raw_data}}}
@@ -47,7 +47,7 @@ class GraphStorage(BaseStorage):
         for node in node_list:
             label = node_label_extractor(node)
             # Generate stable ID based on label
-            node_id = gen_random_id()
+            node_id = get_model_id(node)
             self.label_to_id[label] = node_id
             raw_data = node.model_dump() if hasattr(node, "model_dump") else dict(node)
             self.nodes[node_id] = {"id": node_id, "data": {"label": label, "raw": raw_data}}
@@ -68,7 +68,7 @@ class GraphStorage(BaseStorage):
 
             source_id = self.label_to_id[source_label]
             target_id = self.label_to_id[target_label]
-            edge_id = gen_random_id()
+            edge_id = get_model_id(edge)
 
             if source_id != target_id:
                 self.deg_node[source_id] += 1
@@ -119,13 +119,14 @@ class GraphStorage(BaseStorage):
         """Get graph statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2) -> Dict[str, Any]:
+    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
         """Get a subgraph around given center nodes/edges (or random if not provided).
-        
+
         Args:
             center_ids: List of node or edge IDs to use as starting points
             hops: Number of hops to expand
-            
+            highlight_center: If True, mark center nodes/edges with highlighted=True
+
         Returns:
             Dict with 'nodes' and 'edges' keys containing the subgraph
         """
@@ -140,17 +141,21 @@ class GraphStorage(BaseStorage):
         # Separate node IDs and edge IDs from center_ids
         visited_nodes = set()
         visited_edges = set()
-        
+        center_node_ids = set()
+        center_edge_ids = set()
+
         for element_id in center_ids:
             if element_id in self.nodes:
                 visited_nodes.add(element_id)
+                center_node_ids.add(element_id) if highlight_center else None
             elif element_id in self.edges:
                 # If edge ID, add its source and target nodes
                 visited_edges.add(element_id)
+                center_edge_ids.add(element_id) if highlight_center else None
                 edge_data = self.edges[element_id]
                 visited_nodes.add(edge_data["source"])
                 visited_nodes.add(edge_data["target"])
-        
+
         if not visited_nodes:
             return {"nodes": [], "edges": []}
 
@@ -177,8 +182,19 @@ class GraphStorage(BaseStorage):
             current_layer = next_layer
 
         # Collect nodes and edges within sample
-        sub_nodes = [self.nodes[node_id] for node_id in visited_nodes]
-        sub_edges = [self.edges[edge_id] for edge_id in visited_edges]
+        sub_nodes = []
+        for node_id in visited_nodes:
+            node_data = dict(self.nodes[node_id])  # Shallow copy
+            if highlight_center and node_id in center_node_ids:
+                node_data["highlighted"] = True
+            sub_nodes.append(node_data)
+
+        sub_edges = []
+        for edge_id in visited_edges:
+            edge_data = dict(self.edges[edge_id])  # Shallow copy
+            if highlight_center and edge_id in center_edge_ids:
+                edge_data["highlighted"] = True
+            sub_edges.append(edge_data)
 
         logger.info(f"[GraphStorage] get_sample: {len(sub_nodes)} nodes, {len(sub_edges)} edges")
         return {"nodes": sub_nodes, "edges": sub_edges}
@@ -234,47 +250,42 @@ class GraphStorage(BaseStorage):
         node_list: List[NodeSchema],
         edge_list: List[EdgeSchema],
         hops: int = 2,
+        highlight_center: bool = False,
     ) -> Dict[str, Any]:
         """Get sample based on raw node and edge data objects.
-        
+
         Extracts IDs from the provided raw data using extractors and label_to_id mapping.
-        
+
         Args:
             node_list: List of NodeSchema objects to extract IDs from
             edge_list: List of EdgeSchema objects to extract IDs from
             hops: Number of hops for neighborhood expansion
-            
+            highlight_center: If True, mark extracted nodes and edges with highlighted=True
+
         Returns:
             Dict with 'nodes' and 'edges' keys containing the subgraph
         """
-        # Extract node IDs using node extractor and label_to_id mapping
+        # Extract node IDs
         node_ids = []
         for node in node_list:
-            try:
-                node_label = self.node_label_extractor(node)
-                if node_label in self.label_to_id:
-                    node_ids.append(self.label_to_id[node_label])
-            except Exception as e:
-                logger.warning(f"Failed to extract label from node: {e}")
-                continue
-        
-        # Extract edge IDs using edge extractor and label_to_id mapping
+            node_id = get_model_id(node)
+            if node_id in self.nodes:
+                node_ids.append(node_id)
+            else:
+                logging.warning(f"Node {self.node_label_extractor(node)} not found in graph")
+
+        # Extract edge IDs
         edge_ids = []
         for edge in edge_list:
-            try:
-                edge_label = self.edge_label_extractor(edge)
-                # For edges, we need to find the edge_id by label from edges dict
-                for edge_id, edge_data in self.edges.items():
-                    if edge_data.get("data", {}).get("label") == edge_label:
-                        edge_ids.append(edge_id)
-                        break
-            except Exception as e:
-                logger.warning(f"Failed to extract label from edge: {e}")
-                continue
-        
-        # Combine node and edge IDs and call get_sample
+            edge_id = get_model_id(edge)
+            if edge_id in self.edges:
+                edge_ids.append(edge_id)
+            else:
+                logging.warning(f"Edge {self.edge_label_extractor(edge)} not found in graph")
+
+        # Combine node and edge IDs and call get_sample with highlight_center
         all_ids = node_ids + edge_ids
         if all_ids:
-            return self.get_sample(center_ids=all_ids, hops=hops)
+            return self.get_sample(center_ids=all_ids, hops=hops, highlight_center=highlight_center)
         else:
             return {"nodes": [], "edges": []}

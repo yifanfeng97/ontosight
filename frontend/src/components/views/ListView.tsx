@@ -42,6 +42,7 @@ const ListView = memo(function ListView({ data }: ListViewProps) {
             const label = itemData.label || item.label || "Unknown";
             // Use raw data if available, otherwise use item data
             const itemMetadata = itemData.raw || itemData || item;
+            const isHighlighted = item.highlighted === true;
             
             return (
               <ItemCard
@@ -51,6 +52,7 @@ const ListView = memo(function ListView({ data }: ListViewProps) {
                 type="item"
                 metadata={{ raw: itemMetadata }}
                 isSelected={selectedItems.has(itemId)}
+                isHighlighted={isHighlighted}
                 onClick={() => {
                   selectItem(itemId, "item");
                 }}

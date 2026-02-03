@@ -53,6 +53,7 @@ const EdgeListView: React.FC<EdgeListViewProps> = ({ meta }) => {
             items.map((edge) => {
               // Use internal id for selection (not displayed to user)
               const edgeId = edge.id;
+              const isHighlighted = edge.highlighted === true;
               return (
                 <ItemCard
                   key={edgeId}
@@ -61,10 +62,11 @@ const EdgeListView: React.FC<EdgeListViewProps> = ({ meta }) => {
                   type="edge"
                   metadata={Object.fromEntries(
                     Object.entries(edge).filter(
-                      ([key]) => !["id", "label", "type"].includes(key)
+                      ([key]) => !["id", "label", "type", "highlighted"].includes(key)
                     )
                   )}
                   isSelected={selectedItems.has(edgeId)}
+                  isHighlighted={isHighlighted}
                   onClick={() => {
                     selectItem(edgeId, "edge");
                   }}

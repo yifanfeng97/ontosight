@@ -53,6 +53,7 @@ const NodeListView: React.FC<NodeListViewProps> = ({ meta }) => {
             items.map((node) => {
               // Use internal id for selection (not displayed to user)
               const nodeId = node.id;
+              const isHighlighted = node.highlighted === true;
               return (
                 <ItemCard
                   key={nodeId}
@@ -61,10 +62,11 @@ const NodeListView: React.FC<NodeListViewProps> = ({ meta }) => {
                   type="node"
                   metadata={Object.fromEntries(
                     Object.entries(node).filter(
-                      ([key]) => !["id", "label", "type"].includes(key)
+                      ([key]) => !["id", "label", "type", "highlighted"].includes(key)
                     )
                   )}
                   isSelected={selectedItems.has(nodeId)}
+                  isHighlighted={isHighlighted}
                   onClick={() => {
                     selectItem(nodeId, "node");
                   }}

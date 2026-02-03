@@ -53,6 +53,7 @@ const HyperedgeListView: React.FC<HyperedgeListViewProps> = ({ meta }) => {
             items.map((he) => {
               // Use internal id for selection (not displayed to user)
               const heId = he.id;
+              const isHighlighted = he.highlighted === true;
               return (
                 <ItemCard
                   key={heId}
@@ -61,10 +62,11 @@ const HyperedgeListView: React.FC<HyperedgeListViewProps> = ({ meta }) => {
                   type="hyperedge"
                   metadata={Object.fromEntries(
                     Object.entries(he).filter(
-                      ([key]) => !["id", "label", "type"].includes(key)
+                      ([key]) => !["id", "label", "type", "highlighted"].includes(key)
                     )
                   )}
                   isSelected={selectedItems.has(heId)}
+                  isHighlighted={isHighlighted}
                   onClick={() => {
                     selectItem(heId, "hyperedge");
                   }}

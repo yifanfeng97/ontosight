@@ -89,16 +89,6 @@ class SearchRequest(BaseModel):
     context: Optional[Dict[str, Any]] = Field(None, description="Optional context data")
 
 
-class SearchResponse(BaseModel):
-    """Search results response model.
-
-    Attributes:
-        results: List of matching item IDs
-    """
-
-    results: List[str] = Field(default_factory=list, description="List of matching item IDs")
-
-
 class ChatRequest(BaseModel):
     """Chat query request model.
 
@@ -127,20 +117,20 @@ class ChatResponse(BaseModel):
 
 class GraphData(BaseModel):
     """Data for graph visualization."""
-    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects")
-    edges: List[Dict[str, Any]] = Field(..., description="List of edge objects")
+    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects (may include 'highlighted' bool)")
+    edges: List[Dict[str, Any]] = Field(..., description="List of edge objects (may include 'highlighted' bool)")
 
 
 class HypergraphData(BaseModel):
     """Data for hypergraph visualization."""
-    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects")
+    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects (may include 'highlighted' bool)")
     edges: List[Dict[str, Any]] = Field(..., description="List of edge objects (for layout)")
-    hyperedges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects (for bubble sets)")
+    hyperedges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects (may include 'highlighted' bool)")
 
 
 class ListData(BaseModel):
     """Data for list/table visualization."""
-    items: List[Dict[str, Any]] = Field(..., description="List of items")
+    items: List[Dict[str, Any]] = Field(..., description="List of items (may include 'highlighted' bool)")
     page: Optional[int] = Field(None, description="Current page number (0-indexed)")
     page_size: Optional[int] = Field(None, description="Items per page")
     total: Optional[int] = Field(None, description="Total number of items")
@@ -164,7 +154,6 @@ __all__ = [
     "SchemaUnit",
     "MetaResponse",
     "SearchRequest",
-    "SearchResponse",
     "ChatRequest",
     "ChatResponse",
     "GraphData",

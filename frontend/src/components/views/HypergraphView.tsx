@@ -1,6 +1,5 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { useVisualization } from "@/hooks/useVisualization";
-import { useSearch } from "@/hooks/useSearch";
 import { useToast } from "@/components/ui/toast";
 
 // 使用全局 G6（通过 index.html 中的 script 标签引入 g6.min.js）
@@ -19,6 +18,7 @@ interface HypergraphViewProps {
       label: string;
       linked_nodes: string[];
       data: any;
+      highlighted?: boolean;
     }>;
   };
   meta: any;
@@ -52,7 +52,6 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   const hyperedgeColorsRef = useRef<Map<string, { fill: string; stroke: string }>>(new Map()); // Store original colors
   const selectedItemsRef = useRef(new Map());
   const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
-  const { results: searchResults } = useSearch();
   const { addToast } = useToast();
 
   // Keep ref in sync with state
@@ -96,26 +95,23 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
     try {
       const allNodeData = graph.getNodeData() || [];
-      const searchResultSet = new Set(searchResults);
 
       allNodeData.forEach((nodeData: any) => {
         const nodeId = nodeData.id;
-        if (searchResultSet.has(nodeId)) {
+        // 只检查数据中的 highlighted 标志位，不再从搜索结果中获取
+        if (nodeData.highlighted) {
           graph.setElementState(nodeId, ['highlight']);
         } else {
+          // 清除节点的高亮状态（保留其他状态如selected）
           const currentStates = graph.getElementState(nodeId) || [];
           const newStates = currentStates.filter((state: string) => state !== 'highlight');
           graph.setElementState(nodeId, newStates);
         }
       });
-
-      if (searchResults.length > 0) {
-        graph.focusElement(searchResults[0]);
-      }
     } catch (error) {
       console.warn("[HypergraphView] Error in highlightSearchResults:", error);
     }
-  }, [searchResults]);
+  }, []);
 
   useEffect(() => {
     // 检查 G6 是否已加载（通过 index.html 中的 script 标签引入）
@@ -145,18 +141,26 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         hyperedgesRef.current.set(hyperedge.id, hyperedge);
         hyperedgeColorsRef.current.set(hyperedge.id, colors);
 
-        // Check if this hyperedge is already selected
+        // Check if this hyperedge is selected or highlighted
         const isSelected = selectedItems.has(hyperedge.id);
-        const activeColors = isSelected ? SELECTED_HYPEREDGE_COLOR : colors;
+        const isHighlighted = hyperedge.highlighted === true;
+        
+        // Highlighted takes precedence, then selected
+        let activeColors = colors;
+        if (isHighlighted) {
+          activeColors = { fill: "#FFD700", stroke: "#FFA500" };
+        } else if (isSelected) {
+          activeColors = SELECTED_HYPEREDGE_COLOR;
+        }
 
         return {
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
           members: hyperedge.linked_nodes,
           fill: activeColors.fill,
-          fillOpacity: isSelected ? 0.3 : 0.1,
+          fillOpacity: isSelected || isHighlighted ? 0.3 : 0.1,
           stroke: activeColors.stroke,
-          strokeOpacity: isSelected ? 1 : 0.6,
+          strokeOpacity: isSelected || isHighlighted ? 1 : 0.6,
           label: false,
           // Store hyperedge data for click event detection (reference: HypergraphViewer)
           hyperedge: hyperedge,
@@ -216,13 +220,14 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         data: {
           nodes: data.nodes.map((node: any) => {
             const isSelected = selectedItems.has(node.id);
+            const isHighlighted = node.highlighted === true;
             return {
               ...node,
               style: {
                 ...node.style,
-                fill: isSelected ? "#1890ff" : "#87d068",
-                lineWidth: isSelected ? 3 : 1,
-                stroke: isSelected ? "#1890ff" : "#666",
+                fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
+                lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
+                stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
               },
             };
           }),
@@ -385,23 +390,28 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
     const fullRerender = async () => {
       try {
+        // Validate graph instance before proceeding
+        if (!graphRef.current) {
+          console.warn("[HypergraphView] Graph instance is null, skipping re-render");
+          return;
+        }
+
         console.log("[HypergraphView] Full re-render with cold-start layout...");
-        
-        // Stop any ongoing layout
-        graphRef.current?.stopLayout();
         
         // Clear node coordinates for cold-start layout (not based on current positions)
         const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
         
         // Re-set data with cleaned coordinates
-        graphRef.current?.setData({
+        // setData() will trigger layout reconciliation automatically
+        graphRef.current.setData({
           nodes: cleanNodes,
           edges: data.edges || [],
         });
         
         // Full render: triggers data reconciliation -> layout calculation -> drawing
         // This will also recalculate BubbleSet hyperedge paths
-        await graphRef.current?.render();
+        // Note: No need to explicitly call stopLayout() - G6 handles this internally
+        await graphRef.current.render();
         
         // Re-apply search highlighting after render completes
         if (graphRef.current) {
@@ -423,35 +433,43 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
     const updateStyles = async () => {
       try {
-        // Update node styles based on selection
+        // Update node styles based on selection and highlight state
         data.nodes?.forEach((node: any) => {
           const isSelected = selectedItems.has(node.id);
+          const isHighlighted = node.highlighted === true;
           graphRef.current?.updateNodeData([{
             id: node.id,
             style: {
-              fill: isSelected ? "#1890ff" : "#87d068",
-              lineWidth: isSelected ? 3 : 1,
-              stroke: isSelected ? "#1890ff" : "#666",
+              fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
+              lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
+              stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
             },
           }]);
         });
 
-        // Update hyperedge (bubble-sets) styles based on selection
+        // Update hyperedge (bubble-sets) styles based on selection and highlight state
         data.hyperedges?.forEach((hyperedge: any) => {
           const isSelected = selectedItems.has(hyperedge.id);
+          const isHighlighted = hyperedge.highlighted === true;
           const originalColors = hyperedgeColorsRef.current.get(hyperedge.id);
           if (!originalColors) return;
 
-          const activeColors = isSelected ? SELECTED_HYPEREDGE_COLOR : originalColors;
+          let activeColors = originalColors;
+          if (isHighlighted) {
+            activeColors = { fill: "#FFD700", stroke: "#FFA500" };
+          } else if (isSelected) {
+            activeColors = SELECTED_HYPEREDGE_COLOR;
+          }
+
           const pluginKey = `bubble-sets-${hyperedge.id}`;
 
           try {
             graphRef.current?.updatePlugin({
               key: pluginKey,
               fill: activeColors.fill,
-              fillOpacity: isSelected ? 0.3 : 0.1,
+              fillOpacity: isSelected || isHighlighted ? 0.3 : 0.1,
               stroke: activeColors.stroke,
-              strokeOpacity: isSelected ? 1 : 0.6,
+              strokeOpacity: isSelected || isHighlighted ? 1 : 0.6,
               labelBackgroundFill: activeColors.stroke,
             });
           } catch (e) {

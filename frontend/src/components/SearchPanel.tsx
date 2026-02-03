@@ -5,16 +5,47 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
+import type { GraphData, HypergraphData, ListData } from "@/types/api";
 
 export default function SearchPanel() {
   const [query, setQuery] = useState("");
   const [currentResultIndex, setCurrentResultIndex] = useState(0);
-  const { results, loading, search, clear } = useSearch();
-  const { selectItem } = useVisualization();
+  const { data: searchData, loading, search, clear } = useSearch();
+  const { setData, meta } = useVisualization();
+
+  // Extract highlighted item IDs based on visualization type
+  const getHighlightedIds = (): string[] => {
+    if (!searchData) return [];
+    
+    const vizType = meta?.type;
+    if (vizType === "graph") {
+      const graphData = searchData as GraphData;
+      return [
+        ...(graphData.nodes?.filter(n => n.highlighted)?.map(n => n.id) || []),
+        ...(graphData.edges?.filter(e => e.highlighted)?.map(e => e.id) || []),
+      ];
+    } else if (vizType === "hypergraph") {
+      const hgData = searchData as HypergraphData;
+      return [
+        ...(hgData.nodes?.filter(n => n.highlighted)?.map(n => n.id) || []),
+        ...(hgData.hyperedges?.filter(e => e.highlighted)?.map(e => e.id) || []),
+      ];
+    } else if (vizType === "list") {
+      const listData = searchData as ListData;
+      return listData.items?.filter(i => i.highlighted)?.map(i => i.id) || [];
+    }
+    return [];
+  };
+
+  const highlightedIds = getHighlightedIds();
 
   const handleSearch = async () => {
     if (query.trim()) {
-      await search({ query: query.trim(), context: {} });
+      const result = await search({ query: query.trim(), context: {} });
+      // Update main visualization with search results data
+      if (result) {
+        setData(result);
+      }
       setCurrentResultIndex(0);
     }
   };
@@ -26,23 +57,18 @@ export default function SearchPanel() {
   };
 
   const handlePreviousResult = useCallback(() => {
-    if (results.length === 0) return;
-    setCurrentResultIndex((prev) => (prev === 0 ? results.length - 1 : prev - 1));
-    if (results.length > 0) {
-      selectItem(results[currentResultIndex === 0 ? results.length - 1 : currentResultIndex - 1], "node");
-    }
-  }, [results, currentResultIndex, selectItem]);
+    if (highlightedIds.length === 0) return;
+    const newIndex = currentResultIndex === 0 ? highlightedIds.length - 1 : currentResultIndex - 1;
+    setCurrentResultIndex(newIndex);
+  }, [highlightedIds, currentResultIndex]);
 
   const handleNextResult = useCallback(() => {
-    if (results.length === 0) return;
-    setCurrentResultIndex((prev) => (prev === results.length - 1 ? 0 : prev + 1));
-    if (results.length > 0) {
-      selectItem(results[currentResultIndex === results.length - 1 ? 0 : currentResultIndex + 1], "node");
-    }
-  }, [results, currentResultIndex, selectItem]);
+    if (highlightedIds.length === 0) return;
+    const newIndex = currentResultIndex === highlightedIds.length - 1 ? 0 : currentResultIndex + 1;
+    setCurrentResultIndex(newIndex);
+  }, [highlightedIds, currentResultIndex]);
 
-  const handleResultClick = (resultId: string, index: number) => {
-    selectItem(resultId, "node");
+  const handleResultClick = (index: number) => {
     setCurrentResultIndex(index);
   };
 
@@ -77,15 +103,15 @@ export default function SearchPanel() {
         </div>
       )}
 
-      {!loading && results.length === 0 && query && (
+      {!loading && highlightedIds.length === 0 && query && (
         <div className="text-sm text-muted-foreground text-center py-4">No results found</div>
       )}
 
-      {results.length > 0 && (
+      {highlightedIds.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <Badge variant="secondary">
-              {results.length} results ({currentResultIndex + 1}/{results.length})
+              {highlightedIds.length} highlighted ({currentResultIndex + 1}/{highlightedIds.length})
             </Badge>
           </div>
 
@@ -94,7 +120,7 @@ export default function SearchPanel() {
               size="sm"
               variant="outline"
               onClick={handlePreviousResult}
-              disabled={results.length === 0}
+              disabled={highlightedIds.length === 0}
               title="Previous result (↑)"
             >
               <ChevronUp className="w-4 h-4" />
@@ -103,7 +129,7 @@ export default function SearchPanel() {
               size="sm"
               variant="outline"
               onClick={handleNextResult}
-              disabled={results.length === 0}
+              disabled={highlightedIds.length === 0}
               title="Next result (↓)"
             >
               <ChevronDown className="w-4 h-4" />
@@ -111,10 +137,10 @@ export default function SearchPanel() {
           </div>
 
           <div className="space-y-1 max-h-96 overflow-y-auto border rounded-md">
-            {results.map((item, index) => (
+            {highlightedIds.map((id, index) => (
               <div
                 key={index}
-                onClick={() => handleResultClick(item, index)}
+                onClick={() => handleResultClick(index)}
                 className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
                   index === currentResultIndex
                     ? "bg-primary text-primary-foreground"
@@ -123,7 +149,7 @@ export default function SearchPanel() {
               >
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-mono opacity-75">#{index + 1}</span>
-                  <span className="flex-1 truncate">{item}</span>
+                  <span className="flex-1 truncate">{id}</span>
                   {index === currentResultIndex && (
                     <Badge variant="default" className="text-xs">Current</Badge>
                   )}

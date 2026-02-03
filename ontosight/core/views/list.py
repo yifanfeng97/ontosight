@@ -10,6 +10,7 @@ from ontosight.utils import (
     ensure_server_running,
     open_browser,
     wait_for_user,
+    get_model_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -127,7 +128,7 @@ def format_data_for_ui(
         # Extract display label using required extractor
         _label = name_extractor(item)
 
-        _id = gen_random_id()
+        _id = get_model_id(item)
         _data = item.model_dump()
 
         normalized_items.append({"id": _id, "data": {"label": _label, "raw": _data}})

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Callable, TypeVar
 from pydantic import BaseModel
 import logging
 
-from ...utils import gen_random_id
+from ...utils import get_model_id
 from .base import BaseStorage
 
 logger = logging.getLogger(__name__)
@@ -33,7 +33,7 @@ class ListStorage(BaseStorage):
 
         for item in item_list:
             label = item_name_extractor(item)
-            item_id = gen_random_id()
+            item_id = get_model_id(item)
             self.name_to_id[label] = item_id
             raw_data = item.model_dump() if hasattr(item, "model_dump") else dict(item)
             self.items[item_id] = {"id": item_id, "data": {"label": label, "raw": raw_data}}
@@ -69,13 +69,34 @@ class ListStorage(BaseStorage):
         """Get list statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2) -> Dict[str, Any]:
-        """Get sample of items (hops parameter ignored for lists)."""
+    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+        """Get sample of items (hops parameter ignored for lists).
+        
+        Args:
+            center_ids: List of item IDs to return
+            hops: Ignored for lists (included for interface compatibility)
+            highlight_center: If True, mark center items with highlighted=True
+        
+        Returns:
+            Dict with 'items' key containing the sample items
+        """
+        center_id_set = set(center_ids) if center_ids else set()
+        
         if not center_ids:
             # Return first page of items
-            items_sample = [self.items[item_id] for item_id in self.item_order[:10]]
+            items_sample = [
+                dict(self.items[item_id]) for item_id in self.item_order[:10]
+            ]
         else:
-            items_sample = [self.items[item_id] for item_id in center_ids if item_id in self.items]
+            items_sample = [
+                dict(self.items[item_id]) for item_id in center_ids if item_id in self.items
+            ]
+        
+        # Inject highlighted flag if requested
+        if highlight_center:
+            for item in items_sample:
+                if item.get("id") in center_id_set:
+                    item["highlighted"] = True
 
         logger.info(f"[ListStorage] get_sample: {len(items_sample)} items")
         return {"items": items_sample}
@@ -104,26 +125,26 @@ class ListStorage(BaseStorage):
             "has_next": end < total,
         }
 
-    def get_sample_from_data(self, data_list: List[Any], hops: int = 2) -> Dict[str, Any]:
+    def get_sample_from_data(self, data_list: List[Any], hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
         """Get sample based on a list of raw item data objects.
-        
+
         Args:
             data_list: List of ItemSchema objects from search results
             hops: Ignored for list (included for interface compatibility)
-            
+            highlight_center: If True, mark center items with highlighted=True
+
         Returns:
-            Dict with 'items' key containing the requested items
+            Dict with 'items' key containing the requested items,
+            may include 'highlighted' bool for center items if highlight_center=True
         """
-        # Extract IDs from item objects using name extractor and name_to_id mapping
+        # Extract IDs
         ids = []
         for item in data_list:
-            try:
-                item_name = self.item_name_extractor(item)
-                if item_name in self.name_to_id:
-                    ids.append(self.name_to_id[item_name])
-            except Exception as e:
-                logger.warning(f"Failed to extract name from item: {e}")
-                continue
-        
+            item_id = get_model_id(item)
+            if item_id in self.items:
+                ids.append(item_id)
+            else:
+                logging.warning(f"Item {self.item_name_extractor(item)} not found in list storage")
+
         # Return items for these IDs
-        return self.get_sample(center_ids=ids, hops=hops)
+        return self.get_sample(center_ids=ids, hops=hops, highlight_center=highlight_center)

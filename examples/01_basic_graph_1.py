@@ -2,7 +2,7 @@
 
 This example demonstrates how to visualize game entity relationships with nodes and edges.
 """
-
+from typing import Dict, Any
 from ontosight.core import view_graph
 from pydantic import BaseModel, Field
 
@@ -193,6 +193,26 @@ edges = [
 ]
 
 
+
+# Define search callback
+def on_search(query: str, context: Dict[str, Any]) -> list:
+    """Handle search queries - return matching node IDs."""
+    print(f"[Search] Query: {query}")
+
+    results = []
+    for node in nodes:
+        # Search in label, department, level
+        if (
+            query.lower() in node.name.lower()
+            or query.lower() in node.category.lower()
+            or query.lower() in node.info.lower()
+        ):
+            results.append(node)
+
+    print(f"[Search] Found {len(results)} results: {results}")
+    return results, []
+
+
 if __name__ == "__main__":
     # 创建游戏实体关系可视化
     view_graph(
@@ -203,4 +223,5 @@ if __name__ == "__main__":
         node_label_extractor=lambda node: node.name,
         edge_label_extractor=lambda edge: edge.action_type,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
+        on_search=on_search,
     )

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import random
 import logging
 
-from ...utils import gen_random_id
+from ontosight.utils import get_model_id, get_random_id
 from .base import BaseStorage
 
 logger = logging.getLogger(__name__)
@@ -38,7 +38,7 @@ class HypergraphStorage(BaseStorage):
         self.node_name_extractor = node_name_extractor
         self.edge_name_extractor = edge_name_extractor
         self.nodes_in_edge_extractor = nodes_in_edge_extractor
-        
+
         # Create label->ID mapping
         self.label_to_id = {}
         self.nodes = {}
@@ -46,7 +46,7 @@ class HypergraphStorage(BaseStorage):
 
         for node in node_list:
             label = node_name_extractor(node)
-            node_id = gen_random_id()
+            node_id = get_model_id(node)
             self.label_to_id[label] = node_id
             self.node_deg[node_id] = 0
             raw_data = node.model_dump() if hasattr(node, "model_dump") else dict(node)
@@ -76,7 +76,7 @@ class HypergraphStorage(BaseStorage):
                 logger.warning(f"Hyperedge has no valid nodes: {edge_label}")
                 continue
 
-            he_id = gen_random_id()
+            he_id = get_model_id(edge)
             raw_data = edge.model_dump() if hasattr(edge, "model_dump") else dict(edge)
 
             self.hyperedges[he_id] = {
@@ -134,13 +134,14 @@ class HypergraphStorage(BaseStorage):
         """Get hypergraph statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2) -> Dict[str, Any]:
+    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
         """Get sub-hypergraph around given nodes/hyperedges via hyperedge neighborhoods.
-        
+
         Args:
             center_ids: List of node or hyperedge IDs to use as starting points
             hops: Number of hops to expand via hyperedge connections
-            
+            highlight_center: If True, mark center nodes/hyperedges with highlighted=True
+
         Returns:
             Dict with 'nodes', 'edges', and 'hyperedges' keys
         """
@@ -154,13 +155,17 @@ class HypergraphStorage(BaseStorage):
         # Separate node IDs and hyperedge IDs from center_ids
         visited_nodes = set()
         visited_hyperedges = set()
-        
+        center_node_ids = set()
+        center_hyperedge_ids = set()
+
         for element_id in center_ids:
             if element_id in self.nodes:
                 visited_nodes.add(element_id)
+                center_node_ids.add(element_id) if highlight_center else None
             elif element_id in self.hyperedges:
                 # If hyperedge ID, add all its linked nodes
                 visited_hyperedges.add(element_id)
+                center_hyperedge_ids.add(element_id) if highlight_center else None
                 hyperedge_data = self.hyperedges[element_id]
                 for node_in_he in hyperedge_data.get("linked_nodes", []):
                     visited_nodes.add(node_in_he)
@@ -188,10 +193,19 @@ class HypergraphStorage(BaseStorage):
             current_layer = next_layer
 
         # Collect nodes and hyperedges
-        sub_nodes = [self.nodes[node_id] for node_id in visited_nodes if node_id in self.nodes]
-        sub_hyperedges = [
-            self.hyperedges[he_id] for he_id in visited_hyperedges if he_id in self.hyperedges
-        ]
+        sub_nodes = []
+        for node_id in visited_nodes:
+            node_data = dict(self.nodes[node_id])  # Shallow copy
+            if highlight_center and node_id in center_node_ids:
+                node_data["highlighted"] = True
+            sub_nodes.append(node_data)
+
+        sub_hyperedges = []
+        for he_id in visited_hyperedges:
+            he_data = dict(self.hyperedges[he_id])  # Shallow copy
+            if highlight_center and he_id in center_hyperedge_ids:
+                he_data["highlighted"] = True
+            sub_hyperedges.append(he_data)
 
         # Generate auxiliary layout edges for sub-hypergraph
         sub_edges = []
@@ -204,7 +218,7 @@ class HypergraphStorage(BaseStorage):
                 if node_id != center_node_id:
                     sub_edges.append(
                         {
-                            "id": gen_random_id(),
+                            "id": get_random_id(),
                             "source": center_node_id,
                             "target": node_id,
                         }
@@ -271,47 +285,45 @@ class HypergraphStorage(BaseStorage):
         node_list: List[NodeSchema],
         hyperedge_list: List[EdgeSchema],
         hops: int = 2,
+        highlight_center: bool = False,
     ) -> Dict[str, Any]:
         """Get sample based on raw node and hyperedge data objects.
-        
+
         Extracts IDs from the provided raw data using extractors and label_to_id mapping.
-        
+
         Args:
             node_list: List of NodeSchema objects to extract IDs from
             hyperedge_list: List of EdgeSchema objects to extract IDs from
             hops: Number of hops for neighborhood expansion
-            
+            highlight_center: If True, mark center elements with highlighted=True
+
         Returns:
-            Dict with 'nodes', 'edges', and 'hyperedges' keys containing the sub-hypergraph
+            Dict with 'nodes', 'edges', and 'hyperedges' keys containing the sub-hypergraph,
+            may include 'highlighted' bool for center elements if highlight_center=True
         """
         # Extract node IDs using node extractor and label_to_id mapping
         node_ids = []
         for node in node_list:
-            try:
-                node_label = self.node_name_extractor(node)
-                if node_label in self.label_to_id:
-                    node_ids.append(self.label_to_id[node_label])
-            except Exception as e:
-                logger.warning(f"Failed to extract label from node: {e}")
-                continue
-        
+            node_id = get_model_id(node)
+            if node_id in self.nodes:
+                node_ids.append(node_id)
+            else:
+                logging.warning(f"Node {self.node_label_extractor(node)} not found in hypergraph")
+
         # Extract hyperedge IDs using edge extractor and label lookup
         hyperedge_ids = []
         for hyperedge in hyperedge_list:
-            try:
-                hyperedge_label = self.edge_name_extractor(hyperedge)
-                # For hyperedges, find the hyperedge_id by label from hyperedges dict
-                for he_id, he_data in self.hyperedges.items():
-                    if he_data.get("data", {}).get("label") == hyperedge_label:
-                        hyperedge_ids.append(he_id)
-                        break
-            except Exception as e:
-                logger.warning(f"Failed to extract label from hyperedge: {e}")
-                continue
-        
+            hyperedge_id = get_model_id(hyperedge)
+            if hyperedge_id in self.hyperedges:
+                hyperedge_ids.append(hyperedge_id)
+            else:
+                logging.warning(
+                    f"Hyperedge {self.hyperedge_label_extractor(hyperedge)} not found in hypergraph"
+                )
+
         # Combine node and hyperedge IDs and call get_sample
         all_ids = node_ids + hyperedge_ids
         if all_ids:
-            return self.get_sample(center_ids=all_ids, hops=hops)
+            return self.get_sample(center_ids=all_ids, hops=hops, highlight_center=highlight_center)
         else:
             return {"nodes": [], "edges": [], "hyperedges": []}

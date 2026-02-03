@@ -10,8 +10,7 @@ from pydantic import BaseModel, Field
 
 
 class NodeSchema(BaseModel):
-    id: str = Field(..., description="Unique identifier for the node")
-    label: str = Field(..., description="Label of the node")
+    name: str = Field(..., description="Label of the node")
     department: str = Field(..., description="Department of the node")
     level: str = Field(..., description="Level of the node")
 
@@ -24,19 +23,19 @@ class EdgeSchema(BaseModel):
 
 # Sample network data
 nodes = [
-    NodeSchema(id="alice", label="Alice", department="Engineering", level="Senior"),
-    NodeSchema(id="bob", label="Bob", department="Sales", level="Manager"),
-    NodeSchema(id="charlie", label="Charlie", department="Engineering", level="Junior"),
-    NodeSchema(id="diana", label="Diana", department="Marketing", level="Manager"),
-    NodeSchema(id="eve", label="Eve", department="HR", level="Director"),
+    NodeSchema(name="Alice", department="Engineering", level="Senior"),
+    NodeSchema(name="Bob", department="Sales", level="Manager"),
+    NodeSchema(name="Charlie", department="Engineering", level="Junior"),
+    NodeSchema(name="Diana", department="Marketing", level="Manager"),
+    NodeSchema(name="Eve", department="HR", level="Director"),
 ]
 
 edges = [
-    EdgeSchema(source="alice", target="charlie", label="mentors"),
-    EdgeSchema(source="bob", target="diana", label="manages"),
-    EdgeSchema(source="diana", target="eve", label="reports_to"),
-    EdgeSchema(source="charlie", target="eve", label="reports_to"),
-    EdgeSchema(source="alice", target="bob", label="collaborates_with"),
+    EdgeSchema(source="Alice", target="Charlie", label="mentors"),
+    EdgeSchema(source="Bob", target="Diana", label="manages"),
+    EdgeSchema(source="Diana", target="Eve", label="reports_to"),
+    EdgeSchema(source="Charlie", target="Eve", label="reports_to"),
+    EdgeSchema(source="Alice", target="Bob", label="collaborates_with"),
 ]
 
 
@@ -49,14 +48,14 @@ def on_search(query: str, context: Dict[str, Any]) -> list:
     for node in nodes:
         # Search in label, department, level
         if (
-            query.lower() in node.label.lower()
+            query.lower() in node.name.lower()
             or query.lower() in node.department.lower()
             or query.lower() in node.level.lower()
         ):
-            results.append(node.id)
+            results.append(node)
 
     print(f"[Search] Found {len(results)} results: {results}")
-    return results
+    return results, []
 
 
 # Define chat callback
@@ -90,10 +89,10 @@ if __name__ == "__main__":
         edge_list=edges,
         node_schema=NodeSchema,
         edge_schema=EdgeSchema,
-        node_label_extractor=lambda node: node.label,
+        node_label_extractor=lambda node: node.name,
         edge_label_extractor=lambda edge: edge.label,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         on_search=on_search,
-        on_chat=on_chat,
+        # on_chat=on_chat,
         context={"org": "Acme Corp", "team": "Engineering"},
     )

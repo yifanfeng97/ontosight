@@ -16,7 +16,6 @@
 import {
   MetaResponse,
   SearchRequest,
-  SearchResponse,
   ChatRequest,
   ChatResponse,
   VisualizationData,
@@ -164,8 +163,8 @@ export const apiClient = {
    *
    * POST /api/search
    */
-  async search(request: SearchRequest): Promise<SearchResponse> {
-    return await fetchWithRetry<SearchResponse>(
+  async search(request: SearchRequest): Promise<VisualizationData> {
+    return await fetchWithRetry<VisualizationData>(
       `${API_BASE_URL}/api/search`,
       {
         method: "POST",
