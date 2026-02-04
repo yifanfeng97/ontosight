@@ -1,9 +1,9 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertTitle, AlertDescription, Spinner } from "@/components/ui";
 import { AlertCircle } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
+import FloatingViewSwitcher from "@/components/FloatingViewSwitcher";
 
 const GraphView = lazy(() => import("@/components/views/GraphView"));
 const ListView = lazy(() => import("@/components/views/ListView"));
@@ -54,97 +54,73 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
   }
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full h-full flex flex-col">
-        {/* Tab Headers */}
-        <TabsList className="w-full shrink-0 border-b border-border rounded-none bg-muted/50 px-4">
-          {vizType === "graph" && (
-            <>
-              <TabsTrigger value="graph">Graph View</TabsTrigger>
-              <TabsTrigger value="nodes">Node List</TabsTrigger>
-              <TabsTrigger value="edges">Edge List</TabsTrigger>
-            </>
-          )}
-          {vizType === "hypergraph" && (
-            <>
-              <TabsTrigger value="graph">Hypergraph View</TabsTrigger>
-              <TabsTrigger value="nodes">Node List</TabsTrigger>
-              <TabsTrigger value="hyperedges">Hyperedge List</TabsTrigger>
-            </>
-          )}
-          {vizType === "list" && (
-            <>
-              <TabsTrigger value="list">Sample View</TabsTrigger>
-              <TabsTrigger value="items">All Items</TabsTrigger>
-            </>
-          )}
-        </TabsList>
+    <div className="w-full h-full relative overflow-hidden">
+      {/* Floating View Switcher */}
+      <FloatingViewSwitcher
+        vizType={vizType}
+        activeView={activeTab}
+        onViewChange={handleTabChange}
+      />
 
-        {/* Tab Contents */}
-        <div className="flex-1 overflow-hidden">
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center h-full">
-                <div className="text-sm text-muted-foreground">Loading...</div>
-              </div>
-            }
-          >
-            {vizType === "graph" && (
-              <>
-                <TabsContent value="graph" className="h-full border-0 p-0">
-                  <GraphView data={data} meta={meta} />
-                </TabsContent>
-                <TabsContent value="nodes" className="h-full border-0 p-0">
-                  <UnifiedListView
-                    type="node"
-                    fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                  />
-                </TabsContent>
-                <TabsContent value="edges" className="h-full border-0 p-0">
-                  <UnifiedListView
-                    type="edge"
-                    fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
-                  />
-                </TabsContent>
-              </>
+      {/* View Content */}
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-3">
+              <Spinner size="md" />
+              <p className="text-sm text-muted-foreground">Loading view...</p>
+            </div>
+          </div>
+        }
+      >
+        {vizType === "graph" && (
+          <>
+            {activeTab === "graph" && <GraphView data={data} meta={meta} />}
+            {activeTab === "nodes" && (
+              <UnifiedListView
+                type="node"
+                fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+              />
             )}
+            {activeTab === "edges" && (
+              <UnifiedListView
+                type="edge"
+                fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
+              />
+            )}
+          </>
+        )}
 
-            {vizType === "hypergraph" && (
-              <>
-                <TabsContent value="graph" className="h-full border-0 p-0">
-                  <HypergraphView data={data} meta={meta} />
-                </TabsContent>
-                <TabsContent value="nodes" className="h-full border-0 p-0">
-                  <UnifiedListView
-                    type="node"
-                    fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                  />
-                </TabsContent>
-                <TabsContent value="hyperedges" className="h-full border-0 p-0">
-                  <UnifiedListView
-                    type="hyperedge"
-                    fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
-                  />
-                </TabsContent>
-              </>
+        {vizType === "hypergraph" && (
+          <>
+            {activeTab === "graph" && <HypergraphView data={data} meta={meta} />}
+            {activeTab === "nodes" && (
+              <UnifiedListView
+                type="node"
+                fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+              />
             )}
+            {activeTab === "hyperedges" && (
+              <UnifiedListView
+                type="hyperedge"
+                fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
+              />
+            )}
+          </>
+        )}
 
-            {vizType === "list" && (
-              <>
-                <TabsContent value="list" className="h-full border-0 p-0">
-                  <ListView data={data} meta={meta} />
-                </TabsContent>
-                <TabsContent value="items" className="h-full border-0 p-0">
-                  <UnifiedListView
-                    type="item"
-                    fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
-                  />
-                </TabsContent>
-              </>
+        {vizType === "list" && (
+          <>
+            {activeTab === "list" && <ListView data={data} meta={meta} />}
+            {activeTab === "items" && (
+              <UnifiedListView
+                type="item"
+                fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
+              />
             )}
-          </Suspense>
-        </div>
-      </Tabs>
+          </>
+        )}
+      </Suspense>
     </div>
   );
 }
