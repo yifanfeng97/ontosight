@@ -16,7 +16,7 @@ export interface VisualizationState {
   viewedHistory: SelectedItem[]; // History of all clicked items (no dedup)
   selectedItemDetails: Map<string, any>; // Cache for item details
   highlightedNodes: Set<string>;
-  viewMode: "graph" | "list" | "nodes" | "edges" | "hyperedges" | "hypergraph";
+  viewMode: "graph" | "list" | "items" | "nodes" | "edges" | "hyperedges" | "hypergraph";
   zoomLevel: number;
   resetTrigger: number;
   currentPage: number;

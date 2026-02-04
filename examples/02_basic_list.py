@@ -3,6 +3,7 @@
 This example demonstrates how to visualize data as an interactive list/table.
 """
 
+from typing import List, Tuple
 from ontosight.core import view_list
 from pydantic import BaseModel, Field
 
@@ -53,10 +54,65 @@ users = [
     UserSchema(id=35, name="Isabel Diaz", email="isabel@example.com", department="HR"),
 ]
 
+# Define search callback
+def on_search(query: str) -> Tuple[List[UserSchema], List]:
+    """Handle search queries - return matching users."""
+    print(f"[Search] Query: {query}")
+
+    results = []
+    for user in users:
+        # Search in name, email, department
+        if (
+            query.lower() in user.name.lower()
+            or query.lower() in user.email.lower()
+            or query.lower() in user.department.lower()
+        ):
+            results.append(user)
+
+    print(f"[Search] Found {len(results)} results")
+    return results, []
+
+
+# Define chat callback
+def on_chat(question: str) -> Tuple[str, Tuple[List[UserSchema], List]]:
+    """Handle chat/Q&A queries and return related users."""
+    print(f"[Chat] Question: {question}")
+
+    users_in_answer = []
+    # Simple Q&A logic
+    if "engineering" in question.lower():
+        response = "We have multiple engineers in the Engineering department."
+        users_in_answer = [user for user in users if user.department == "Engineering"]
+    elif "sales" in question.lower():
+        response = "We have several sales representatives in the Sales department."
+        users_in_answer = [user for user in users if user.department == "Sales"]
+    elif "marketing" in question.lower():
+        response = "We have marketing specialists in the Marketing department."
+        users_in_answer = [user for user in users if user.department == "Marketing"]
+    elif "hr" in question.lower():
+        response = "We have HR personnel managing human resources."
+        users_in_answer = [user for user in users if user.department == "HR"]
+    elif "finance" in question.lower():
+        response = "We have finance professionals handling financial matters."
+        users_in_answer = [user for user in users if user.department == "Finance"]
+    elif "alice" in question.lower():
+        response = "Alice Chen is an engineer in the Engineering department."
+        users_in_answer = [user for user in users if "alice" in user.name.lower()]
+    elif "bob" in question.lower():
+        response = "Bob Smith works in the Sales department."
+        users_in_answer = [user for user in users if "bob" in user.name.lower()]
+    else:
+        response = f"I don't have specific information about '{question}'."
+
+    print(f"[Chat] Response: {response}")
+    return response, (users_in_answer, [])
+
 if __name__ == "__main__":
     # Create a list/table visualization
     view_list(
         item_list=users,
         item_schema=UserSchema,
         item_name_extractor=lambda item: item.name,
+        on_search=on_search,
+        on_chat=on_chat,
     )

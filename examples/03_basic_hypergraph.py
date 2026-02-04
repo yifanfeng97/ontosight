@@ -119,7 +119,7 @@ hyperedges = [
 
 
 # Define search callback
-def on_search(query: str, context: Dict[str, Any]) -> Tuple[List, List]:
+def on_search(query: str) -> Tuple[List, List]:
     """Handle search queries - return matching nodes."""
     print(f"[Search] Query: {query}")
 
@@ -137,7 +137,7 @@ def on_search(query: str, context: Dict[str, Any]) -> Tuple[List, List]:
 
 
 # Define chat callback
-def on_chat(question: str, context: Dict[str, Any]) -> Tuple[str, Tuple[List, List]]:
+def on_chat(question: str) -> Tuple[str, Tuple[List, List]]:
     """Handle chat/Q&A queries and return related nodes and hyperedges."""
     print(f"[Chat] Question: {question}")
 

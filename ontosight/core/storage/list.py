@@ -69,29 +69,30 @@ class ListStorage(BaseStorage):
         """Get list statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+    def get_sample(
+        self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False
+    ) -> Dict[str, Any]:
         """Get sample of items (hops parameter ignored for lists).
-        
+
         Args:
             center_ids: List of item IDs to return
             hops: Ignored for lists (included for interface compatibility)
             highlight_center: If True, mark center items with highlighted=True
-        
+
         Returns:
             Dict with 'items' key containing the sample items
         """
         center_id_set = set(center_ids) if center_ids else set()
-        
+
         if not center_ids:
-            # Return first page of items
-            items_sample = [
-                dict(self.items[item_id]) for item_id in self.item_order[:10]
-            ]
+            # Return up to 50 items as default sample
+            sample_size = min(50, len(self.item_order))
+            items_sample = [dict(self.items[item_id]) for item_id in self.item_order[:sample_size]]
         else:
             items_sample = [
                 dict(self.items[item_id]) for item_id in center_ids if item_id in self.items
             ]
-        
+
         # Inject highlighted flag if requested
         if highlight_center:
             for item in items_sample:
@@ -125,7 +126,9 @@ class ListStorage(BaseStorage):
             "has_next": end < total,
         }
 
-    def get_sample_from_data(self, data_list: List[Any], hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+    def get_sample_from_data(
+        self, data_list: List[Any], hops: int = 2, highlight_center: bool = False
+    ) -> Dict[str, Any]:
         """Get sample based on a list of raw item data objects.
 
         Args:

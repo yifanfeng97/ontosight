@@ -13,7 +13,7 @@ Architecture:
 Example:
     >>> from ontosight.server.state import global_state
     >>>
-    >>> def my_search_callback(query: str, context: dict) -> list[str]:
+    >>> def my_search_callback(query: str) -> list[str]:
     ...     return ["item1", "item2"]
     >>>
     >>> global_state.register_callbacks({

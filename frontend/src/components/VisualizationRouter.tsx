@@ -6,6 +6,7 @@ import { useVisualization } from "@/hooks/useVisualization";
 
 const GraphView = lazy(() => import("@/components/views/GraphView"));
 const ListView = lazy(() => import("@/components/views/ListView"));
+const AllItemsListView = lazy(() => import("@/components/views/AllItemsListView"));
 const HypergraphView = lazy(() => import("@/components/views/HypergraphView"));
 const NodeListView = lazy(() => import("@/components/views/NodeListView"));
 const EdgeListView = lazy(() => import("@/components/views/EdgeListView"));
@@ -73,7 +74,12 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
               <TabsTrigger value="hyperedges">超边列表</TabsTrigger>
             </>
           )}
-          {vizType === "list" && <TabsTrigger value="list">列表视图</TabsTrigger>}
+          {vizType === "list" && (
+            <>
+              <TabsTrigger value="list">样本视图</TabsTrigger>
+              <TabsTrigger value="items">所有项目</TabsTrigger>
+            </>
+          )}
         </TabsList>
 
         {/* Tab Contents */}
@@ -114,9 +120,14 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
             )}
 
             {vizType === "list" && (
-              <TabsContent value="list" className="h-full border-0 p-0">
-                <ListView data={data} meta={meta} />
-              </TabsContent>
+              <>
+                <TabsContent value="list" className="h-full border-0 p-0">
+                  <ListView data={data} meta={meta} />
+                </TabsContent>
+                <TabsContent value="items" className="h-full border-0 p-0">
+                  <AllItemsListView />
+                </TabsContent>
+              </>
             )}
           </Suspense>
         </div>

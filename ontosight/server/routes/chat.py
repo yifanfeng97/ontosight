@@ -38,10 +38,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
 
     try:
         # Execute chat callback - expect (response_text, related_data) tuple
-        # Note: callback uses 'question' parameter, not 'query'
-        result = global_state.execute_callback(
-            "chat", question=request.query, context=request.context or {}
-        )
+        result = global_state.execute_callback("chat", question=request.query)
 
         # Extract response and related data from callback result
         response_text = None
@@ -95,7 +92,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     )
 
             elif viz_type == "list":
-                item_list = related_data
+                # Unpack related_data (item_list, _) from callback
+                item_list = related_data[0] if isinstance(related_data, tuple) else related_data
                 # Only process if there's actual data
                 if item_list:
                     sample = storage.get_sample_from_data(item_list, highlight_center=True)

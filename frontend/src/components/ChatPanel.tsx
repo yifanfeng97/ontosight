@@ -12,7 +12,7 @@ export default function ChatPanel() {
 
   const handleSend = async () => {
     if (message.trim()) {
-      const response = await send({ query: message.trim(), context: {} });
+      const response = await send({ query: message.trim() });
       // Update main visualization with related data if provided
       // Only update if data is not empty (has nodes/edges or items)
       if (response?.data) {

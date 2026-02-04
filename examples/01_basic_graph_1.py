@@ -195,7 +195,7 @@ edges = [
 
 
 # Define search callback
-def on_search(query: str, context: Dict[str, Any]) -> list:
+def on_search(query: str) -> list:
     """Handle search queries - return matching node IDs."""
     print(f"[Search] Query: {query}")
 

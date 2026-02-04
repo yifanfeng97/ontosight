@@ -39,9 +39,7 @@ async def search(request: SearchRequest) -> Union[GraphData, HypergraphData, Lis
     viz_type = global_state.get_visualization_type()
 
     try:
-        results = global_state.execute_callback(
-            "search", query=request.query, context=request.context or {}
-        )
+        results = global_state.execute_callback("search", query=request.query)
         
         if viz_type == "graph":
             node_list, edge_list = results
@@ -86,8 +84,11 @@ async def search(request: SearchRequest) -> Union[GraphData, HypergraphData, Lis
             if not storage:
                 raise HTTPException(status_code=400, detail="Storage not initialized")
             
+            # Unpack results (item_list, _) from callback
+            item_list = results[0] if isinstance(results, tuple) else results
+            
             # Get sample with highlighting injected at storage layer
-            sample = storage.get_sample_from_data(results, highlight_center=True)
+            sample = storage.get_sample_from_data(item_list, highlight_center=True)
             
             logger.info(
                 f"[/api/search] List search returned {len(sample['items'])} items "

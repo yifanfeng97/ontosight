@@ -20,6 +20,7 @@ from ontosight.server.models.api import (
     HypergraphData,
     ListData,
 )
+from ontosight.core.storage import GraphStorage, HypergraphStorage, ListStorage
 from ontosight.server.state import global_state
 
 logger = logging.getLogger(__name__)
@@ -75,17 +76,12 @@ async def get_data(
             if not storage:
                 raise HTTPException(status_code=400, detail="Storage not initialized")
 
-            list_data = storage.get_all_items_paginated(page=page, page_size=page_size)
+            # Get a sample of items (not paginated, default ~50 items)
+            sample_data = storage.get_sample()
             logger.info(
-                f"[/api/data] List page {page}: {len(list_data['items'])} items (total: {list_data['total']})"
+                f"[/api/data] List sample: {len(sample_data['items'])} items"
             )
-            return ListData(
-                items=list_data["items"],
-                page=list_data["page"],
-                page_size=list_data["page_size"],
-                total=list_data["total"],
-                has_next=list_data["has_next"],
-            )
+            return ListData(items=sample_data["items"])
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown viz type: {viz_type}")
@@ -136,7 +132,7 @@ async def get_nodes_paginated(page: int = Query(0), page_size: int = Query(30)):
     Returns:
         Paginated node list
     """
-    storage = global_state.get_storage()
+    storage: GraphStorage = global_state.get_storage()
     if not storage:
         raise HTTPException(status_code=400, detail="Storage not initialized")
 
@@ -158,7 +154,7 @@ async def get_edges_paginated(page: int = Query(0), page_size: int = Query(30)):
     Returns:
         Paginated edge list
     """
-    storage = global_state.get_storage()
+    storage: GraphStorage | HypergraphStorage = global_state.get_storage()
     if not storage:
         raise HTTPException(status_code=400, detail="Storage not initialized")
 
@@ -180,7 +176,7 @@ async def get_hyperedges_paginated(page: int = Query(0), page_size: int = Query(
     Returns:
         Paginated hyperedge list
     """
-    storage = global_state.get_storage()
+    storage: HypergraphStorage = global_state.get_storage()
     if not storage:
         raise HTTPException(status_code=400, detail="Storage not initialized")
 
@@ -202,7 +198,7 @@ async def get_items_paginated(page: int = Query(0), page_size: int = Query(30)):
     Returns:
         Paginated item list
     """
-    storage = global_state.get_storage()
+    storage: ListStorage = global_state.get_storage()
     if not storage:
         raise HTTPException(status_code=400, detail="Storage not initialized")
 

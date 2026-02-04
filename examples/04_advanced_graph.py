@@ -40,7 +40,7 @@ edges = [
 
 
 # Define search callback
-def on_search(query: str, context: Dict[str, Any]) -> list:
+def on_search(query: str) -> list:
     """Handle search queries - return matching nodes."""
     print(f"[Search] Query: {query}")
 
@@ -59,7 +59,7 @@ def on_search(query: str, context: Dict[str, Any]) -> list:
 
 
 # Define chat callback
-def on_chat(question: str, context: Dict[str, Any]) -> str:
+def on_chat(question: str) -> str:
     """Handle chat/Q&A queries and return related nodes and edges."""
     print(f"[Chat] Question: {question}")
 

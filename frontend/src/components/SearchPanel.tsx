@@ -41,7 +41,7 @@ export default function SearchPanel() {
 
   const handleSearch = async () => {
     if (query.trim()) {
-      const result = await search({ query: query.trim(), context: {} });
+      const result = await search({ query: query.trim() });
       // Update main visualization with search results data
       if (result) {
         setData(result);
