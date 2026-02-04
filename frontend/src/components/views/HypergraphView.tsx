@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, memo } from "react";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useToast } from "@/components/ui/toast";
 
-// 使用全局 G6（通过 index.html 中的 script 标签引入 g6.min.js）
+// Use global G6 (imported via g6.min.js in index.html)
 declare global {
   interface Window {
     G6: any;
@@ -24,7 +24,7 @@ interface HypergraphViewProps {
   meta: any;
 }
 
-// 颜色调色板，为每个超边生成不同颜色
+// Hyperedge color palette for varied colors
 const HYPEREDGE_COLORS = [
   { fill: "#1890FF", stroke: "#0050B3" },
   { fill: "#52C41A", stroke: "#274704" },
@@ -42,7 +42,7 @@ function getHyperedgeColor(index: number) {
   return HYPEREDGE_COLORS[index % HYPEREDGE_COLORS.length];
 }
 
-// 选中状态的超边颜色
+// Selected hyperedge color
 const SELECTED_HYPEREDGE_COLOR = { fill: "#1890ff", stroke: "#0050b3" };
 
 const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphViewProps) {
@@ -81,12 +81,12 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       clearSelection();
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
-      addToast('搜索面板已激活', 'info');
+      addToast('Search panel activated', 'info');
     } else if (evt.key === 'Delete' && selectedItemsRef.current.size > 0) {
       selectedItemsRef.current.forEach((item) => {
         deselectItem(item.id);
       });
-      addToast('已清除选中项', 'success');
+      addToast('Selection cleared', 'success');
     }
   }, [clearSelection, deselectItem, addToast]);
 

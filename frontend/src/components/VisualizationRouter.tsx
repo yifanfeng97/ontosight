@@ -3,14 +3,12 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVisualization } from "@/hooks/useVisualization";
+import { apiClient } from "@/services/api";
 
 const GraphView = lazy(() => import("@/components/views/GraphView"));
 const ListView = lazy(() => import("@/components/views/ListView"));
-const AllItemsListView = lazy(() => import("@/components/views/AllItemsListView"));
+const UnifiedListView = lazy(() => import("@/components/views/UnifiedListView"));
 const HypergraphView = lazy(() => import("@/components/views/HypergraphView"));
-const NodeListView = lazy(() => import("@/components/views/NodeListView"));
-const EdgeListView = lazy(() => import("@/components/views/EdgeListView"));
-const HyperedgeListView = lazy(() => import("@/components/views/HyperedgeListView"));
 
 interface VisualizationRouterProps {
   data: any;
@@ -62,22 +60,22 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
         <TabsList className="w-full shrink-0 border-b border-border rounded-none bg-muted/50 px-4">
           {vizType === "graph" && (
             <>
-              <TabsTrigger value="graph">图视图</TabsTrigger>
-              <TabsTrigger value="nodes">节点列表</TabsTrigger>
-              <TabsTrigger value="edges">边列表</TabsTrigger>
+              <TabsTrigger value="graph">Graph View</TabsTrigger>
+              <TabsTrigger value="nodes">Node List</TabsTrigger>
+              <TabsTrigger value="edges">Edge List</TabsTrigger>
             </>
           )}
           {vizType === "hypergraph" && (
             <>
-              <TabsTrigger value="graph">超图视图</TabsTrigger>
-              <TabsTrigger value="nodes">节点列表</TabsTrigger>
-              <TabsTrigger value="hyperedges">超边列表</TabsTrigger>
+              <TabsTrigger value="graph">Hypergraph View</TabsTrigger>
+              <TabsTrigger value="nodes">Node List</TabsTrigger>
+              <TabsTrigger value="hyperedges">Hyperedge List</TabsTrigger>
             </>
           )}
           {vizType === "list" && (
             <>
-              <TabsTrigger value="list">样本视图</TabsTrigger>
-              <TabsTrigger value="items">所有项目</TabsTrigger>
+              <TabsTrigger value="list">Sample View</TabsTrigger>
+              <TabsTrigger value="items">All Items</TabsTrigger>
             </>
           )}
         </TabsList>
@@ -87,7 +85,7 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
           <Suspense
             fallback={
               <div className="flex items-center justify-center h-full">
-                <div className="text-sm text-muted-foreground">加载中...</div>
+                <div className="text-sm text-muted-foreground">Loading...</div>
               </div>
             }
           >
@@ -97,10 +95,18 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                   <GraphView data={data} meta={meta} />
                 </TabsContent>
                 <TabsContent value="nodes" className="h-full border-0 p-0">
-                  <NodeListView data={data} meta={meta} />
+                  <UnifiedListView
+                    title="All Nodes"
+                    type="node"
+                    fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                  />
                 </TabsContent>
                 <TabsContent value="edges" className="h-full border-0 p-0">
-                  <EdgeListView data={data} meta={meta} />
+                  <UnifiedListView
+                    title="All Edges"
+                    type="edge"
+                    fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
+                  />
                 </TabsContent>
               </>
             )}
@@ -111,10 +117,18 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                   <HypergraphView data={data} meta={meta} />
                 </TabsContent>
                 <TabsContent value="nodes" className="h-full border-0 p-0">
-                  <NodeListView data={data} meta={meta} />
+                  <UnifiedListView
+                    title="All Nodes"
+                    type="node"
+                    fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                  />
                 </TabsContent>
                 <TabsContent value="hyperedges" className="h-full border-0 p-0">
-                  <HyperedgeListView data={data} meta={meta} />
+                  <UnifiedListView
+                    title="All Hyperedges"
+                    type="hyperedge"
+                    fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
+                  />
                 </TabsContent>
               </>
             )}
@@ -125,7 +139,11 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                   <ListView data={data} meta={meta} />
                 </TabsContent>
                 <TabsContent value="items" className="h-full border-0 p-0">
-                  <AllItemsListView />
+                  <UnifiedListView
+                    title="All Items"
+                    type="item"
+                    fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
+                  />
                 </TabsContent>
               </>
             )}
