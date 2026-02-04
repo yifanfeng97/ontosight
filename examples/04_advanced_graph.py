@@ -41,7 +41,7 @@ edges = [
 
 # Define search callback
 def on_search(query: str, context: Dict[str, Any]) -> list:
-    """Handle search queries - return matching node IDs."""
+    """Handle search queries - return matching nodes."""
     print(f"[Search] Query: {query}")
 
     results = []
@@ -60,23 +60,42 @@ def on_search(query: str, context: Dict[str, Any]) -> list:
 
 # Define chat callback
 def on_chat(question: str, context: Dict[str, Any]) -> str:
-    """Handle chat/Q&A queries."""
+    """Handle chat/Q&A queries and return related nodes and edges."""
     print(f"[Chat] Question: {question}")
 
+    nodes_in_answer, edges_in_answer = [], []
     # Simple Q&A logic
     if "alice" in question.lower():
         response = "Alice is a Senior Engineer who mentors Charlie."
+        nodes_in_answer = [node for node in nodes if node.name == "Alice"]
+        edges_in_answer = [
+            edge for edge in edges if edge.source == "Alice" or edge.target == "Alice"
+        ]
     elif "bob" in question.lower():
         response = "Bob is a Sales Manager who manages Diana."
+        nodes_in_answer = [node for node in nodes if node.name == "Bob"]
+        edges_in_answer = [edge for edge in edges if edge.source == "Bob" or edge.target == "Bob"]
     elif "engineer" in question.lower():
         response = "We have 2 engineers in the department: Alice (Senior) and Charlie (Junior)."
+        nodes_in_answer = [node for node in nodes if node.department == "Engineering"]
+        edges_in_answer = [
+            edge
+            for edge in edges
+            if edge.source in nodes_in_answer or edge.target in nodes_in_answer
+        ]
     elif "manager" in question.lower():
         response = "We have 2 managers: Bob (Sales) and Diana (Marketing)."
+        nodes_in_answer = [node for node in nodes if node.level == "Manager"]
+        edges_in_answer = [
+            edge
+            for edge in edges
+            if edge.source in nodes_in_answer or edge.target in nodes_in_answer
+        ]
     else:
         response = f"I don't have information about '{question}'."
 
     print(f"[Chat] Response: {response}")
-    return response
+    return response, (nodes_in_answer, edges_in_answer)
 
 
 if __name__ == "__main__":
@@ -93,6 +112,6 @@ if __name__ == "__main__":
         edge_label_extractor=lambda edge: edge.label,
         nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
         on_search=on_search,
-        # on_chat=on_chat,
+        on_chat=on_chat,
         context={"org": "Acme Corp", "team": "Engineering"},
     )

@@ -205,8 +205,8 @@ export interface ChatRequest {
 export interface ChatResponse {
   /** Response text from LLM or callback */
   response: string;
-  /** Optional list of source item IDs */
-  sources?: string[];
+  /** Optional visualization data with highlighted related elements */
+  data?: VisualizationData;
 }
 
 /**

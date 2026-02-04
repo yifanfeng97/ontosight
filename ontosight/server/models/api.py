@@ -107,12 +107,14 @@ class ChatResponse(BaseModel):
     """Chat response model.
 
     Attributes:
-        response: LLM response text
-        sources: Optional list of source item IDs
+        response: Chat response text
+        data: Optional visualization data with highlighted related elements
     """
 
     response: str = Field(..., description="Response text")
-    sources: Optional[List[str]] = Field(None, description="Optional list of source item IDs")
+    data: Optional[Dict[str, Any]] = Field(
+        None, description="Visualization data (GraphData, HypergraphData, or ListData) with highlighted related elements"
+    )
 
 
 class GraphData(BaseModel):

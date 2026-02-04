@@ -3,14 +3,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, X } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
+import { useVisualization } from "@/hooks/useVisualization";
 
 export default function ChatPanel() {
   const [message, setMessage] = useState("");
   const { history, loading, send, clear } = useChat();
+  const { setData } = useVisualization();
 
   const handleSend = async () => {
     if (message.trim()) {
-      await send({ query: message.trim(), context: {} });
+      const response = await send({ query: message.trim(), context: {} });
+      // Update main visualization with related data if provided
+      // Only update if data is not empty (has nodes/edges or items)
+      if (response?.data) {
+        const hasContent = 
+          (response.data as any).nodes?.length > 0 ||
+          (response.data as any).edges?.length > 0 ||
+          (response.data as any).hyperedges?.length > 0 ||
+          (response.data as any).items?.length > 0;
+        
+        if (hasContent) {
+          setData(response.data);
+        }
+      }
       setMessage("");
     }
   };

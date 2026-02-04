@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { create } from "zustand";
 import { apiClient } from "@/services/api";
-import type { ChatRequest } from "@/types/api";
+import type { ChatRequest, ChatResponse, VisualizationData } from "@/types/api";
 
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  data?: VisualizationData;
 }
 
 export interface ChatState {
@@ -13,7 +14,7 @@ export interface ChatState {
   loading: boolean;
   error: string | null;
 
-  send: (req: ChatRequest) => Promise<void>;
+  send: (req: ChatRequest) => Promise<ChatResponse | null>;
   clear: () => void;
   setError: (error: string | null) => void;
 }
@@ -35,12 +36,18 @@ export const useChat = create<ChatState>((set) => ({
       set((state) => ({
         history: [
           ...state.history,
-          { role: "assistant" as const, content: response.response },
+          {
+            role: "assistant" as const,
+            content: response.response,
+            data: response.data,
+          },
         ],
       }));
+      return response;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Chat failed";
       set({ error: message });
+      return null;
     } finally {
       set({ loading: false });
     }
