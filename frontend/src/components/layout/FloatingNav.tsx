@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Eye, List, Link2, Layers } from "lucide-react";
+import { List, Link2, Layers } from "lucide-react";
 import { cn } from "@/utils";
 
 interface FloatingNavProps {
@@ -17,20 +17,17 @@ const FloatingNav = memo(function FloatingNav({
   activeView,
   onViewChange,
 }: FloatingNavProps) {
-  // 根据 vizType 决定显示哪些按钮
+  // 根据 vizType 决定显示哪些按钮（移除 Graph/Hypergraph 按钮，仅保留列表类）
   const viewOptions = {
     graph: [
-      { value: "graph", label: "Graph", icon: Eye },
       { value: "nodes", label: "Nodes", icon: List },
       { value: "edges", label: "Edges", icon: Link2 },
     ],
     hypergraph: [
-      { value: "graph", label: "Hypergraph", icon: Eye },
       { value: "nodes", label: "Nodes", icon: List },
       { value: "hyperedges", label: "Hyperedges", icon: Layers },
     ],
     list: [
-      { value: "list", label: "Sample", icon: Eye },
       { value: "items", label: "All Items", icon: List },
     ],
   };
@@ -38,9 +35,8 @@ const FloatingNav = memo(function FloatingNav({
   const options = viewOptions[vizType] || viewOptions.list;
 
   return (
-    <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-      <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-lg">
-        {options.map(({ value, label, icon: Icon }) => {
+    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-lg">
+      {options.map(({ value, label, icon: Icon }) => {
           const isActive = activeView === value;
           return (
             <button
@@ -59,7 +55,6 @@ const FloatingNav = memo(function FloatingNav({
           );
         })}
       </div>
-    </div>
   );
 });
 

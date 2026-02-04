@@ -82,6 +82,48 @@
     width: 100%;
     height: 100%;
   }
+
+  /* Glass-morphism utilities for the island aesthetic */
+  .glass-effect {
+    @apply rounded-2xl bg-background/40 backdrop-blur-xl border border-border/30 shadow-2xl;
+  }
+
+  .glass-effect-subtle {
+    @apply rounded-lg bg-background/30 backdrop-blur-md border border-border/20 shadow-lg;
+  }
+
+  /* Floating island specific effects */
+  .island-glow {
+    @apply shadow-[0_0_20px_rgba(99,102,241,0.1)];
+  }
+
+  .island-glow:hover {
+    @apply shadow-[0_0_30px_rgba(99,102,241,0.15)];
+  }
+
+  /* Enhanced card hover effects for island mode */
+  .card-float {
+    @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+  }
+
+  /* Custom scrollbar styling - thin and minimal */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border) / 0.3);
+    border-radius: 3px;
+    transition: background 0.2s;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--border) / 0.5);
+  }
 }
 
 pre {

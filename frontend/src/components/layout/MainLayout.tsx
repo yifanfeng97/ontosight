@@ -3,10 +3,11 @@ import ViewRouter from "@/components/views/ViewRouter";
 import StatsPanel from "@/components/panels/StatsPanel";
 import DetailPanel from "@/components/panels/DetailPanel";
 import FloatingTools from "@/components/layout/FloatingTools";
+import Island from "@/components/core/Island";
 import { RotateCcw, AlertCircle } from "lucide-react";
 
 export default function MainLayout() {
-  const { loading, error, meta, data, viewedHistory, triggerLayoutReset } = useVisualization();
+  const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode } = useVisualization();
 
   // Determine which features are available based on meta
   const hasSearch = meta?.features?.search === true;
@@ -15,45 +16,35 @@ export default function MainLayout() {
   const vizType = meta?.type || "graph";
   const isHistorySelected = viewedHistory.length > 0;
 
+  // 判断是否处于列表/网格视图模式（此时需要应用模态背景模糊）
+  const isGridViewMode = ["nodes", "edges", "hyperedges", "items"].includes(meta?.viewMode || "");
+
+  // 处理背景点击以关闭 Gallery
+  const handleCanvasClick = () => {
+    if (isGridViewMode) {
+      setViewMode(vizType === "graph" ? "graph" : "hypergraph");
+    }
+  };
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-background">
-      {/* Left Sidebar: Stats + Details */}
-      <div className="w-[300px] border-r border-border bg-muted/30 flex flex-col h-full overflow-hidden">
-        <div className="p-4 border-b border-border flex-shrink-0">
-          <h1 className="text-xl font-bold text-primary">OntoSight</h1>
-        </div>
+    <div className="relative w-screen h-screen overflow-hidden bg-background">
+      {/* Canvas Background with subtle grid pattern */}
+      <div 
+        className={`absolute inset-0 z-0 transition-opacity duration-300 ${isGridViewMode ? "opacity-20" : "opacity-100"}`}
+        style={{
+          backgroundImage: `
+            linear-gradient(to right, hsl(var(--border)/0.1) 1px, transparent 1px),
+            linear-gradient(to bottom, hsl(var(--border)/0.1) 1px, transparent 1px)
+          `,
+          backgroundSize: '40px 40px',
+        }}
+      />
 
-        {/* Top: Basic Statistics */}
-        <div className="flex-shrink-0 overflow-y-auto max-h-[40%]">
-          {meta?.stats && (
-            <div className="p-4">
-              <StatsPanel stats={meta.stats} />
-            </div>
-          )}
-        </div>
-
-        {/* Bottom: Detail Panel (when selected) */}
-        {isHistorySelected && (
-          <div className="flex-1 min-h-0 overflow-hidden">
-            <DetailPanel />
-          </div>
-        )}
-      </div>
-
-      {/* Main Canvas Area - Full Screen */}
-      <div className="flex-1 relative overflow-hidden bg-background">
-        {/* Reset Button */}
-        {data && (
-          <button
-            onClick={() => triggerLayoutReset()}
-            className="absolute top-4 right-4 z-10 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading}
-            title="Reset view layout and fetch fresh data"
-          >
-            <RotateCcw className={`w-4 h-4 hover:rotate-180 transition-transform duration-300 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        )}
-        
+      {/* Main ViewRouter - Full Screen Canvas with Close Handler */}
+      <div 
+        className={`absolute inset-0 z-0 transition-all duration-300 cursor-pointer ${isGridViewMode ? "blur-xl" : ""}`}
+        onClick={handleCanvasClick}
+      >
         {/* Loading State */}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
@@ -81,10 +72,62 @@ export default function MainLayout() {
 
         {/* Main Content - View Router */}
         {!loading && !error && data && <ViewRouter data={data} meta={meta} />}
-
-        {/* Floating Toolbar (Search + Chat) */}
-        <FloatingTools hasSearch={hasSearch} hasChat={hasChat} />
       </div>
+
+      {/* Modal Backdrop Overlay - Only show when Gallery is active */}
+      {isGridViewMode && (
+        <div 
+          className="fixed inset-0 z-[25] pointer-events-auto"
+          onClick={handleCanvasClick}
+        />
+      )}
+
+      {/* Floating Islands Layer - Always on top of canvas */}
+      <div className="fixed inset-0 z-10 pointer-events-none">
+        {/* Left Sidebar Island Container - Vertical Stack */}
+        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-80">
+          {/* Stats Island - Top Left */}
+          {meta?.stats && (
+            <Island
+              title="Statistics"
+              position="custom"
+              className="w-full"
+            >
+              <StatsPanel stats={meta.stats} />
+            </Island>
+          )}
+
+          {/* Details Island - Bottom Left (when selected, scrollable) */}
+          {isHistorySelected && (
+            <Island
+              title="Details"
+              position="custom"
+              showClose
+              className="w-full flex-1 min-h-0 overflow-y-auto"
+            >
+              <DetailPanel />
+            </Island>
+          )}
+
+          {/* Spacer when no details */}
+          {!isHistorySelected && <div className="flex-1" />}
+        </div>
+      </div>
+
+      {/* Reset Button - Absolute positioning above all layers */}
+      {data && (
+        <button
+          onClick={() => triggerLayoutReset()}
+          className="fixed top-4 right-4 z-40 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={loading}
+          title="Reset view layout and fetch fresh data"
+        >
+          <RotateCcw className={`w-4 h-4 hover:rotate-180 transition-transform duration-300 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+      )}
+
+      {/* Floating Toolbar (Search + Chat) */}
+      <FloatingTools hasSearch={hasSearch} hasChat={hasChat} />
     </div>
   );
 }

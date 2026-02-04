@@ -2,7 +2,37 @@
  * 统一的视觉配置文件
  * 集中管理所有UI元素的三种状态（normal、selected、highlighted）的样式
  * 包括G6图表、超边、卡片等所有可视化组件
+ * 
+ * 配色系统：Modern Digital Palette
+ * - Primary (Indigo/紫罗兰)：用于选中和强调
+ * - Success (Emerald/翡翠绿)：默认节点颜色，生机活力
+ * - Warning (Amber/琥珀色)：搜索/高亮，温暖亮眼
+ * - Neutral (Slate/石板灰)：边线和次要元素，极简感
  */
+
+/**
+ * 全局色彩调色板
+ */
+export const COLOR_PALETTE = {
+  primary: {
+    normal: '#6366F1',      // Indigo - 主品牌色，科技感强
+    hover: '#4F46E5',       // 深紫罗兰
+    glow: '#6366F1',        // 用于发光效果
+  },
+  success: {
+    normal: '#10B981',      // Emerald - 节点默认，清新自然
+    hover: '#059669',       // 深翡翠
+  },
+  warning: {
+    normal: '#F59E0B',      // Amber - 高亮/搜索，温暖亮眼
+    hover: '#D97706',       // 深琥珀
+  },
+  neutral: {
+    light: '#CBD5E1',       // Slate-300 - 浅灰，用于边线
+    lighter: '#E2E8F0',     // Slate-200 - 更浅
+    muted: '#94A3B8',       // Slate-400 - 次要文字
+  },
+};
 
 /**
  * 可视化状态枚举
@@ -19,40 +49,47 @@ export enum VisualState {
  */
 export const GRAPH_NODE_STYLES = {
   [VisualState.NORMAL]: {
-    fill: '#87d068',
-    stroke: '#666',
-    lineWidth: 1,
+    fill: COLOR_PALETTE.success.normal,
+    stroke: COLOR_PALETTE.success.normal,
+    lineWidth: 1.5,
+    shadowBlur: 8,
+    shadowColor: `${COLOR_PALETTE.success.normal}40`,
   },
   [VisualState.SELECTED]: {
-    fill: '#1890ff',
-    stroke: '#1890ff',
-    lineWidth: 3,
+    fill: COLOR_PALETTE.primary.normal,
+    stroke: COLOR_PALETTE.primary.normal,
+    lineWidth: 2.5,
+    shadowBlur: 16,
+    shadowColor: `${COLOR_PALETTE.primary.glow}60`,
   },
   [VisualState.HIGHLIGHTED]: {
-    fill: '#FFD700',
-    stroke: '#FFA500',
-    lineWidth: 2,
+    fill: COLOR_PALETTE.warning.normal,
+    stroke: COLOR_PALETTE.warning.normal,
+    lineWidth: 2.5,
+    shadowBlur: 20,
+    shadowColor: `${COLOR_PALETTE.warning.normal}70`,
   },
 };
 
 /**
  * G6图表中的边样式配置
  * 包含normal、selected、highlighted三种状态
+ * 采用更清晰的设计，提升边线在毛玻璃背景下的可见性
  */
 export const GRAPH_EDGE_STYLES = {
   [VisualState.NORMAL]: {
-    stroke: '#ccc',
-    lineWidth: 1,
-    opacity: 0.6,
+    stroke: COLOR_PALETTE.neutral.light,
+    lineWidth: 1.2,
+    opacity: 0.55,
   },
   [VisualState.SELECTED]: {
-    stroke: '#1890ff',
-    lineWidth: 2,
-    opacity: 1,
+    stroke: COLOR_PALETTE.primary.normal,
+    lineWidth: 1.8,
+    opacity: 0.95,
   },
   [VisualState.HIGHLIGHTED]: {
-    stroke: '#FFA500',
-    lineWidth: 2,
+    stroke: COLOR_PALETTE.warning.normal,
+    lineWidth: 1.8,
     opacity: 1,
   },
 };
@@ -95,19 +132,20 @@ export const HYPERGRAPH_EDGE_DEFAULT_STYLE = {
 
 /**
  * 超边样式配置
- * 超边有不同的颜色调色板，同时也支持selected和highlighted状态
+ * 超边有不同的颜色调色板（梯度化设计，更具现代感），同时也支持selected和highlighted状态
+ * 采用高饱和度，在极低透明度下有足够的可读性
  */
 export const HYPEREDGE_COLOR_PALETTE = [
-  { fill: '#1890FF', stroke: '#0050B3' },
-  { fill: '#52C41A', stroke: '#274704' },
-  { fill: '#FA8C16', stroke: '#872000' },
-  { fill: '#EB2F96', stroke: '#780C56' },
-  { fill: '#13C2C2', stroke: '#0C464C' },
-  { fill: '#722ED1', stroke: '#38165F' },
-  { fill: '#F5222D', stroke: '#7F0000' },
-  { fill: '#FA541C', stroke: '#7F2C00' },
-  { fill: '#FFC53D', stroke: '#7F6400' },
-  { fill: '#45B39D', stroke: '#0F5C4C' },
+  { fill: '#6366F1', stroke: '#4F46E5' }, // Indigo
+  { fill: '#10B981', stroke: '#059669' }, // Emerald
+  { fill: '#F59E0B', stroke: '#D97706' }, // Amber
+  { fill: '#8B5CF6', stroke: '#7C3AED' }, // Violet
+  { fill: '#06B6D4', stroke: '#0891B2' }, // Cyan
+  { fill: '#EC4899', stroke: '#BE185D' }, // Pink
+  { fill: '#EF4444', stroke: '#DC2626' }, // Red
+  { fill: '#14B8A6', stroke: '#0D9488' }, // Teal
+  { fill: '#F97316', stroke: '#EA580C' }, // Orange
+  { fill: '#6B21A8', stroke: '#581C87' }, // Purple
 ];
 
 /**
@@ -117,22 +155,23 @@ export const HYPEREDGE_COLOR_PALETTE = [
 export const HYPEREDGE_STATE_OVERRIDES = {
   [VisualState.NORMAL]: null, // 使用调色板颜色
   [VisualState.SELECTED]: {
-    fill: '#1890ff',
-    stroke: '#0050b3',
+    fill: COLOR_PALETTE.primary.normal,
+    stroke: COLOR_PALETTE.primary.hover,
   },
   [VisualState.HIGHLIGHTED]: {
-    fill: '#FFD700',
-    stroke: '#FFA500',
+    fill: COLOR_PALETTE.warning.normal,
+    stroke: COLOR_PALETTE.warning.hover,
   },
 };
 
 /**
  * 超边的opacity配置
+ * 在毛玻璃背景下的透明度调整，确保清晰度
  */
 export const HYPEREDGE_OPACITY = {
-  [VisualState.NORMAL]: 0.1,
-  [VisualState.SELECTED]: 0.3,
-  [VisualState.HIGHLIGHTED]: 0.3,
+  [VisualState.NORMAL]: 0.08,      // 极淡，像一片能量场
+  [VisualState.SELECTED]: 0.25,    // 更清晰的选中状态
+  [VisualState.HIGHLIGHTED]: 0.3,  // 高亮状态最清晰
 };
 
 export const HYPEREDGE_STROKE_OPACITY = {
@@ -151,23 +190,23 @@ export const UI_CARD_STATE_CLASSES = {
 };
 
 /**
- * UI卡片类型对应的徽章颜色
+ * UI卡片类型对应的徽章颜色（现代化调整）
  */
 export const UI_CARD_TYPE_COLORS: Record<'node' | 'edge' | 'hyperedge' | 'item', string> = {
-  node: 'bg-blue-100 text-blue-800',
-  edge: 'bg-green-100 text-green-800',
-  hyperedge: 'bg-purple-100 text-purple-800',
-  item: 'bg-gray-100 text-gray-800',
+  node: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300',
+  edge: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300',
+  hyperedge: 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300',
+  item: 'bg-slate-100 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300',
 };
 
 /**
- * UI卡片类型对应的边框颜色
+ * UI卡片类型对应的边框颜色（现代化调整）
  */
 export const UI_CARD_TYPE_BORDERS: Record<'node' | 'edge' | 'hyperedge' | 'item', string> = {
-  node: 'border-blue-300 hover:border-blue-500',
-  edge: 'border-green-300 hover:border-green-500',
-  hyperedge: 'border-purple-300 hover:border-purple-500',
-  item: 'border-gray-300 hover:border-gray-500',
+  node: 'border-indigo-300/50 dark:border-indigo-500/40 hover:border-indigo-500 dark:hover:border-indigo-400',
+  edge: 'border-emerald-300/50 dark:border-emerald-500/40 hover:border-emerald-500 dark:hover:border-emerald-400',
+  hyperedge: 'border-violet-300/50 dark:border-violet-500/40 hover:border-violet-500 dark:hover:border-violet-400',
+  item: 'border-slate-300/50 dark:border-slate-500/40 hover:border-slate-500 dark:hover:border-slate-400',
 };
 
 /**

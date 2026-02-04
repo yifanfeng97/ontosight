@@ -61,73 +61,77 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   }
 
   return (
-    <div className="w-full h-full relative overflow-hidden">
-      {/* Floating View Switcher */}
-      <FloatingNav
-        vizType={vizType}
-        activeView={activeTab}
-        onViewChange={handleTabChange}
-      />
+    <div className="w-full h-full flex flex-col items-stretch overflow-hidden">
+      {/* View Switcher - No longer absolute to avoid covering content */}
+      <div className="flex-shrink-0 flex justify-center py-4 z-10 bg-background/50 backdrop-blur-sm">
+        <FloatingNav
+          vizType={vizType}
+          activeView={activeTab}
+          onViewChange={handleTabChange}
+        />
+      </div>
 
-      {/* View Content */}
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-full">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-              <p className="text-sm text-muted-foreground">Loading view...</p>
+      {/* View Content - Fill remaining space */}
+      <div className="flex-1 min-h-0 relative">
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                <p className="text-sm text-muted-foreground">Loading view...</p>
+              </div>
             </div>
-          </div>
-        }
-      >
-        {vizType === "graph" && (
-          <>
-            {activeTab === "graph" && <GraphView data={data} meta={meta} />}
-            {activeTab === "nodes" && (
-              <PaginatedGridView
-                type="node"
-                fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-              />
-            )}
-            {activeTab === "edges" && (
-              <PaginatedGridView
-                type="edge"
-                fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
-              />
-            )}
-          </>
-        )}
+          }
+        >
+          {vizType === "graph" && (
+            <>
+              {activeTab === "graph" && <GraphView data={data} meta={meta} />}
+              {activeTab === "nodes" && (
+                <PaginatedGridView
+                  type="node"
+                  fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                />
+              )}
+              {activeTab === "edges" && (
+                <PaginatedGridView
+                  type="edge"
+                  fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
+                />
+              )}
+            </>
+          )}
 
-        {vizType === "hypergraph" && (
-          <>
-            {activeTab === "graph" && <HypergraphView data={data} meta={meta} />}
-            {activeTab === "nodes" && (
-              <PaginatedGridView
-                type="node"
-                fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-              />
-            )}
-            {activeTab === "hyperedges" && (
-              <PaginatedGridView
-                type="hyperedge"
-                fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
-              />
-            )}
-          </>
-        )}
+          {vizType === "hypergraph" && (
+            <>
+              {activeTab === "graph" && <HypergraphView data={data} meta={meta} />}
+              {activeTab === "nodes" && (
+                <PaginatedGridView
+                  type="node"
+                  fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                />
+              )}
+              {activeTab === "hyperedges" && (
+                <PaginatedGridView
+                  type="hyperedge"
+                  fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
+                />
+              )}
+            </>
+          )}
 
-        {vizType === "list" && (
-          <>
-            {activeTab === "list" && <ListView data={data} meta={meta} />}
-            {activeTab === "items" && (
-              <PaginatedGridView
-                type="item"
-                fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
-              />
-            )}
-          </>
-        )}
-      </Suspense>
+          {vizType === "list" && (
+            <>
+              {activeTab === "list" && <ListView data={data} meta={meta} />}
+              {activeTab === "items" && (
+                <PaginatedGridView
+                  type="item"
+                  fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
+                />
+              )}
+            </>
+          )}
+        </Suspense>
+      </div>
     </div>
   );
 }

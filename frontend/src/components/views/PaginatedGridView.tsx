@@ -1,7 +1,7 @@
 import { memo, useState, useEffect } from "react";
 import ItemGallery from "./components/ItemGallery";
 import { useVisualization } from "@/hooks/useVisualization";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Island } from "@/components/core";
 
 interface PaginatedGridViewProps {
   type: "node" | "edge" | "hyperedge" | "item";
@@ -51,10 +51,17 @@ const PaginatedGridView = memo(function PaginatedGridView({
   }, []);
 
   return (
-    <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Grid of entities */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-4">
+    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+      {/* Centered focused island gallery with stable fixed height - pagination integrated */}
+      <Island
+        position="custom"
+        className="fixed inset-0 m-auto w-11/12 max-w-3xl z-30 flex flex-col backdrop-blur-md h-[650px] pointer-events-auto"
+      >
+        {/* Gallery content with safe padding - no title shown, top-aligned, stops event propagation */}
+        <div 
+          className="flex-1 overflow-auto p-4 flex flex-col items-start"
+          onClick={(e) => e.stopPropagation()}
+        >
           <ItemGallery
             items={items}
             itemType={type}
@@ -64,34 +71,57 @@ const PaginatedGridView = memo(function PaginatedGridView({
             emptyMessage={`No ${type}s found`}
             selectedItems={selectedItems}
             onItemClick={(itemId) => selectItem(itemId, type)}
+            gridClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max w-full"
           />
         </div>
-      </div>
 
-      {/* Pagination controls */}
-      <div className="flex-shrink-0 border-t border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Page {page + 1} of {totalPages}
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => loadPage(Math.max(0, page - 1))}
-            disabled={page === 0 || loading}
-            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Previous page"
+        {/* Pagination integrated inside island at bottom */}
+        {totalPages > 1 && (
+          <div 
+            className="flex items-center justify-center gap-3 px-4 py-3 border-t border-border/10"
+            onClick={(e) => e.stopPropagation()}
           >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => loadPage(page + 1)}
-            disabled={!hasNextPage || loading}
-            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            title="Next page"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
+            {/* Previous Button */}
+            <button
+              onClick={() => loadPage(Math.max(0, page - 1))}
+              disabled={page === 0 || loading}
+              className={`p-1.5 rounded-full transition-all duration-200 ${
+                page > 0 && !loading
+                  ? "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                  : "text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              title="Previous page"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Page Info */}
+            <div className="text-sm text-muted-foreground font-medium px-2 min-w-[100px] text-center">
+              <span className="text-foreground font-semibold">{page + 1}</span>
+              <span className="mx-1">/</span>
+              <span>{totalPages}</span>
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={() => loadPage(page + 1)}
+              disabled={page >= totalPages - 1 || loading}
+              className={`p-1.5 rounded-full transition-all duration-200 ${
+                page < totalPages - 1 && !loading
+                  ? "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
+                  : "text-muted-foreground/40 cursor-not-allowed"
+              }`}
+              title="Next page"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+      </Island>
     </div>
   );
 });

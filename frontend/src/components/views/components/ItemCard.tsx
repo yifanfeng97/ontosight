@@ -58,16 +58,14 @@ const ItemCard: React.FC<ItemCardProps> = ({
 
   // Get state classes from global visual config
   const stateClasses = getCardStateClasses(isSelected, isHighlighted);
-  const typeBorderClasses = UI_CARD_TYPE_BORDERS[type];
-  const typeColorClasses = UI_CARD_TYPE_COLORS[type];
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        "p-4 cursor-pointer transition-all duration-200 transform hover:scale-105 rounded-lg border-2 bg-card",
-        typeBorderClasses,
-        stateClasses,
+        "p-3 cursor-pointer transition-all duration-300 rounded-lg bg-background/40 backdrop-blur-md border border-border/40 hover:border-border/70 hover:bg-background/55 hover:shadow-xl hover:-translate-y-1",
+        isSelected && "ring-2 ring-indigo-500 ring-offset-2 bg-background/60",
+        isHighlighted && "ring-2 ring-amber-400 ring-offset-2 bg-amber-500/15",
         className
       )}
     >
@@ -75,23 +73,23 @@ const ItemCard: React.FC<ItemCardProps> = ({
         {/* Label */}
         <div className="font-semibold text-sm truncate text-foreground">{label}</div>
 
-        {/* Type Badge */}
-        <span className={cn("inline-block text-xs px-2.5 py-0.5 rounded-full font-semibold bg-secondary text-secondary-foreground", typeColorClasses)}>
+        {/* Type Badge - unified indigo color */}
+        <span className="inline-block text-xs px-2.5 py-1 rounded-full font-medium bg-indigo-500/20 text-indigo-600 dark:text-indigo-400">
           {type}
         </span>
 
         {/* Metadata preview - show 2 key-value pairs from raw data */}
         {displayEntries.length > 0 && (
-          <div className="text-xs text-muted-foreground pt-1 border-t border-border">
-            <div className="space-y-1">
-              {displayEntries.map(([key, value], idx) => (
-                <div key={key} className="truncate">
-                  <span className="font-semibold">{key}:</span>{" "}
-                  {formatMetadataValue(value)}
-                  {idx === 1 && displayEntries.length === 2 && metadata && Object.keys(metadata).length > 2 ? "..." : ""}
-                </div>
-              ))}
-            </div>
+          <div className="text-xs text-muted-foreground pt-1.5 border-t border-border/30 space-y-0.5">
+            {displayEntries.map(([key, value], idx) => (
+              <div key={key} className="truncate flex justify-between gap-2">
+                <span className="font-medium text-muted-foreground">{key}:</span>
+                <span className="font-semibold text-foreground text-right flex-1 truncate">{formatMetadataValue(value)}</span>
+              </div>
+            ))}
+            {displayEntries.length > 0 && metadata && Object.keys(metadata).length > displayEntries.length && (
+              <div className="text-muted-foreground text-right text-xs opacity-60">+{Object.keys(metadata).length - displayEntries.length} more</div>
+            )}
           </div>
         )}
       </div>
