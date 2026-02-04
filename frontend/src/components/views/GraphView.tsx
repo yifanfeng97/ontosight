@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, EdgeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/core";
 import { GRAPH_NODE_STYLES, GRAPH_EDGE_STYLES, getNodeVisualState, getEdgeVisualState } from "@/theme/visual-config";
 
 interface GraphViewProps {

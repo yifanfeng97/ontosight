@@ -6,8 +6,6 @@
  */
 
 import React, { useMemo } from "react";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn, extractDisplayMetadata, formatMetadataValue } from "@/utils";
 import { getCardStateClasses, UI_CARD_TYPE_COLORS, UI_CARD_TYPE_BORDERS } from "@/theme/visual-config";
 
@@ -64,11 +62,10 @@ const ItemCard: React.FC<ItemCardProps> = ({
   const typeColorClasses = UI_CARD_TYPE_COLORS[type];
 
   return (
-    <Card
+    <div
       onClick={onClick}
       className={cn(
-        "p-4 cursor-pointer transition-all duration-200 transform hover:scale-105",
-        "border-2",
+        "p-4 cursor-pointer transition-all duration-200 transform hover:scale-105 rounded-lg border-2 bg-card",
         typeBorderClasses,
         stateClasses,
         className
@@ -79,9 +76,9 @@ const ItemCard: React.FC<ItemCardProps> = ({
         <div className="font-semibold text-sm truncate text-foreground">{label}</div>
 
         {/* Type Badge */}
-        <Badge variant="secondary" className={cn("inline-block text-xs", typeColorClasses)}>
+        <span className={cn("inline-block text-xs px-2.5 py-0.5 rounded-full font-semibold bg-secondary text-secondary-foreground", typeColorClasses)}>
           {type}
-        </Badge>
+        </span>
 
         {/* Metadata preview - show 2 key-value pairs from raw data */}
         {displayEntries.length > 0 && (
@@ -98,7 +95,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
           </div>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
 

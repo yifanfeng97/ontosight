@@ -1,6 +1,4 @@
 import { useMemo, useEffect, useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { useVisualization } from "@/hooks/useVisualization";
 import { X, Loader2 } from "lucide-react";
 
@@ -43,22 +41,17 @@ export default function DetailPanel() {
   }
 
   return (
-    <TooltipProvider>
-      <div className="flex flex-col h-full overflow-hidden">
-        <div className="flex items-center justify-between shrink-0 px-3 py-2 border-b border-border">
-          <h3 className="text-sm font-semibold text-foreground">Details</h3>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={clearHistory}
-                className="p-1 hover:bg-muted rounded transition-colors"
-              >
-                <X className="w-4 h-4 text-muted-foreground" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>Clear all details</TooltipContent>
-          </Tooltip>
-        </div>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between shrink-0 px-3 py-2 border-b border-border">
+        <h3 className="text-sm font-semibold text-foreground">Details</h3>
+        <button
+          onClick={clearHistory}
+          className="p-1 hover:bg-muted rounded transition-colors"
+          title="Clear all details"
+        >
+          <X className="w-4 h-4 text-muted-foreground" />
+        </button>
+      </div>
 
       <div className="flex-1 overflow-y-auto">
         <div className="space-y-3 p-3">
@@ -66,9 +59,9 @@ export default function DetailPanel() {
             const itemDetails = getItemDetails(item.id);
 
             return (
-              <Card
+              <div
                 key={item.id}
-                className="p-3 space-y-2 bg-card border border-border"
+                className="p-3 space-y-2 bg-card border border-border rounded-lg"
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
@@ -81,17 +74,13 @@ export default function DetailPanel() {
                       {getTypeLabel(item.type)}
                     </p>
                   </div>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={() => removeFromHistory(item.id)}
-                        className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
-                      >
-                        <X className="w-4 h-4 text-muted-foreground" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent>Remove from history</TooltipContent>
-                  </Tooltip>
+                  <button
+                    onClick={() => removeFromHistory(item.id)}
+                    className="shrink-0 p-1 hover:bg-muted rounded transition-colors"
+                    title="Remove from history"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </button>
                 </div>
 
                 {detailLoading && !itemDetails ? (
@@ -157,12 +146,11 @@ export default function DetailPanel() {
                 ) : (
                   <p className="text-xs text-muted-foreground py-2">No details available</p>
                 )}
-              </Card>
+              </div>
             );
           })}
         </div>
       </div>
     </div>
-    </TooltipProvider>
   );
 }

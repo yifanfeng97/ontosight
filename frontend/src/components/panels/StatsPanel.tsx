@@ -1,5 +1,3 @@
-import { Card } from "@/components/ui/card";
-
 interface StatsPanelProps {
   stats: Record<string, any>;
 }
@@ -12,7 +10,7 @@ export default function StatsPanel({ stats }: StatsPanelProps) {
   return (
     <div className="space-y-3">
       <h3 className="text-sm font-semibold text-foreground">Statistics</h3>
-      <Card className="p-4">
+      <div className="p-4 rounded-lg border border-border bg-card">
         <div className="grid grid-cols-2 gap-4">
           {Object.entries(stats).map(([key, value]) => (
             <div key={key} className="flex flex-col">
@@ -25,8 +23,7 @@ export default function StatsPanel({ stats }: StatsPanelProps) {
             </div>
           ))}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }
-

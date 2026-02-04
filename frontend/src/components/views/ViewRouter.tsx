@@ -1,21 +1,20 @@
 import { Suspense, lazy, useEffect, useState } from "react";
-import { Alert, AlertTitle, AlertDescription, Spinner } from "@/components/ui";
-import { AlertCircle } from "lucide-react";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
-import FloatingViewSwitcher from "@/components/FloatingViewSwitcher";
+import FloatingNav from "@/components/layout/FloatingNav";
+import { AlertCircle } from "lucide-react";
 
-const GraphView = lazy(() => import("@/components/views/GraphView"));
-const ListView = lazy(() => import("@/components/views/ListView"));
-const UnifiedListView = lazy(() => import("@/components/views/UnifiedListView"));
-const HypergraphView = lazy(() => import("@/components/views/HypergraphView"));
+const GraphView = lazy(() => import("./GraphView"));
+const ListView = lazy(() => import("./ListView"));
+const PaginatedGridView = lazy(() => import("./PaginatedGridView"));
+const HypergraphView = lazy(() => import("./HypergraphView"));
 
-interface VisualizationRouterProps {
+interface ViewRouterProps {
   data: any;
   meta: any;
 }
 
-export default function VisualizationRouter({ data, meta }: VisualizationRouterProps) {
+export default function ViewRouter({ data, meta }: ViewRouterProps) {
   // Get visualization type from meta
   const vizType = meta?.type;
   const { setViewMode, viewMode } = useVisualization();
@@ -28,35 +27,43 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
   }, [vizType, setViewMode]);
 
   const handleTabChange = (tab: string) => {
-    console.log("VisualizationRouter.TabChange", { tab, vizType });
+    console.log("ViewRouter.TabChange", { tab, vizType });
     setActiveTab(tab);
     setViewMode(tab as any);
   };
   
   if (!data) {
     return (
-      <Alert>
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>No data available</AlertTitle>
-        <AlertDescription>No data to visualize</AlertDescription>
-      </Alert>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-3">
+          <AlertCircle className="h-8 w-8 text-muted-foreground" />
+          <div>
+            <h3 className="font-semibold text-foreground">No data available</h3>
+            <p className="text-sm text-muted-foreground">No data to visualize</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   if (!vizType) {
     return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Invalid metadata</AlertTitle>
-        <AlertDescription>Invalid visualization metadata</AlertDescription>
-      </Alert>
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-3">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+          <div>
+            <h3 className="font-semibold text-destructive">Invalid metadata</h3>
+            <p className="text-sm text-destructive/80">Invalid visualization metadata</p>
+          </div>
+        </div>
+      </div>
     );
   }
 
   return (
     <div className="w-full h-full relative overflow-hidden">
       {/* Floating View Switcher */}
-      <FloatingViewSwitcher
+      <FloatingNav
         vizType={vizType}
         activeView={activeTab}
         onViewChange={handleTabChange}
@@ -67,7 +74,7 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
         fallback={
           <div className="flex items-center justify-center h-full">
             <div className="flex flex-col items-center gap-3">
-              <Spinner size="md" />
+              <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
               <p className="text-sm text-muted-foreground">Loading view...</p>
             </div>
           </div>
@@ -77,13 +84,13 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
           <>
             {activeTab === "graph" && <GraphView data={data} meta={meta} />}
             {activeTab === "nodes" && (
-              <UnifiedListView
+              <PaginatedGridView
                 type="node"
                 fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
               />
             )}
             {activeTab === "edges" && (
-              <UnifiedListView
+              <PaginatedGridView
                 type="edge"
                 fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
               />
@@ -95,13 +102,13 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
           <>
             {activeTab === "graph" && <HypergraphView data={data} meta={meta} />}
             {activeTab === "nodes" && (
-              <UnifiedListView
+              <PaginatedGridView
                 type="node"
                 fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
               />
             )}
             {activeTab === "hyperedges" && (
-              <UnifiedListView
+              <PaginatedGridView
                 type="hyperedge"
                 fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
               />
@@ -113,7 +120,7 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
           <>
             {activeTab === "list" && <ListView data={data} meta={meta} />}
             {activeTab === "items" && (
-              <UnifiedListView
+              <PaginatedGridView
                 type="item"
                 fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
               />

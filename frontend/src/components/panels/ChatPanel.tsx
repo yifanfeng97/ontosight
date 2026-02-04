@@ -1,6 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Send, X } from "lucide-react";
 import { useChat } from "@/hooks/useChat";
 import { useVisualization } from "@/hooks/useVisualization";
@@ -35,7 +33,7 @@ export default function ChatPanel() {
       <h3 className="text-sm font-semibold text-foreground">💬 Chat</h3>
       
       {/* Message History */}
-      <div className="flex-1 min-h-0 border rounded-md bg-muted/30 overflow-y-auto space-y-2 p-3">
+      <div className="flex-1 min-h-0 border border-border rounded-md bg-muted/30 overflow-y-auto space-y-2 p-3">
         {loading && (
           <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
             <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
@@ -70,34 +68,32 @@ export default function ChatPanel() {
             }
           }}
           rows={2}
-          className="w-full px-3 py-2 text-sm border rounded-md bg-background border-input placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 resize-none"
+          className="w-full px-3 py-2 text-sm border border-border rounded-md bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none transition-all"
         />
         
         <div className="flex gap-2">
-          <Button
+          <button
             onClick={handleSend}
             disabled={loading || !message.trim()}
-            size="sm"
-            className="flex-1"
+            className="flex-1 px-3 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium flex items-center justify-center gap-2"
           >
             {loading ? (
               <>
-                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full"></div>
                 Sending...
               </>
             ) : (
               <>
-                <Send className="w-4 h-4 mr-2" /> Send
+                <Send className="w-4 h-4" /> Send
               </>
             )}
-          </Button>
-          <Button
+          </button>
+          <button
             onClick={clear}
-            variant="outline"
-            size="sm"
+            className="px-3 py-2 border border-border rounded-md hover:bg-muted transition-colors"
           >
             <X className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>

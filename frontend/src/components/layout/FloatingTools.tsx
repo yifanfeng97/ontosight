@@ -1,11 +1,10 @@
 import { useState, memo } from "react";
 import { Search, MessageSquare, X } from "lucide-react";
 import { cn } from "@/utils";
-import SearchPanel from "@/components/SearchPanel";
-import ChatPanel from "@/components/ChatPanel";
-import { ScrollArea } from "@/components/ui";
+import SearchPanel from "@/components/panels/SearchPanel";
+import ChatPanel from "@/components/panels/ChatPanel";
 
-interface FloatingToolbarProps {
+interface FloatingToolsProps {
   hasSearch?: boolean;
   hasChat?: boolean;
 }
@@ -13,13 +12,13 @@ interface FloatingToolbarProps {
 type DrawerType = "search" | "chat" | null;
 
 /**
- * FloatingToolbar - 右侧悬浮工具栏
+ * FloatingTools - 右侧悬浮工具栏
  * 包含搜索和聊天按钮，点击展开对应的抽屉
  */
-const FloatingToolbar = memo(function FloatingToolbar({
+const FloatingTools = memo(function FloatingTools({
   hasSearch = true,
   hasChat = true,
-}: FloatingToolbarProps) {
+}: FloatingToolsProps) {
   const [openDrawer, setOpenDrawer] = useState<DrawerType>(null);
 
   const toggleDrawer = (type: DrawerType) => {
@@ -80,11 +79,11 @@ const FloatingToolbar = memo(function FloatingToolbar({
               </button>
             </div>
             {/* Content */}
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-y-auto">
               <div className="p-4">
                 <SearchPanel />
               </div>
-            </ScrollArea>
+            </div>
           </div>
         </div>
       )}
@@ -122,4 +121,4 @@ const FloatingToolbar = memo(function FloatingToolbar({
   );
 });
 
-export default FloatingToolbar;
+export default FloatingTools;

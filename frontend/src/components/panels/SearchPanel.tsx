@@ -1,8 +1,4 @@
 import { useState, useCallback } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
@@ -74,33 +70,27 @@ export default function SearchPanel() {
   };
 
   return (
-    <TooltipProvider>
-      <div className="space-y-3">
-        <h3 className="text-sm font-semibold text-foreground">Search</h3>
-        
-        <div className="flex gap-2">
-          <Input
-            placeholder="Search nodes..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleSearch();
-            }}
-            className="flex-1"
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={handleClear}
-                variant="outline"
-                size="sm"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Clear search</TooltipContent>
-          </Tooltip>
-        </div>
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">Search</h3>
+      
+      <div className="flex gap-2">
+        <input
+          placeholder="Search nodes..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") handleSearch();
+          }}
+          className="flex-1 px-3 py-2 bg-muted/50 rounded-md border border-border focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"
+        />
+        <button
+          onClick={handleClear}
+          className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          title="Clear search"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
       {loading && (
         <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
@@ -116,41 +106,31 @@ export default function SearchPanel() {
       {highlightedIds.length > 0 && (
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Badge variant="secondary">
+            <span className="inline-block px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold">
               {highlightedIds.length} highlighted ({currentResultIndex + 1}/{highlightedIds.length})
-            </Badge>
+            </span>
           </div>
 
           <div className="flex gap-2 justify-center">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handlePreviousResult}
-                  disabled={highlightedIds.length === 0}
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Previous result (↑)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleNextResult}
-                  disabled={highlightedIds.length === 0}
-                >
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Next result (↓)</TooltipContent>
-            </Tooltip>
+            <button
+              onClick={handlePreviousResult}
+              disabled={highlightedIds.length === 0}
+              className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Previous result"
+            >
+              <ChevronUp className="w-4 h-4" />
+            </button>
+            <button
+              onClick={handleNextResult}
+              disabled={highlightedIds.length === 0}
+              className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              title="Next result"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </button>
           </div>
 
-          <div className="space-y-1 max-h-96 overflow-y-auto border rounded-md">
+          <div className="space-y-1 max-h-96 overflow-y-auto border border-border rounded-md">
             {highlightedIds.map((id, index) => (
               <div
                 key={index}
@@ -165,7 +145,7 @@ export default function SearchPanel() {
                   <span className="text-xs font-mono opacity-75">#{index + 1}</span>
                   <span className="flex-1 truncate">{id}</span>
                   {index === currentResultIndex && (
-                    <Badge variant="default" className="text-xs">Current</Badge>
+                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">Current</span>
                   )}
                 </div>
               </div>
@@ -174,6 +154,5 @@ export default function SearchPanel() {
         </div>
       )}
     </div>
-    </TooltipProvider>
   );
 }

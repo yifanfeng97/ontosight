@@ -1,0 +1,4 @@
+export { Toaster, useToast, toast } from "./Toast"
+export type { ToasterToast } from "./Toast"
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./Tabs"
+export { default as ErrorBoundary } from "./ErrorBoundary"

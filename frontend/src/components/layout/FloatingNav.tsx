@@ -2,21 +2,21 @@ import { memo } from "react";
 import { Eye, List, Link2, Layers } from "lucide-react";
 import { cn } from "@/utils";
 
-interface FloatingViewSwitcherProps {
+interface FloatingNavProps {
   vizType: "graph" | "hypergraph" | "list";
   activeView: string;
   onViewChange: (view: string) => void;
 }
 
 /**
- * FloatingViewSwitcher - 悬浮胶囊样式的视图切换器
+ * FloatingNav - 悬浮胶囊样式的视图切换器
  * 使用玻璃拟态效果，悬浮在画布上方
  */
-const FloatingViewSwitcher = memo(function FloatingViewSwitcher({
+const FloatingNav = memo(function FloatingNav({
   vizType,
   activeView,
   onViewChange,
-}: FloatingViewSwitcherProps) {
+}: FloatingNavProps) {
   // 根据 vizType 决定显示哪些按钮
   const viewOptions = {
     graph: [
@@ -63,4 +63,4 @@ const FloatingViewSwitcher = memo(function FloatingViewSwitcher({
   );
 });
 
-export default FloatingViewSwitcher;
+export default FloatingNav;

@@ -1,22 +1,23 @@
 import { memo, useState, useEffect } from "react";
-import { ItemCard, DataGridContainer } from "@/components/display";
+import ItemGallery from "./components/ItemGallery";
 import { useVisualization } from "@/hooks/useVisualization";
-import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-interface UnifiedListViewProps {
+interface PaginatedGridViewProps {
   type: "node" | "edge" | "hyperedge" | "item";
   fetchFunction: (page: number, pageSize: number) => Promise<any>;
 }
 
 /**
- * UnifiedListView - displays paginated list with unified UI
+ * PaginatedGridView - displays paginated entity grid with unified UI
  * Supports nodes, edges, hyperedges, and items
+ * 
+ * Simplified compared to old UnifiedListView by leveraging EntityGrid component
  */
-const UnifiedListView = memo(function UnifiedListView({
+const PaginatedGridView = memo(function PaginatedGridView({
   type,
   fetchFunction,
-}: UnifiedListViewProps) {
+}: PaginatedGridViewProps) {
   const { selectedItems, selectItem } = useVisualization();
   const [page, setPage] = useState(0);
   const [items, setItems] = useState<any[]>([]);
@@ -51,66 +52,48 @@ const UnifiedListView = memo(function UnifiedListView({
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Grid of cards */}
+      {/* Grid of entities */}
       <div className="flex-1 overflow-auto">
         <div className="p-4">
-          <DataGridContainer 
+          <ItemGallery
+            items={items}
+            itemType={type}
             loading={loading && items.length === 0}
             error={error}
-            isEmpty={items.length === 0 && !loading}
-            emptyMessage={`No ${type}s found`}
             loadingMessage="Loading..."
-          >
-            {items.map((item: any) => {
-              const itemId = item.id;
-              const label = item.label || "Unknown";
-              const isHighlighted = item.highlighted === true;
-
-              return (
-                <ItemCard
-                  key={itemId}
-                  id={itemId}
-                  label={label}
-                  type={type}
-                  metadata={item}
-                  isSelected={selectedItems.has(itemId)}
-                  isHighlighted={isHighlighted}
-                  onClick={() => selectItem(itemId, type)}
-                />
-              );
-            })}
-          </DataGridContainer>
+            emptyMessage={`No ${type}s found`}
+            selectedItems={selectedItems}
+            onItemClick={(itemId) => selectItem(itemId, type)}
+          />
         </div>
       </div>
 
-      {/* Pagination */}
+      {/* Pagination controls */}
       <div className="flex-shrink-0 border-t border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Page {page + 1} of {totalPages}
         </div>
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
+          <button
             onClick={() => loadPage(Math.max(0, page - 1))}
             disabled={page === 0 || loading}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Previous page"
           >
             <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
+          </button>
+          <button
             onClick={() => loadPage(page + 1)}
             disabled={!hasNextPage || loading}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             title="Next page"
           >
             <ChevronRight className="w-4 h-4" />
-          </Button>
+          </button>
         </div>
       </div>
     </div>
   );
 });
 
-export default UnifiedListView;
+export default PaginatedGridView;

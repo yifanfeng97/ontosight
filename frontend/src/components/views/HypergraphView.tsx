@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { useVisualization } from "@/hooks/useVisualization";
-import { useToast } from "@/components/ui/toast";
+import { useToast } from "@/components/core";
 import {
   HYPERGRAPH_NODE_STYLES,
   HYPERGRAPH_EDGE_STYLES,

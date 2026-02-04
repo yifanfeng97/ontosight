@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import ErrorBoundary from "@/components/ErrorBoundary";
-import Layout from "@/components/Layout";
-import { Toaster } from "@/components/ui/toast";
+import ErrorBoundary from "@/components/core/ErrorBoundary";
+import MainLayout from "@/components/layout/MainLayout";
+import { Toaster } from "@/components/core";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
 
@@ -39,7 +39,7 @@ function AppContent() {
 
   return (
     <ErrorBoundary>
-      <Layout />
+      <MainLayout />
     </ErrorBoundary>
   );
 }
