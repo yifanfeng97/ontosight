@@ -9,6 +9,7 @@ import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/utils";
+import { getCardStateClasses, UI_CARD_TYPE_COLORS, UI_CARD_TYPE_BORDERS } from "@/theme/visual-config";
 
 export interface ItemCardProps {
   /** Unique item identifier */
@@ -52,20 +53,6 @@ const ItemCard: React.FC<ItemCardProps> = ({
   onClick,
   className,
 }) => {
-  const typeColors: Record<string, string> = {
-    node: "bg-blue-100 text-blue-800",
-    edge: "bg-green-100 text-green-800",
-    hyperedge: "bg-purple-100 text-purple-800",
-    item: "bg-gray-100 text-gray-800",
-  };
-
-  const typeBorders: Record<string, string> = {
-    node: "border-blue-300 hover:border-blue-500",
-    edge: "border-green-300 hover:border-green-500",
-    hyperedge: "border-purple-300 hover:border-purple-500",
-    item: "border-gray-300 hover:border-gray-500",
-  };
-
   // Extract metadata entries to display from raw data
   const displayEntries = useMemo(() => {
     if (!metadata) return [];
@@ -82,18 +69,19 @@ const ItemCard: React.FC<ItemCardProps> = ({
       .slice(0, 2);
   }, [metadata]);
 
+  // Get state classes from global visual config
+  const stateClasses = getCardStateClasses(isSelected, isHighlighted);
+  const typeBorderClasses = UI_CARD_TYPE_BORDERS[type];
+  const typeColorClasses = UI_CARD_TYPE_COLORS[type];
+
   return (
     <Card
       onClick={onClick}
       className={cn(
         "p-4 cursor-pointer transition-all duration-200 transform hover:scale-105",
         "border-2",
-        typeBorders[type],
-        isHighlighted
-          ? "shadow-lg ring-2 ring-offset-2 ring-yellow-400 bg-yellow-50"
-          : isSelected
-          ? "shadow-lg ring-2 ring-offset-2 ring-primary"
-          : "shadow hover:shadow-md",
+        typeBorderClasses,
+        stateClasses,
         className
       )}
     >
@@ -102,7 +90,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
         <div className="font-semibold text-sm truncate text-foreground">{label}</div>
 
         {/* Type Badge */}
-        <Badge variant="secondary" className={cn("inline-block text-xs", typeColors[type])}>
+        <Badge variant="secondary" className={cn("inline-block text-xs", typeColorClasses)}>
           {type}
         </Badge>
 

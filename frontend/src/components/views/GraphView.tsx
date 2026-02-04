@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, EdgeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useToast } from "@/components/ui/toast";
+import { GRAPH_NODE_STYLES, GRAPH_EDGE_STYLES, getNodeVisualState, getEdgeVisualState } from "@/theme/visual-config";
 
 interface GraphViewProps {
   data: any;
@@ -153,60 +154,42 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
             labelText: (d: any) => d.data?.label || d.id,
             fontSize: 12,
           },
-          state: {
-            highlight: {
-              fill: '#ffd666',
-              stroke: '#faad14',
-              lineWidth: 2,
-              shadowColor: '#faad14',
-              shadowBlur: 10,
-            },
-            selected: {
-              fill: '#1890ff',
-              stroke: '#1890ff',
-              lineWidth: 3,
-              shadowColor: '#1890ff',
-              shadowBlur: 10,
-            },
-          },
         },
         edge: {
           style: {
             labelText: (d: any) => d.data?.label || '',
             fontSize: 10,
           },
-          state: {
-            highlight: {
-              stroke: '#faad14',
-              lineWidth: 2,
-              opacity: 1,
-            },
-          },
         },
         data: {
           nodes: data.nodes.map((node: any) => {
             const isSelected = selectedItems.has(node.id);
             const isHighlighted = node.highlighted === true;
+            const visualState = getNodeVisualState(isSelected, isHighlighted);
+            const nodeStyle = GRAPH_NODE_STYLES[visualState];
+            
             return {
               ...node,
               style: {
                 ...node.style,
-                // Highlighted takes precedence to show search results with special color
-                fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
-                lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
-                stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
+                fill: nodeStyle.fill,
+                lineWidth: nodeStyle.lineWidth,
+                stroke: nodeStyle.stroke,
               },
             };
           }),
           edges: processParallelEdges(data.edges || []).map((edge: any) => {
             const isSelected = selectedItems.has(edge.id);
             const isHighlighted = edge.highlighted === true;
+            const visualState = getEdgeVisualState(isSelected, isHighlighted);
+            const edgeStyle = GRAPH_EDGE_STYLES[visualState];
+            
             return {
               ...edge,
               style: {
-                stroke: isHighlighted ? '#FFA500' : (isSelected ? '#1890ff' : '#ccc'),
-                lineWidth: isHighlighted ? 2 : (isSelected ? 2 : 1),
-                opacity: isHighlighted ? 1 : (isSelected ? 1 : 0.6),
+                stroke: edgeStyle.stroke,
+                lineWidth: edgeStyle.lineWidth,
+                opacity: edgeStyle.opacity,
                 ...edge.style,
               },
             };
@@ -337,12 +320,15 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         data.nodes?.forEach((node: any) => {
           const isSelected = selectedItems.has(node.id);
           const isHighlighted = node.highlighted === true;
+          const visualState = getNodeVisualState(isSelected, isHighlighted);
+          const nodeStyle = GRAPH_NODE_STYLES[visualState];
+          
           graphRef.current?.updateNodeData([{
             id: node.id,
             style: {
-              fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
-              lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
-              stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
+              fill: nodeStyle.fill,
+              lineWidth: nodeStyle.lineWidth,
+              stroke: nodeStyle.stroke,
             },
           }]);
         });
@@ -351,12 +337,15 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         data.edges?.forEach((edge: any) => {
           const isSelected = selectedItems.has(edge.id);
           const isHighlighted = edge.highlighted === true;
+          const visualState = getEdgeVisualState(isSelected, isHighlighted);
+          const edgeStyle = GRAPH_EDGE_STYLES[visualState];
+          
           graphRef.current?.updateEdgeData([{
             id: edge.id,
             style: {
-              stroke: isHighlighted ? '#FFA500' : (isSelected ? '#1890ff' : '#ccc'),
-              lineWidth: isHighlighted ? 2 : (isSelected ? 2 : 1),
-              opacity: isHighlighted ? 1 : (isSelected ? 1 : 0.6),
+              stroke: edgeStyle.stroke,
+              lineWidth: edgeStyle.lineWidth,
+              opacity: edgeStyle.opacity,
             },
           }]);
         });

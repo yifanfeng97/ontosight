@@ -1,6 +1,20 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { useVisualization } from "@/hooks/useVisualization";
 import { useToast } from "@/components/ui/toast";
+import {
+  HYPERGRAPH_NODE_STYLES,
+  HYPERGRAPH_EDGE_STYLES,
+  HYPERGRAPH_EDGE_DEFAULT_STYLE,
+  HYPEREDGE_COLOR_PALETTE,
+  HYPEREDGE_STATE_OVERRIDES,
+  HYPEREDGE_OPACITY,
+  HYPEREDGE_STROKE_OPACITY,
+  getNodeVisualState,
+  getEdgeVisualState,
+  getHyperedgeColorByIndex,
+  getHyperedgeColorByState,
+  VisualState,
+} from "@/theme/visual-config";
 
 // Use global G6 (imported via g6.min.js in index.html)
 declare global {
@@ -23,27 +37,6 @@ interface HypergraphViewProps {
   };
   meta: any;
 }
-
-// Hyperedge color palette for varied colors
-const HYPEREDGE_COLORS = [
-  { fill: "#1890FF", stroke: "#0050B3" },
-  { fill: "#52C41A", stroke: "#274704" },
-  { fill: "#FA8C16", stroke: "#872000" },
-  { fill: "#EB2F96", stroke: "#780C56" },
-  { fill: "#13C2C2", stroke: "#0C464C" },
-  { fill: "#722ED1", stroke: "#38165F" },
-  { fill: "#F5222D", stroke: "#7F0000" },
-  { fill: "#FA541C", stroke: "#7F2C00" },
-  { fill: "#FFC53D", stroke: "#7F6400" },
-  { fill: "#45B39D", stroke: "#0F5C4C" },
-];
-
-function getHyperedgeColor(index: number) {
-  return HYPEREDGE_COLORS[index % HYPEREDGE_COLORS.length];
-}
-
-// Selected hyperedge color
-const SELECTED_HYPEREDGE_COLOR = { fill: "#1890ff", stroke: "#0050b3" };
 
 const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -136,31 +129,31 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
       // Build bubble-sets plugins from hyperedges
       const bubbleSetPlugins = (data.hyperedges || []).map((hyperedge, index) => {
-        const colors = getHyperedgeColor(index);
+        const paletteColors = getHyperedgeColorByIndex(index);
         // Store hyperedge metadata and original colors for click detection and style updates
         hyperedgesRef.current.set(hyperedge.id, hyperedge);
-        hyperedgeColorsRef.current.set(hyperedge.id, colors);
+        hyperedgeColorsRef.current.set(hyperedge.id, paletteColors);
 
         // Check if this hyperedge is selected or highlighted
         const isSelected = selectedItems.has(hyperedge.id);
         const isHighlighted = hyperedge.highlighted === true;
         
-        // Highlighted takes precedence, then selected
-        let activeColors = colors;
-        if (isHighlighted) {
-          activeColors = { fill: "#FFD700", stroke: "#FFA500" };
-        } else if (isSelected) {
-          activeColors = SELECTED_HYPEREDGE_COLOR;
-        }
+        // Determine visual state and get corresponding colors
+        const visualState = isHighlighted 
+          ? VisualState.HIGHLIGHTED 
+          : (isSelected ? VisualState.SELECTED : VisualState.NORMAL);
+        const activeColors = getHyperedgeColorByState(visualState, index);
+        const fillOpacity = HYPEREDGE_OPACITY[visualState];
+        const strokeOpacity = HYPEREDGE_STROKE_OPACITY[visualState];
 
         return {
           key: `bubble-sets-${hyperedge.id}`,
           type: 'bubble-sets',
           members: hyperedge.linked_nodes,
           fill: activeColors.fill,
-          fillOpacity: isSelected || isHighlighted ? 0.3 : 0.1,
+          fillOpacity: fillOpacity,
           stroke: activeColors.stroke,
-          strokeOpacity: isSelected || isHighlighted ? 1 : 0.6,
+          strokeOpacity: strokeOpacity,
           label: false,
           // Store hyperedge data for click event detection (reference: HypergraphViewer)
           hyperedge: hyperedge,
@@ -185,61 +178,43 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
             labelText: (d: any) => d.data?.label || d.id,
             fontSize: 12,
           },
-          state: {
-            highlight: {
-              fill: '#ffd666',
-              stroke: '#faad14',
-              lineWidth: 2,
-              shadowColor: '#faad14',
-              shadowBlur: 10,
-            },
-            selected: {
-              fill: '#1890ff',
-              stroke: '#1890ff',
-              lineWidth: 3,
-              shadowColor: '#1890ff',
-              shadowBlur: 10,
-            },
-          },
         },
         edge: {
           style: {
             labelText: (d: any) => d.data?.label || '',
             fontSize: 10,
-            stroke: '#B4E5FF',
-            opacity: 0.6,
-          },
-          state: {
-            highlight: {
-              stroke: '#faad14',
-              lineWidth: 2,
-              opacity: 1,
-            },
+            ...HYPERGRAPH_EDGE_DEFAULT_STYLE,
           },
         },
         data: {
           nodes: data.nodes.map((node: any) => {
             const isSelected = selectedItems.has(node.id);
             const isHighlighted = node.highlighted === true;
+            const visualState = getNodeVisualState(isSelected, isHighlighted);
+            const nodeStyle = HYPERGRAPH_NODE_STYLES[visualState];
+            
             return {
               ...node,
               style: {
                 ...node.style,
-                fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
-                lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
-                stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
+                fill: nodeStyle.fill,
+                lineWidth: nodeStyle.lineWidth,
+                stroke: nodeStyle.stroke,
               },
             };
           }),
-          edges: (data.edges || []).map((edge: any) => ({
-            ...edge,
-            style: {
-              stroke: 'transparent',
-              lineWidth: 0,
-              opacity: 0,
-              ...edge.style,
-            },
-          })),
+          edges: (data.edges || []).map((edge: any) => {
+            const edgeStyle = HYPERGRAPH_EDGE_STYLES[VisualState.NORMAL];
+            return {
+              ...edge,
+              style: {
+                stroke: edgeStyle.stroke,
+                lineWidth: edgeStyle.lineWidth,
+                opacity: edgeStyle.opacity,
+                ...edge.style,
+              },
+            };
+          }),
         },
         plugins: bubbleSetPlugins,
         autoFit: 'center',
@@ -437,29 +412,31 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         data.nodes?.forEach((node: any) => {
           const isSelected = selectedItems.has(node.id);
           const isHighlighted = node.highlighted === true;
+          const visualState = getNodeVisualState(isSelected, isHighlighted);
+          const nodeStyle = HYPERGRAPH_NODE_STYLES[visualState];
+          
           graphRef.current?.updateNodeData([{
             id: node.id,
             style: {
-              fill: isHighlighted ? "#FFD700" : (isSelected ? "#1890ff" : "#87d068"),
-              lineWidth: isSelected ? 3 : (isHighlighted ? 2 : 1),
-              stroke: isHighlighted ? "#FFA500" : (isSelected ? "#1890ff" : "#666"),
+              fill: nodeStyle.fill,
+              lineWidth: nodeStyle.lineWidth,
+              stroke: nodeStyle.stroke,
             },
           }]);
         });
 
         // Update hyperedge (bubble-sets) styles based on selection and highlight state
-        data.hyperedges?.forEach((hyperedge: any) => {
+        data.hyperedges?.forEach((hyperedge: any, index: number) => {
           const isSelected = selectedItems.has(hyperedge.id);
           const isHighlighted = hyperedge.highlighted === true;
-          const originalColors = hyperedgeColorsRef.current.get(hyperedge.id);
-          if (!originalColors) return;
-
-          let activeColors = originalColors;
-          if (isHighlighted) {
-            activeColors = { fill: "#FFD700", stroke: "#FFA500" };
-          } else if (isSelected) {
-            activeColors = SELECTED_HYPEREDGE_COLOR;
-          }
+          
+          // Determine visual state and get corresponding colors and opacities
+          const visualState = isHighlighted 
+            ? VisualState.HIGHLIGHTED 
+            : (isSelected ? VisualState.SELECTED : VisualState.NORMAL);
+          const activeColors = getHyperedgeColorByState(visualState, index);
+          const fillOpacity = HYPEREDGE_OPACITY[visualState];
+          const strokeOpacity = HYPEREDGE_STROKE_OPACITY[visualState];
 
           const pluginKey = `bubble-sets-${hyperedge.id}`;
 
@@ -467,9 +444,9 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
             graphRef.current?.updatePlugin({
               key: pluginKey,
               fill: activeColors.fill,
-              fillOpacity: isSelected || isHighlighted ? 0.3 : 0.1,
+              fillOpacity: fillOpacity,
               stroke: activeColors.stroke,
-              strokeOpacity: isSelected || isHighlighted ? 1 : 0.6,
+              strokeOpacity: strokeOpacity,
               labelBackgroundFill: activeColors.stroke,
             });
           } catch (e) {
