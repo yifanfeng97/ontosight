@@ -3,8 +3,19 @@ export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
 export { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 export { Input } from "@/components/ui/input"
 export { Badge, badgeVariants } from "@/components/ui/badge"
-export { ScrollArea } from "@/components/ui/scroll-area"
+export { ScrollArea, ScrollBar } from "@/components/ui/scroll-area"
 export { Separator } from "@/components/ui/separator"
 export { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert"
-export { ToastProvider, useToast } from "@/components/ui/toast"
-export { default as ItemCard, type ItemCardProps } from "@/components/ui/item-card"
+export {
+  Toaster,
+  useToast,
+  toast,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastClose,
+  ToastActionElement,
+  type ToasterToast,
+} from "@/components/ui/toast"
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip"
+export { Spinner } from "@/components/ui/spinner"

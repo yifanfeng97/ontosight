@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import Layout from "@/components/Layout";
-import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "@/components/ui/toast";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
 
@@ -46,8 +46,9 @@ function AppContent() {
 
 export default function App() {
   return (
-    <ToastProvider>
+    <>
       <AppContent />
-    </ToastProvider>
+      <Toaster />
+    </>
   );
 }

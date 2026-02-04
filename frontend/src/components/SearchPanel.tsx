@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
@@ -73,28 +74,33 @@ export default function SearchPanel() {
   };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Search</h3>
-      
-      <div className="flex gap-2">
-        <Input
-          placeholder="Search nodes..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSearch();
-          }}
-          className="flex-1"
-        />
-        <Button
-          onClick={handleClear}
-          variant="outline"
-          size="sm"
-          title="Clear search"
-        >
-          <X className="w-4 h-4" />
-        </Button>
-      </div>
+    <TooltipProvider>
+      <div className="space-y-3">
+        <h3 className="text-sm font-semibold text-foreground">Search</h3>
+        
+        <div className="flex gap-2">
+          <Input
+            placeholder="Search nodes..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch();
+            }}
+            className="flex-1"
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={handleClear}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Clear search</TooltipContent>
+          </Tooltip>
+        </div>
 
       {loading && (
         <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
@@ -116,24 +122,32 @@ export default function SearchPanel() {
           </div>
 
           <div className="flex gap-2 justify-center">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handlePreviousResult}
-              disabled={highlightedIds.length === 0}
-              title="Previous result (↑)"
-            >
-              <ChevronUp className="w-4 h-4" />
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleNextResult}
-              disabled={highlightedIds.length === 0}
-              title="Next result (↓)"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handlePreviousResult}
+                  disabled={highlightedIds.length === 0}
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Previous result (↑)</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleNextResult}
+                  disabled={highlightedIds.length === 0}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Next result (↓)</TooltipContent>
+            </Tooltip>
           </div>
 
           <div className="space-y-1 max-h-96 overflow-y-auto border rounded-md">
@@ -160,5 +174,6 @@ export default function SearchPanel() {
         </div>
       )}
     </div>
+    </TooltipProvider>
   );
 }

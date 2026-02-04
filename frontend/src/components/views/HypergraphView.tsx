@@ -45,7 +45,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   const hyperedgeColorsRef = useRef<Map<string, { fill: string; stroke: string }>>(new Map()); // Store original colors
   const selectedItemsRef = useRef(new Map());
   const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -74,14 +74,20 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       clearSelection();
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
-      addToast('Search panel activated', 'info');
+      toast({
+        title: "Search",
+        description: "Search panel activated",
+      });
     } else if (evt.key === 'Delete' && selectedItemsRef.current.size > 0) {
       selectedItemsRef.current.forEach((item) => {
         deselectItem(item.id);
       });
-      addToast('Selection cleared', 'success');
+      toast({
+        title: "Cleared",
+        description: "Selection cleared",
+      });
     }
-  }, [clearSelection, deselectItem, addToast]);
+  }, [clearSelection, deselectItem, toast]);
 
   const highlightSearchResults = useCallback((graph: any) => {
     if (!graph) return;

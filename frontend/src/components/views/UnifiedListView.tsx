@@ -1,11 +1,10 @@
 import { memo, useState, useEffect } from "react";
-import { ItemCard } from "@/components/ui";
+import { ItemCard, DataGridContainer } from "@/components/display";
 import { useVisualization } from "@/hooks/useVisualization";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface UnifiedListViewProps {
-  title?: string;
   type: "node" | "edge" | "hyperedge" | "item";
   fetchFunction: (page: number, pageSize: number) => Promise<any>;
 }
@@ -15,7 +14,6 @@ interface UnifiedListViewProps {
  * Supports nodes, edges, hyperedges, and items
  */
 const UnifiedListView = memo(function UnifiedListView({
-  title,
   type,
   fetchFunction,
 }: UnifiedListViewProps) {
@@ -51,62 +49,37 @@ const UnifiedListView = memo(function UnifiedListView({
     loadPage(0);
   }, []);
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-96 text-destructive">
-        <p>{error}</p>
-      </div>
-    );
-  }
-
-  if (loading && items.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-96 text-muted-foreground">
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
-  if (items.length === 0 && !loading) {
-    return (
-      <div className="flex items-center justify-center h-96 text-muted-foreground">
-        <p>No {type}s found</p>
-      </div>
-    );
-  }
-
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      {title && (
-        <div className="flex-shrink-0 border-b border-border bg-muted/30 px-4 py-3">
-          <h2 className="text-lg font-semibold">
-            {title} ({total})
-          </h2>
-        </div>
-      )}
-
       {/* Grid of cards */}
       <div className="flex-1 overflow-auto">
-        <div className="p-4 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max">
-          {items.map((item: any) => {
-            const itemId = item.id;
-            const label = item.label || "Unknown";
-            const isHighlighted = item.highlighted === true;
+        <div className="p-4">
+          <DataGridContainer 
+            loading={loading && items.length === 0}
+            error={error}
+            isEmpty={items.length === 0 && !loading}
+            emptyMessage={`No ${type}s found`}
+            loadingMessage="Loading..."
+          >
+            {items.map((item: any) => {
+              const itemId = item.id;
+              const label = item.label || "Unknown";
+              const isHighlighted = item.highlighted === true;
 
-            return (
-              <ItemCard
-                key={itemId}
-                id={itemId}
-                label={label}
-                type={type}
-                metadata={item}
-                isSelected={selectedItems.has(itemId)}
-                isHighlighted={isHighlighted}
-                onClick={() => selectItem(itemId, type)}
-              />
-            );
-          })}
+              return (
+                <ItemCard
+                  key={itemId}
+                  id={itemId}
+                  label={label}
+                  type={type}
+                  metadata={item}
+                  isSelected={selectedItems.has(itemId)}
+                  isHighlighted={isHighlighted}
+                  onClick={() => selectItem(itemId, type)}
+                />
+              );
+            })}
+          </DataGridContainer>
         </div>
       </div>
 
@@ -121,6 +94,7 @@ const UnifiedListView = memo(function UnifiedListView({
             size="sm"
             onClick={() => loadPage(Math.max(0, page - 1))}
             disabled={page === 0 || loading}
+            title="Previous page"
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
@@ -129,6 +103,7 @@ const UnifiedListView = memo(function UnifiedListView({
             size="sm"
             onClick={() => loadPage(page + 1)}
             disabled={!hasNextPage || loading}
+            title="Next page"
           >
             <ChevronRight className="w-4 h-4" />
           </Button>

@@ -96,14 +96,12 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                 </TabsContent>
                 <TabsContent value="nodes" className="h-full border-0 p-0">
                   <UnifiedListView
-                    title="All Nodes"
                     type="node"
                     fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
                   />
                 </TabsContent>
                 <TabsContent value="edges" className="h-full border-0 p-0">
                   <UnifiedListView
-                    title="All Edges"
                     type="edge"
                     fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
                   />
@@ -118,14 +116,12 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                 </TabsContent>
                 <TabsContent value="nodes" className="h-full border-0 p-0">
                   <UnifiedListView
-                    title="All Nodes"
                     type="node"
                     fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
                   />
                 </TabsContent>
                 <TabsContent value="hyperedges" className="h-full border-0 p-0">
                   <UnifiedListView
-                    title="All Hyperedges"
                     type="hyperedge"
                     fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
                   />
@@ -140,7 +136,6 @@ export default function VisualizationRouter({ data, meta }: VisualizationRouterP
                 </TabsContent>
                 <TabsContent value="items" className="h-full border-0 p-0">
                   <UnifiedListView
-                    title="All Items"
                     type="item"
                     fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
                   />

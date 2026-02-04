@@ -49,7 +49,7 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
   const graphRef = useRef<Graph | null>(null);
   const selectedItemsRef = useRef(new Map());
   const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
-  const { addToast } = useToast();
+  const { toast } = useToast();
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -86,14 +86,20 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       clearSelection();
     } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
       evt.preventDefault();
-      addToast('搜索面板已激活', 'info');
+      toast({
+        title: "搜索激活",
+        description: "搜索面板已激活",
+      });
     } else if (evt.key === 'Delete' && selectedItemsRef.current.size > 0) {
       selectedItemsRef.current.forEach((item) => {
         deselectItem(item.id);
       });
-      addToast('已清除选中项', 'success');
+      toast({
+        title: "已清除",
+        description: "已清除选中项",
+      });
     }
-  }, [clearSelection, deselectItem, addToast]);
+  }, [clearSelection, deselectItem, toast]);
 
   // 高亮搜索结果
   const highlightSearchResults = useCallback((graph: Graph) => {

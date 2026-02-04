@@ -8,7 +8,7 @@
 import React, { useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/utils";
+import { cn, extractDisplayMetadata, formatMetadataValue } from "@/utils";
 import { getCardStateClasses, UI_CARD_TYPE_COLORS, UI_CARD_TYPE_BORDERS } from "@/theme/visual-config";
 
 export interface ItemCardProps {
@@ -55,18 +55,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
 }) => {
   // Extract metadata entries to display from raw data
   const displayEntries = useMemo(() => {
-    if (!metadata) return [];
-    
-    const rawData = metadata.raw;
-    
-    if (rawData && typeof rawData === 'object' && !Array.isArray(rawData)) {
-      return Object.entries(rawData).slice(0, 2);
-    }
-    
-    // Fallback: show other metadata fields
-    return Object.entries(metadata)
-      .filter(([key]) => !['raw', 'data'].includes(key))
-      .slice(0, 2);
+    return extractDisplayMetadata(metadata);
   }, [metadata]);
 
   // Get state classes from global visual config
@@ -101,11 +90,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
               {displayEntries.map(([key, value], idx) => (
                 <div key={key} className="truncate">
                   <span className="font-semibold">{key}:</span>{" "}
-                  {typeof value === "string"
-                    ? value.length > 15 ? value.substring(0, 15) + "..." : value
-                    : typeof value === "object"
-                    ? JSON.stringify(value).substring(0, 15) + "..."
-                    : String(value)}
+                  {formatMetadataValue(value)}
                   {idx === 1 && displayEntries.length === 2 && metadata && Object.keys(metadata).length > 2 ? "..." : ""}
                 </div>
               ))}
