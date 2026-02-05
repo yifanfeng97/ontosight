@@ -71,21 +71,21 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
           className
         )}
       >
-        {/* Header (if title or headerContent provided) */}
+        {/* Header (if title or headerContent provided) - minimalist design */}
         {(title || headerContent || showClose) && (
-          <div className="flex items-center justify-between px-5 py-4 border-b border-border/20 backdrop-blur-sm">
+          <div className="flex items-center justify-between px-5 py-3 transition-all duration-200">
             {headerContent ? (
               headerContent
             ) : (
-              <h3 className="text-sm font-semibold text-foreground">{title}</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">{title}</h3>
             )}
             {showClose && onClose && (
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg hover:bg-muted/50 transition-colors"
+                className="shrink-0 p-1 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-200 opacity-0 hover:opacity-100 group-hover:opacity-100"
                 aria-label="Close"
               >
-                <X className="w-4 h-4 text-muted-foreground hover:text-foreground" />
+                <X className="w-3.5 h-3.5" />
               </button>
             )}
           </div>

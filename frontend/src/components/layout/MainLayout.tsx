@@ -75,7 +75,7 @@ export default function MainLayout() {
             <Island
               title="Statistics"
               position="custom"
-              className="w-full"
+              className="w-full group"
             >
               <StatsPanel stats={meta.stats} />
             </Island>
@@ -88,7 +88,7 @@ export default function MainLayout() {
               position="custom"
               showClose
               onClose={clearHistory}
-              className="w-full flex-1 min-h-0 overflow-y-auto"
+              className="w-full flex-1 min-h-0 overflow-y-auto group"
             >
               <DetailPanel />
             </Island>

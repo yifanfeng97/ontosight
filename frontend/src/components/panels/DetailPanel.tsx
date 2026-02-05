@@ -55,7 +55,7 @@ export default function DetailPanel() {
                 )}
 
                 <div
-                  className="relative px-3 py-3 space-y-1.5 rounded-lg bg-white/5 border border-border/30 shadow-sm transition-all duration-200 hover:bg-white/8 hover:border-primary/50 hover:translate-x-1 hover:shadow-md"
+                  className="relative px-3 py-3 space-y-1.5 rounded-lg bg-white/5 border border-border/12 shadow-sm transition-all duration-200 hover:bg-white/8 hover:border-border/25 hover:translate-x-1 hover:shadow-md group"
                 >
                   {/* Accent dot removed - now using border for definition */}
                   
@@ -72,10 +72,10 @@ export default function DetailPanel() {
                     </div>
                     <button
                       onClick={() => removeFromHistory(item.id)}
-                      className="shrink-0 p-1 hover:bg-white/10 rounded transition-all duration-200"
+                      className="shrink-0 p-1 rounded transition-all duration-200 opacity-0 group-hover:opacity-100 hover:bg-white/10 text-muted-foreground hover:text-foreground"
                       title="Remove from history"
                     >
-                      <X className="w-3.5 h-3.5 text-muted-foreground hover:text-foreground transition-colors" />
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
