@@ -1,6 +1,6 @@
 /**
  * 统一的视觉配置文件
- * 集中管理所有UI元素的三种状态（normal、selected、highlighted）的样式
+ * 集中管理所有UI元素的三种状态（default、selected、highlighted）的样式
  * 包括G6图表、超边、卡片等所有可视化组件
  * 
  * 配色系统：Modern Digital Palette
@@ -35,25 +35,69 @@ export const COLOR_PALETTE = {
 };
 
 /**
+ * 文本配色系统
+ * 采用极简设计，确保在各种背景下清晰易读
+ */
+export const TEXT_PALETTE = {
+  label: '#1E293B',         // Slate-800 - 标准标签颜色
+  description: '#64748B',   // Slate-500 - 次要描述
+  contrast: '#FFFFFF',      // 白色 - 用于反差背景
+  halo: '#FFFFFF',          // 描边（Halo）色，确保在深色/复杂背景下清晰
+};
+
+/**
+ * 基础标签配置
+ * 统一图中所有元素的文字呈现方式
+ */
+export const BASE_LABEL_CONFIG = {
+  fontSize: 12,
+  fontFamily: 'system-ui, -apple-system, sans-serif',
+  fontWeight: 400,
+  fill: TEXT_PALETTE.label,
+  stroke: TEXT_PALETTE.halo,
+  lineWidth: 2,             // Halo 效果
+  lineAppendWidth: 2,
+};
+
+/**
+ * 布局间隔配置
+ * 统一调整力导向图的碰撞半径和元素间距
+ */
+export const LAYOUT_SPACING_CONFIG = {
+  nodeCollideRadius: 40,    // 节点碰撞半径
+  labelOffset: 15,          // 标签相对于中心点的偏移
+};
+
+/**
  * 可视化状态枚举
  */
 export enum VisualState {
-  NORMAL = 'normal',
+  DEFAULT = 'default',
   SELECTED = 'selected',
   HIGHLIGHTED = 'highlighted',
 }
 
 /**
  * G6图表中的节点样式配置
- * 包含normal、selected、highlighted三种状态
+ * 包含default、selected、highlighted三种状态
  */
 export const GRAPH_NODE_STYLES = {
-  [VisualState.NORMAL]: {
+  [VisualState.DEFAULT]: {
     fill: COLOR_PALETTE.success.normal,
     stroke: COLOR_PALETTE.success.normal,
     lineWidth: 1.5,
     shadowBlur: 8,
     shadowColor: `${COLOR_PALETTE.success.normal}40`,
+    // 基础标签配置
+    labelFill: TEXT_PALETTE.label,
+    labelStroke: TEXT_PALETTE.halo,
+    labelLineWidth: 2,
+    labelFontSize: 12,
+    labelBackgroundFill: 'rgba(255, 255, 255, 0.7)',
+    labelBackgroundRadius: 4,
+    labelPadding: [2, 4],
+    labelPlacement: 'bottom' as any,
+    labelDy: 8,
   },
   [VisualState.SELECTED]: {
     fill: COLOR_PALETTE.primary.normal,
@@ -61,6 +105,9 @@ export const GRAPH_NODE_STYLES = {
     lineWidth: 2.5,
     shadowBlur: 16,
     shadowColor: `${COLOR_PALETTE.primary.glow}60`,
+    // 选中时标签加粗，对比度更高
+    labelFontWeight: 700,
+    labelFill: TEXT_PALETTE.label,
   },
   [VisualState.HIGHLIGHTED]: {
     fill: COLOR_PALETTE.warning.normal,
@@ -68,16 +115,19 @@ export const GRAPH_NODE_STYLES = {
     lineWidth: 2.5,
     shadowBlur: 20,
     shadowColor: `${COLOR_PALETTE.warning.normal}70`,
+    // 高亮时标签更醒目
+    labelFontWeight: 700,
+    labelFill: '#000000',
   },
 };
 
 /**
  * G6图表中的边样式配置
- * 包含normal、selected、highlighted三种状态
+ * 包含default、selected、highlighted三种状态
  * 采用更清晰的设计，提升边线在毛玻璃背景下的可见性
  */
 export const GRAPH_EDGE_STYLES = {
-  [VisualState.NORMAL]: {
+  [VisualState.DEFAULT]: {
     stroke: COLOR_PALETTE.neutral.light,
     lineWidth: 1.2,
     opacity: 0.55,
@@ -105,7 +155,7 @@ export const HYPERGRAPH_NODE_STYLES = {
  * 超图中的边样式配置（超图中边通常不显示）
  */
 export const HYPERGRAPH_EDGE_STYLES = {
-  [VisualState.NORMAL]: {
+  [VisualState.DEFAULT]: {
     stroke: 'transparent',
     lineWidth: 0,
     opacity: 0,
@@ -153,7 +203,7 @@ export const HYPEREDGE_COLOR_PALETTE = [
  * 用于在selected或highlighted时覆盖调色板颜色
  */
 export const HYPEREDGE_STATE_OVERRIDES = {
-  [VisualState.NORMAL]: null, // 使用调色板颜色
+  [VisualState.DEFAULT]: null, // 使用调色板颜色
   [VisualState.SELECTED]: {
     fill: COLOR_PALETTE.primary.normal,
     stroke: COLOR_PALETTE.primary.hover,
@@ -169,22 +219,34 @@ export const HYPEREDGE_STATE_OVERRIDES = {
  * 在毛玻璃背景下的透明度调整，确保清晰度
  */
 export const HYPEREDGE_OPACITY = {
-  [VisualState.NORMAL]: 0.08,      // 极淡，像一片能量场
+  [VisualState.DEFAULT]: 0.08,      // 极淡，像一片能量场
   [VisualState.SELECTED]: 0.25,    // 更清晰的选中状态
   [VisualState.HIGHLIGHTED]: 0.3,  // 高亮状态最清晰
 };
 
 export const HYPEREDGE_STROKE_OPACITY = {
-  [VisualState.NORMAL]: 0.6,
+  [VisualState.DEFAULT]: 0.6,
   [VisualState.SELECTED]: 1,
   [VisualState.HIGHLIGHTED]: 1,
+};
+
+/**
+ * 超边标签配置
+ * 统一超图气泡集的标签样式
+ */
+export const HYPEREDGE_LABEL_CONFIG = {
+  labelFontSize: 14,
+  labelFontWeight: 600,
+  labelFill: TEXT_PALETTE.label,
+  labelStroke: TEXT_PALETTE.halo,
+  labelLineWidth: 3,             // 气泡集背景较深，加厚 Halo
 };
 
 /**
  * UI卡片（ItemCard）的Tailwind样式配置
  */
 export const UI_CARD_STATE_CLASSES = {
-  [VisualState.NORMAL]: 'shadow hover:shadow-md',
+  [VisualState.DEFAULT]: 'shadow hover:shadow-md',
   [VisualState.SELECTED]: 'shadow-lg ring-2 ring-offset-2 ring-primary',
   [VisualState.HIGHLIGHTED]: 'shadow-lg ring-2 ring-offset-2 ring-yellow-400 bg-yellow-50',
 };
@@ -218,7 +280,7 @@ export const UI_CARD_TYPE_BORDERS: Record<'node' | 'edge' | 'hyperedge' | 'item'
 export function getNodeVisualState(isSelected: boolean, isHighlighted: boolean): VisualState {
   if (isHighlighted) return VisualState.HIGHLIGHTED;
   if (isSelected) return VisualState.SELECTED;
-  return VisualState.NORMAL;
+  return VisualState.DEFAULT;
 }
 
 /**
@@ -230,7 +292,7 @@ export function getNodeVisualState(isSelected: boolean, isHighlighted: boolean):
 export function getEdgeVisualState(isSelected: boolean, isHighlighted: boolean): VisualState {
   if (isHighlighted) return VisualState.HIGHLIGHTED;
   if (isSelected) return VisualState.SELECTED;
-  return VisualState.NORMAL;
+  return VisualState.DEFAULT;
 }
 
 /**
@@ -245,7 +307,7 @@ export function getHyperedgeColorByIndex(index: number) {
 /**
  * 获取超边在当前状态下的颜色
  * @param visualState 当前视觉状态
- * @param paletteIndex 调色板中的索引（用于normal状态）
+ * @param paletteIndex 调色板中的索引（用于default状态）
  * @returns { fill: string, stroke: string }
  */
 export function getHyperedgeColorByState(visualState: VisualState, paletteIndex: number) {
@@ -265,5 +327,5 @@ export function getHyperedgeColorByState(visualState: VisualState, paletteIndex:
 export function getCardStateClasses(isSelected: boolean, isHighlighted: boolean): string {
   if (isHighlighted) return UI_CARD_STATE_CLASSES[VisualState.HIGHLIGHTED];
   if (isSelected) return UI_CARD_STATE_CLASSES[VisualState.SELECTED];
-  return UI_CARD_STATE_CLASSES[VisualState.NORMAL];
+  return UI_CARD_STATE_CLASSES[VisualState.DEFAULT];
 }

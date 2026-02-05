@@ -1,7 +1,12 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, EdgeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
-import { GRAPH_NODE_STYLES, GRAPH_EDGE_STYLES, VisualState } from "@/theme/visual-config";
+import { 
+  GRAPH_NODE_STYLES, 
+  GRAPH_EDGE_STYLES, 
+  VisualState, 
+  LAYOUT_SPACING_CONFIG 
+} from "@/theme/visual-config";
 
 interface GraphViewProps {
   data: any;
@@ -86,7 +91,7 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         layout: {
           type: 'force',
           collide: {
-            radius: (d: any) => (d.size || 32) / 2 + 5,
+            radius: LAYOUT_SPACING_CONFIG.nodeCollideRadius,
           },
           preventOverlap: true,
           animated: true,
@@ -101,8 +106,7 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         node: {
           style: {
             labelText: (d: any) => d.data?.label || d.id,
-            fontSize: 12,
-            ...GRAPH_NODE_STYLES[VisualState.NORMAL],
+            ...GRAPH_NODE_STYLES[VisualState.DEFAULT],
           },
           state: {
             [VisualState.SELECTED]: GRAPH_NODE_STYLES[VisualState.SELECTED],
@@ -112,8 +116,10 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         edge: {
           style: {
             labelText: (d: any) => d.data?.label || '',
-            fontSize: 10,
-            ...GRAPH_EDGE_STYLES[VisualState.NORMAL],
+            ...GRAPH_EDGE_STYLES[VisualState.DEFAULT],
+            // 边缘标签默认为辅助信息，稍微淡一些
+            labelFill: '#94a3b8',
+            labelFontSize: 10,
           },
           state: {
             [VisualState.SELECTED]: GRAPH_EDGE_STYLES[VisualState.SELECTED],
