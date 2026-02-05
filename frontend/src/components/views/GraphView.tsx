@@ -1,159 +1,84 @@
 import { useEffect, useRef, useCallback, memo } from "react";
 import { Graph, NodeEvent, EdgeEvent, CanvasEvent } from "@antv/g6";
 import { useVisualization } from "@/hooks/useVisualization";
-import { useToast } from "@/components/core";
-import { GRAPH_NODE_STYLES, GRAPH_EDGE_STYLES, getNodeVisualState, getEdgeVisualState } from "@/theme/visual-config";
+import { GRAPH_NODE_STYLES, GRAPH_EDGE_STYLES, VisualState } from "@/theme/visual-config";
 
 interface GraphViewProps {
   data: any;
-  meta: any;
+  meta?: any;
 }
 
-// 处理平行边，给多条边添加不同的 curveOffset
-function processParallelEdges(edges: any[]) {
-  // 统计每对节点之间的边
-  const edgeMap = new Map<string, any[]>();
-  edges.forEach(edge => {
-    const key = edge.source < edge.target
-      ? `${edge.source}|${edge.target}`
-      : `${edge.target}|${edge.source}`;
-    if (!edgeMap.has(key)) edgeMap.set(key, []);
-    edgeMap.get(key)!.push(edge);
-  });
-
-  // 给每组平行边设置不同的 curveOffset
-  edgeMap.forEach(edgeList => {
-    if (edgeList.length === 1) {
-      // 单条边，保持直线
-      edgeList[0].type = 'line';
-      edgeList[0].style = { ...edgeList[0].style, curveOffset: 0 };
-    } else {
-      // 多条边，分配不同的曲率
-      const mid = (edgeList.length - 1) / 2;
-      edgeList.forEach((edge, i) => {
-        edge.type = 'quadratic'; // 二次贝塞尔曲线
-        // 正负交错分布
-        edge.style = {
-          ...edge.style,
-          curveOffset: (i - mid) * 30 // 30 可调整，越大弯曲越明显
-        };
-      });
-    }
-  });
-
-  return edges;
-}
-
-const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
+/**
+ * GraphView 组件 - 使用 AntV G6 v5 构建的图引擎
+ * 已重构：
+ * 1. 使用 G6 v5 内部状态系统 (State System) 管理选中和高亮
+ * 2. 使用内置 transforms 处理平行边
+ * 3. 移除冗余的样式计算和手动更新逻辑
+ * 4. 移除键盘监听，纯鼠标交互
+ */
+const GraphView = memo(function GraphView({ data }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<Graph | null>(null);
-  const selectedItemsRef = useRef(new Map());
-  const { selectedItems, selectItem, deselectItem, clearSelection, resetTrigger } = useVisualization();
-  const { toast } = useToast();
+  const { selectedItems, selectItem, clearSelection, resetTrigger } = useVisualization();
 
-  // Keep ref in sync with state
-  useEffect(() => {
-    selectedItemsRef.current = selectedItems;
-  }, [selectedItems]);
+  // 统一的状态更新函数
+  const updateGraphStates = useCallback((currentData: any, currentSelection: Map<string, any>) => {
+    const graph = graphRef.current;
+    if (!graph || graph.destroyed || !currentData) return;
 
-  const handleNodeClick = useCallback(
-    (evt: any) => {
-      const nodeId = evt.target?.id;
-      if (!nodeId) return;
+    const stateMap: Record<string, string[]> = {};
 
-      selectItem(nodeId, "node");
-    },
-    [selectItem]
-  );
+    // 处理节点状态
+    currentData.nodes?.forEach((node: any) => {
+      const states: string[] = [];
+      if (currentSelection.has(node.id)) states.push(VisualState.SELECTED);
+      if (node.highlighted) states.push(VisualState.HIGHLIGHTED);
+      stateMap[node.id] = states;
+    });
 
-  const handleEdgeClick = useCallback(
-    (evt: any) => {
-      const edgeId = evt.target?.id;
-      if (!edgeId) return;
+    // 处理边状态
+    currentData.edges?.forEach((edge: any) => {
+      const states: string[] = [];
+      if (currentSelection.has(edge.id)) states.push(VisualState.SELECTED);
+      if (edge.highlighted) states.push(VisualState.HIGHLIGHTED);
+      stateMap[edge.id] = states;
+    });
 
-      selectItem(edgeId, "edge");
-    },
-    [selectItem]
-  );
-
-  const handleCanvasClick = useCallback(() => {
-    clearSelection();
-  }, [clearSelection]);
-
-  // 键盘快捷键处理
-  const handleKeyDown = useCallback((evt: KeyboardEvent) => {
-    if (evt.key === 'Escape') {
-      clearSelection();
-    } else if ((evt.ctrlKey || evt.metaKey) && evt.key === 'f') {
-      evt.preventDefault();
-      toast({
-        title: "搜索激活",
-        description: "搜索面板已激活",
-      });
-    } else if (evt.key === 'Delete' && selectedItemsRef.current.size > 0) {
-      selectedItemsRef.current.forEach((item) => {
-        deselectItem(item.id);
-      });
-      toast({
-        title: "已清除",
-        description: "已清除选中项",
-      });
-    }
-  }, [clearSelection, deselectItem, toast]);
-
-  // 高亮搜索结果
-  const highlightSearchResults = useCallback((graph: Graph) => {
-    if (!graph) return;
-
-    try {
-      const allNodeData = graph.getNodeData() || [];
-
-      allNodeData.forEach((nodeData: any) => {
-        const nodeId = nodeData.id;
-        // 只检查数据中的 highlighted 标志位，不再从搜索结果中获取
-        if (nodeData.highlighted) {
-          graph.setElementState(nodeId, ['highlight']);
-        } else {
-          // 清除节点的高亮状态（保留其他状态如selected）
-          const currentStates = graph.getElementState(nodeId) || [];
-          const newStates = currentStates.filter((state: string) => state !== 'highlight');
-          graph.setElementState(nodeId, newStates);
-        }
-      });
-    } catch (error) {
-      console.warn("[GraphView] Error in highlightSearchResults:", error);
-    }
+    graph.setElementState(stateMap);
   }, []);
 
-  // Initialize graph only on mount
-  const hasInitializedRef = useRef(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
-
+  // 处理数据更新 (受控于 data prop)
   useEffect(() => {
-    if (!containerRef.current || !data?.nodes) {
-      return;
+    const graph = graphRef.current;
+    if (graph && !graph.destroyed && data) {
+      graph.setData(data);
+      graph.render().then(() => {
+        if (!graph.destroyed) {
+          updateGraphStates(data, selectedItems);
+        }
+      });
     }
+  }, [data, updateGraphStates, selectedItems]);
 
-    // Only initialize on first mount, not on every data prop change
-    if (!hasInitializedRef.current) {
-      hasInitializedRef.current = true;
-    } else {
-      // If already initialized, skip recreation unless resetTrigger triggered
-      return;
-    }
+  // 单独监听选中项变化（数据未变时，仅切换状态，极快）
+  useEffect(() => {
+    updateGraphStates(data, selectedItems);
+  }, [selectedItems, data, updateGraphStates]);
 
-    // Clean up old graph (only on first mount)
+  // 图实例生命周期管理（全量重建）
+  useEffect(() => {
+    if (!containerRef.current || !data?.nodes) return;
+
+    // 如果已存在实例，先销毁
     if (graphRef.current) {
-      try {
-        graphRef.current.destroy();
-      } catch (e) {
-        console.warn("[GraphView] Error destroying previous graph:", e);
-      }
-      graphRef.current = null;
+      graphRef.current.destroy();
     }
+
+    // 准备基础数据（重置逻辑下清除坐标以触发冷启动布局）
+    const initialNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+    const initialEdges = data.edges || [];
 
     try {
-      // Create new graph with proper G6 v5 config
       const graph = new Graph({
         container: containerRef.current,
         width: containerRef.current.clientWidth,
@@ -161,342 +86,106 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         layout: {
           type: 'force',
           collide: {
-            radius: (d: any) => d.size / 2,
+            radius: (d: any) => (d.size || 32) / 2 + 5,
           },
           preventOverlap: true,
+          animated: true,
         },
         behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+        transforms: [
+          {
+            type: 'process-parallel-edges',
+            distance: 30, // 平行边间距
+          },
+        ],
         node: {
           style: {
             labelText: (d: any) => d.data?.label || d.id,
             fontSize: 12,
+            ...GRAPH_NODE_STYLES[VisualState.NORMAL],
+          },
+          state: {
+            [VisualState.SELECTED]: GRAPH_NODE_STYLES[VisualState.SELECTED],
+            [VisualState.HIGHLIGHTED]: GRAPH_NODE_STYLES[VisualState.HIGHLIGHTED],
           },
         },
         edge: {
           style: {
             labelText: (d: any) => d.data?.label || '',
             fontSize: 10,
+            ...GRAPH_EDGE_STYLES[VisualState.NORMAL],
+          },
+          state: {
+            [VisualState.SELECTED]: GRAPH_EDGE_STYLES[VisualState.SELECTED],
+            [VisualState.HIGHLIGHTED]: GRAPH_EDGE_STYLES[VisualState.HIGHLIGHTED],
           },
         },
         data: {
-          nodes: data.nodes.map((node: any) => {
-            const isSelected = selectedItems.has(node.id);
-            const isHighlighted = node.highlighted === true;
-            const visualState = getNodeVisualState(isSelected, isHighlighted);
-            const nodeStyle = GRAPH_NODE_STYLES[visualState];
-            
-            return {
-              ...node,
-              style: {
-                ...node.style,
-                fill: nodeStyle.fill,
-                lineWidth: nodeStyle.lineWidth,
-                stroke: nodeStyle.stroke,
-              },
-            };
-          }),
-          edges: processParallelEdges(data.edges || []).map((edge: any) => {
-            const isSelected = selectedItems.has(edge.id);
-            const isHighlighted = edge.highlighted === true;
-            const visualState = getEdgeVisualState(isSelected, isHighlighted);
-            const edgeStyle = GRAPH_EDGE_STYLES[visualState];
-            
-            return {
-              ...edge,
-              style: {
-                stroke: edgeStyle.stroke,
-                lineWidth: edgeStyle.lineWidth,
-                opacity: edgeStyle.opacity,
-                ...edge.style,
-              },
-            };
-          }),
+          nodes: initialNodes,
+          edges: initialEdges,
         },
       });
 
-        // Register event handlers with proper G6 v5 API
-        const nodeClickHandler = handleNodeClick;
-        const edgeClickHandler = handleEdgeClick;
-        const canvasClickHandler = handleCanvasClick;
+      // 事件监听
+      graph.on(NodeEvent.CLICK, (evt: any) => {
+        const id = evt.target.id;
+        if (id) selectItem(id, 'node');
+      });
 
-        graph.on(NodeEvent.CLICK, nodeClickHandler);
-        graph.on(EdgeEvent.CLICK, edgeClickHandler);
-        graph.on(CanvasEvent.CLICK, canvasClickHandler);
+      graph.on(EdgeEvent.CLICK, (evt: any) => {
+        const id = evt.target.id;
+        if (id) selectItem(id, 'edge');
+      });
 
-        // 双击节点展开相邻节点
-        graph.on(NodeEvent.DBLCLICK, (evt: any) => {
-          try {
-            const nodeId = evt.target?.id;
-            if (!nodeId) return;
-            const neighbors = graph.getNeighborNodesData(nodeId) || [];
-            neighbors.forEach((neighbor: any) => {
-              graph.setElementState(neighbor.id, ['highlight']);
-            });
-          } catch (error) {
-            console.warn("[GraphView] Error in dblclick handler:", error);
+      graph.on(CanvasEvent.CLICK, () => {
+        clearSelection();
+      });
+
+      // 双击：高亮相邻节点
+      graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+        const nodeId = evt.target.id;
+        if (!nodeId) return;
+        const neighbors = graph.getNeighborNodesData(nodeId) || [];
+        const stateMapping: Record<string, string[]> = {};
+        neighbors.forEach((n: any) => {
+          const currentStates = graph.getElementState(n.id) || [];
+          if (!currentStates.includes(VisualState.HIGHLIGHTED)) {
+            stateMapping[n.id] = [...currentStates, VisualState.HIGHLIGHTED];
           }
         });
+        graph.setElementState(stateMapping);
+      });
 
-      // Render and then apply search highlighting
+      // 渲染
       graph.render().then(() => {
-        if (graph.destroyed) return;
-        console.log("[GraphView] Graph rendered successfully");
-        highlightSearchResults(graph);
-      }).catch((error: any) => {
         if (!graph.destroyed) {
-          console.error("[GraphView] Error rendering graph:", error);
+          updateGraphStates(data, selectedItems);
         }
       });
 
-      // Handle resize
+      graphRef.current = graph;
+
+      // 响应式处理
       const handleResize = () => {
         if (containerRef.current && graphRef.current) {
-          try {
-            graphRef.current.resize(
-              containerRef.current.clientWidth,
-              containerRef.current.clientHeight
-            );
-          } catch (error) {
-            console.warn("[GraphView] Error resizing graph:", error);
-          }
+          graphRef.current.resize(
+            containerRef.current.clientWidth,
+            containerRef.current.clientHeight
+          );
         }
       };
 
       window.addEventListener("resize", handleResize);
-      window.addEventListener("keydown", handleKeyDown);
-      graphRef.current = graph;
 
-      // Cleanup function
       return () => {
         window.removeEventListener("resize", handleResize);
-        window.removeEventListener("keydown", handleKeyDown);
-
-        if (graphRef.current) {
-          try {
-            // Unregister event handlers
-            graphRef.current.off(NodeEvent.CLICK, nodeClickHandler);
-            graphRef.current.off(EdgeEvent.CLICK, edgeClickHandler);
-            graphRef.current.off(CanvasEvent.CLICK, canvasClickHandler);
-
-            // Destroy graph
-            graphRef.current.destroy();
-            graphRef.current = null;
-          } catch (e) {
-            console.warn("[GraphView] Error in cleanup:", e);
-          }
-        }
+        graph.destroy();
+        graphRef.current = null;
       };
     } catch (error) {
-      console.error("[GraphView] Error creating graph:", error);
-      return () => { }; // Return empty cleanup
+      console.error("[GraphView] Error initializing graph:", error);
     }
-  }, []); // Empty dependency array - initialize only on mount
-
-  // Destroy and recreate graph when reset is triggered (full refresh with cold-start layout)
-  useEffect(() => {
-    if (!resetTrigger || !containerRef.current || !data?.nodes) return;
-
-    // Cancel any previous recreation operation
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    // Create new abort controller for this operation
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
-
-    const fullRecreate = async () => {
-      try {
-        console.log("[GraphView] Full re-initialization triggered by resetTrigger");
-        
-        // Check if operation was cancelled
-        if (abortController.signal.aborted) {
-          console.log("[GraphView] Recreation cancelled");
-          return;
-        }
-        
-        // Destroy old graph completely
-        if (graphRef.current) {
-          try {
-            graphRef.current.destroy();
-          } catch (e) {
-            console.warn("[GraphView] Error destroying graph during reset:", e);
-          }
-          graphRef.current = null;
-        }
-        
-        // Check again if operation was cancelled
-        if (abortController.signal.aborted) {
-          return;
-        }
-        
-        // Reset initialization flag to allow re-initialization
-        hasInitializedRef.current = false;
-        
-        // Clear node coordinates for cold-start layout
-        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
-        
-        // Create fresh graph instance
-        const graph = new Graph({
-          container: containerRef.current!,
-          width: containerRef.current!.clientWidth,
-          height: containerRef.current!.clientHeight,
-          layout: {
-            type: 'force',
-            collide: {
-              radius: (d: any) => d.size / 2,
-            },
-            preventOverlap: true,
-          },
-          behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
-          node: {
-            style: {
-              labelText: (d: any) => d.data?.label || d.id,
-              fontSize: 12,
-            },
-          },
-          edge: {
-            style: {
-              labelText: (d: any) => d.data?.label || '',
-              fontSize: 10,
-            },
-          },
-          data: {
-            nodes: cleanNodes.map((node: any) => {
-              const isSelected = selectedItems.has(node.id);
-              const isHighlighted = node.highlighted === true;
-              const visualState = getNodeVisualState(isSelected, isHighlighted);
-              const nodeStyle = GRAPH_NODE_STYLES[visualState];
-              
-              return {
-                ...node,
-                style: {
-                  ...node.style,
-                  fill: nodeStyle.fill,
-                  lineWidth: nodeStyle.lineWidth,
-                  stroke: nodeStyle.stroke,
-                },
-              };
-            }),
-            edges: processParallelEdges(data.edges || []).map((edge: any) => {
-              const isSelected = selectedItems.has(edge.id);
-              const isHighlighted = edge.highlighted === true;
-              const visualState = getEdgeVisualState(isSelected, isHighlighted);
-              const edgeStyle = GRAPH_EDGE_STYLES[visualState];
-              
-              return {
-                ...edge,
-                style: {
-                  stroke: edgeStyle.stroke,
-                  lineWidth: edgeStyle.lineWidth,
-                  opacity: edgeStyle.opacity,
-                  ...edge.style,
-                },
-              };
-            }),
-          },
-        });
-
-        // Check if cancelled before registering handlers
-        if (abortController.signal.aborted) {
-          graph.destroy();
-          return;
-        }
-
-        // Register event handlers
-        graph.on(NodeEvent.CLICK, handleNodeClick);
-        graph.on(EdgeEvent.CLICK, handleEdgeClick);
-        graph.on(CanvasEvent.CLICK, handleCanvasClick);
-
-        graph.on(NodeEvent.DBLCLICK, (evt: any) => {
-          try {
-            const nodeId = evt.target?.id;
-            if (!nodeId) return;
-            const neighbors = graph.getNeighborNodesData(nodeId) || [];
-            neighbors.forEach((neighbor: any) => {
-              graph.setElementState(neighbor.id, ['highlight']);
-            });
-          } catch (error) {
-            console.warn("[GraphView] Error in dblclick handler:", error);
-          }
-        });
-
-        // Render and apply highlighting
-        await graph.render();
-        
-        // Check if cancelled after render completes
-        if (abortController.signal.aborted || graph.destroyed) {
-          if (!graph.destroyed) graph.destroy();
-          return;
-        }
-        
-        highlightSearchResults(graph);
-        
-        graphRef.current = graph;
-        console.log("[GraphView] Full re-initialization completed");
-      } catch (error) {
-        console.warn("[GraphView] Error during full recreation:", error);
-      }
-    };
-
-    fullRecreate();
-  }, [resetTrigger]);
-
-  // Update node/edge styles when selection changes (without redrawing graph)
-  useEffect(() => {
-    if (!graphRef.current || graphRef.current.destroyed || !data) return;
-
-    const updateStyles = async () => {
-      try {
-        const graph = graphRef.current;
-        if (!graph || graph.destroyed) return;
-
-        // Update node styles based on selection and highlight state
-        data.nodes?.forEach((node: any) => {
-          if (!graph || graph.destroyed) return;
-          const isSelected = selectedItems.has(node.id);
-          const isHighlighted = node.highlighted === true;
-          const visualState = getNodeVisualState(isSelected, isHighlighted);
-          const nodeStyle = GRAPH_NODE_STYLES[visualState];
-          
-          graph.updateNodeData([{
-            id: node.id,
-            style: {
-              fill: nodeStyle.fill,
-              lineWidth: nodeStyle.lineWidth,
-              stroke: nodeStyle.stroke,
-            },
-          }]);
-        });
-
-        // Update edge styles based on selection and highlight state
-        data.edges?.forEach((edge: any) => {
-          if (!graph || graph.destroyed) return;
-          const isSelected = selectedItems.has(edge.id);
-          const isHighlighted = edge.highlighted === true;
-          const visualState = getEdgeVisualState(isSelected, isHighlighted);
-          const edgeStyle = GRAPH_EDGE_STYLES[visualState];
-          
-          graph.updateEdgeData([{
-            id: edge.id,
-            style: {
-              stroke: edgeStyle.stroke,
-              lineWidth: edgeStyle.lineWidth,
-              opacity: edgeStyle.opacity,
-            },
-          }]);
-        });
-
-        // Draw immediately to show style changes
-        if (!graph || graph.destroyed) return;
-        await graph.draw();
-      } catch (error) {
-        console.warn("[GraphView] Error updating selection styles:", error);
-      }
-    };
-
-    updateStyles();
-  }, [selectedItems, data]);
+  }, [resetTrigger]); // 仅在手动重核或挂载时触发全量重建
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">
