@@ -53,8 +53,8 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
     },
     ref
   ) => {
-    // Base glass-morphic styles - updated for consistency and transparency
-    const baseStyles = "flex flex-col rounded-[2.5rem] bg-white/20 backdrop-blur-2xl border border-white/40 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[280px]";
+    // Base glass-morphic styles - updated for maximum transparency and color bleed
+    const baseStyles = "flex flex-col rounded-[2.5rem] bg-white/[0.03] backdrop-blur-[64px] border border-white/20 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] overflow-hidden min-w-[280px]";
 
     // Position-specific classes
     const positionStyles = {

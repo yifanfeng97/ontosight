@@ -239,10 +239,13 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
       // Render and then apply search highlighting
       graph.render().then(() => {
+        if (graph.destroyed) return;
         console.log("[GraphView] Graph rendered successfully");
         highlightSearchResults(graph);
-      }).catch((error) => {
-        console.error("[GraphView] Error rendering graph:", error);
+      }).catch((error: any) => {
+        if (!graph.destroyed) {
+          console.error("[GraphView] Error rendering graph:", error);
+        }
       });
 
       // Handle resize
@@ -422,8 +425,8 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         await graph.render();
         
         // Check if cancelled after render completes
-        if (abortController.signal.aborted) {
-          graph.destroy();
+        if (abortController.signal.aborted || graph.destroyed) {
+          if (!graph.destroyed) graph.destroy();
           return;
         }
         
@@ -441,18 +444,22 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
   // Update node/edge styles when selection changes (without redrawing graph)
   useEffect(() => {
-    if (!graphRef.current || !data) return;
+    if (!graphRef.current || graphRef.current.destroyed || !data) return;
 
     const updateStyles = async () => {
       try {
+        const graph = graphRef.current;
+        if (!graph || graph.destroyed) return;
+
         // Update node styles based on selection and highlight state
         data.nodes?.forEach((node: any) => {
+          if (!graph || graph.destroyed) return;
           const isSelected = selectedItems.has(node.id);
           const isHighlighted = node.highlighted === true;
           const visualState = getNodeVisualState(isSelected, isHighlighted);
           const nodeStyle = GRAPH_NODE_STYLES[visualState];
           
-          graphRef.current?.updateNodeData([{
+          graph.updateNodeData([{
             id: node.id,
             style: {
               fill: nodeStyle.fill,
@@ -464,12 +471,13 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
 
         // Update edge styles based on selection and highlight state
         data.edges?.forEach((edge: any) => {
+          if (!graph || graph.destroyed) return;
           const isSelected = selectedItems.has(edge.id);
           const isHighlighted = edge.highlighted === true;
           const visualState = getEdgeVisualState(isSelected, isHighlighted);
           const edgeStyle = GRAPH_EDGE_STYLES[visualState];
           
-          graphRef.current?.updateEdgeData([{
+          graph.updateEdgeData([{
             id: edge.id,
             style: {
               stroke: edgeStyle.stroke,
@@ -480,7 +488,8 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
         });
 
         // Draw immediately to show style changes
-        await graphRef.current?.draw();
+        if (!graph || graph.destroyed) return;
+        await graph.draw();
       } catch (error) {
         console.warn("[GraphView] Error updating selection styles:", error);
       }

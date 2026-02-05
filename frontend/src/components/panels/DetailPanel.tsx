@@ -55,7 +55,7 @@ export default function DetailPanel() {
                 )}
 
                 <div
-                  className="relative px-3 py-3 space-y-1.5 rounded-lg bg-white/5 border border-border/12 shadow-sm transition-all duration-200 hover:bg-white/8 hover:border-border/25 hover:translate-x-1 hover:shadow-md group"
+                  className="relative px-3 py-3 space-y-1.5 rounded-lg bg-white/[0.02] border border-border/10 shadow-sm transition-all duration-200 hover:bg-white/[0.05] hover:border-border/20 hover:translate-x-1 hover:shadow-md group"
                 >
                   {/* Accent dot removed - now using border for definition */}
                   

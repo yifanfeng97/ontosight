@@ -78,31 +78,25 @@ const FloatingTools = memo(function FloatingTools({
         </button>
       </div>
 
-      {/* 搜索抽屉 */}
+      {/* Search Capsule - Modern Raycast-style HUD */}
       {openDrawer === "search" && hasSearch && (
-        <div className="fixed right-0 top-0 h-full w-[400px] bg-background/95 backdrop-blur-md border-l border-border shadow-2xl z-40 animate-in slide-in-from-right duration-300">
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-lg font-semibold">Search</h2>
-              <button
-                onClick={() => setOpenDrawer(null)}
-                className="p-1 rounded-md hover:bg-muted transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto">
-              <div className="p-4">
-                <SearchPanel />
-              </div>
+        <div className="fixed top-8 left-1/2 -translate-x-1/2 w-[550px] max-w-[90vw] z-[120] animate-in slide-in-from-top-4 fade-in duration-300">
+          <div className="bg-white/[0.03] backdrop-blur-[64px] rounded-[2rem] border-t border-l border-white/40 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.02] overflow-hidden relative">
+            {/* Grain Texture Overlay */}
+            <div 
+              className="absolute inset-0 z-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
+              style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
+              }}
+            />
+            <div className="relative z-10">
+              <SearchPanel />
             </div>
           </div>
         </div>
       )}
 
-      {/* 聊天抽屉 */}
+      {/* Chat Drawer - Keep sidebar for vertical reading flow */}
       {openDrawer === "chat" && hasChat && (
         <div className="fixed right-0 top-0 h-full w-[400px] bg-background/95 backdrop-blur-md border-l border-border shadow-2xl z-40 animate-in slide-in-from-right duration-300">
           <div className="flex flex-col h-full">

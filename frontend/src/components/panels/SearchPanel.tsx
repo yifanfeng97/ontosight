@@ -1,40 +1,12 @@
-import { useState, useCallback } from "react";
-import { ChevronUp, ChevronDown, Search, X } from "lucide-react";
+import { useState } from "react";
+import { Search, X, Loader2 } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
-import type { GraphData, HypergraphData, ListData } from "@/types/api";
 
 export default function SearchPanel() {
   const [query, setQuery] = useState("");
-  const [currentResultIndex, setCurrentResultIndex] = useState(0);
-  const { data: searchData, loading, search, clear } = useSearch();
-  const { setData, meta } = useVisualization();
-
-  // Extract highlighted item IDs based on visualization type
-  const getHighlightedIds = (): string[] => {
-    if (!searchData) return [];
-    
-    const vizType = meta?.type;
-    if (vizType === "graph") {
-      const graphData = searchData as GraphData;
-      return [
-        ...(graphData.nodes?.filter(n => n.highlighted)?.map(n => n.id) || []),
-        ...(graphData.edges?.filter(e => e.highlighted)?.map(e => e.id) || []),
-      ];
-    } else if (vizType === "hypergraph") {
-      const hgData = searchData as HypergraphData;
-      return [
-        ...(hgData.nodes?.filter(n => n.highlighted)?.map(n => n.id) || []),
-        ...(hgData.hyperedges?.filter(e => e.highlighted)?.map(e => e.id) || []),
-      ];
-    } else if (vizType === "list") {
-      const listData = searchData as ListData;
-      return listData.items?.filter(i => i.highlighted)?.map(i => i.id) || [];
-    }
-    return [];
-  };
-
-  const highlightedIds = getHighlightedIds();
+  const { loading, search, clear } = useSearch();
+  const { setData, triggerLayoutReset } = useVisualization();
 
   const handleSearch = async () => {
     if (query.trim()) {
@@ -42,117 +14,67 @@ export default function SearchPanel() {
       // Update main visualization with search results data
       if (result) {
         setData(result);
+        // Force a layout reset/re-render to reflect the new data structure
+        triggerLayoutReset();
       }
-      setCurrentResultIndex(0);
     }
   };
 
   const handleClear = () => {
     setQuery("");
     clear();
-    setCurrentResultIndex(0);
   };
 
-  const handlePreviousResult = useCallback(() => {
-    if (highlightedIds.length === 0) return;
-    const newIndex = currentResultIndex === 0 ? highlightedIds.length - 1 : currentResultIndex - 1;
-    setCurrentResultIndex(newIndex);
-  }, [highlightedIds, currentResultIndex]);
 
-  const handleNextResult = useCallback(() => {
-    if (highlightedIds.length === 0) return;
-    const newIndex = currentResultIndex === highlightedIds.length - 1 ? 0 : currentResultIndex + 1;
-    setCurrentResultIndex(newIndex);
-  }, [highlightedIds, currentResultIndex]);
-
-  const handleResultClick = (index: number) => {
-    setCurrentResultIndex(index);
-  };
 
   return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-foreground">Search</h3>
+    <div className="flex flex-col gap-0 w-full relative group">
+      {/* Container with golden highlight accent at the top */}
+      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent pointer-events-none rounded-t-3xl" />
       
-      <div className="flex gap-2">
+      <div className="flex items-center gap-3 px-5 py-3.5">
+        {/* Modern Search Icon with subtle pulse when loading */}
+        <div className="flex-shrink-0">
+          {loading ? (
+            <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
+          ) : (
+            <Search className="w-5 h-5 text-slate-400 group-hover:text-amber-500 transition-colors duration-300" />
+          )}
+        </div>
+
+        {/* Minimalist Input Field */}
         <input
-          placeholder="Search nodes..."
+          placeholder="Search items, nodes, or relationships..."
           value={query}
+          autoFocus
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSearch();
+            if (e.key === "Escape") handleClear();
           }}
-          className="flex-1 px-3 py-2 bg-muted/50 rounded-md border border-border focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all text-sm"
+          className="flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-slate-400 text-slate-800 placeholder:font-light"
         />
-        <button
-          onClick={handleClear}
-          className="p-2 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-          title="Clear search"
-        >
-          <X className="w-4 h-4" />
-        </button>
+
+        {/* Result Counter and Navigation Pills - Integrated HUD style */}
+
+        {/* Clear Action */}
+        {query && (
+          <button
+            onClick={handleClear}
+            className="p-1.5 rounded-full hover:bg-black/5 transition-all text-slate-400 hover:text-slate-600 active:rotate-90"
+            title="Clear search (Esc)"
+          >
+            <X className="w-4.5 h-4.5" />
+          </button>
+        )}
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
-          <div className="animate-spin h-4 w-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
-          Searching...
-        </div>
-      )}
-
-      {!loading && highlightedIds.length === 0 && query && (
-        <div className="text-sm text-muted-foreground text-center py-4">No results found</div>
-      )}
-
-      {highlightedIds.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="inline-block px-2.5 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs font-semibold">
-              {highlightedIds.length} highlighted ({currentResultIndex + 1}/{highlightedIds.length})
-            </span>
-          </div>
-
-          <div className="flex gap-2 justify-center">
-            <button
-              onClick={handlePreviousResult}
-              disabled={highlightedIds.length === 0}
-              className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Previous result"
-            >
-              <ChevronUp className="w-4 h-4" />
-            </button>
-            <button
-              onClick={handleNextResult}
-              disabled={highlightedIds.length === 0}
-              className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              title="Next result"
-            >
-              <ChevronDown className="w-4 h-4" />
-            </button>
-          </div>
-
-          <div className="space-y-1 max-h-96 overflow-y-auto border border-border rounded-md">
-            {highlightedIds.map((id, index) => (
-              <div
-                key={index}
-                onClick={() => handleResultClick(index)}
-                className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
-                  index === currentResultIndex
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-muted"
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono opacity-75">#{index + 1}</span>
-                  <span className="flex-1 truncate">{id}</span>
-                  {index === currentResultIndex && (
-                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-semibold">Current</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Meta/Keyboard Hints Layer - Raycast aesthetic */}
+      <div className="px-5 pb-2.5 flex justify-end">
+        <span className="text-[9px] text-slate-300 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.1em]">
+          Press <kbd className="font-sans px-1.5 py-0.5 bg-white/60 rounded border border-black/5 shadow-sm text-slate-500 normal-case tracking-normal">↵ Enter</kbd> to search
+        </span>
+      </div>
     </div>
   );
 }

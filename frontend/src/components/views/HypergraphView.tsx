@@ -341,12 +341,25 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         }
       });
 
-      // Render and apply search highlighting
+      // Render and apply search highlighting with comprehensive destruction checks
       graph.render().then(() => {
+        // Pre-highlight validation check
+        if (graph.destroyed) {
+          console.warn("[HypergraphView] Graph destroyed before highlighting");
+          return;
+        }
         console.log("[HypergraphView] Graph rendered successfully");
         highlightSearchResults(graph);
+        
+        // Post-highlight validation check
+        if (graph.destroyed) {
+          console.warn("[HypergraphView] Graph destroyed after highlighting");
+          return;
+        }
       }).catch((error: any) => {
-        console.error("[HypergraphView] Error rendering graph:", error);
+        if (!graph.destroyed) {
+          console.error("[HypergraphView] Error rendering graph:", error);
+        }
       });
 
       // Handle resize
@@ -616,24 +629,56 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         });
 
         // Render and apply highlighting
+        // Pre-render validation check
+        if (abortController.signal.aborted || graph.destroyed) {
+          console.log("[HypergraphView] Graph destroyed before render");
+          if (graph && !graph.destroyed) graph.destroy();
+          return;
+        }
+
         await graph.render();
         
-        // Check if cancelled after render completes
-        if (abortController.signal.aborted) {
-          graph.destroy();
+        // Post-render validation check
+        if (abortController.signal.aborted || graph.destroyed) {
+          console.log("[HypergraphView] Graph destroyed after render");
+          if (graph && !graph.destroyed) graph.destroy();
           return;
         }
         
         highlightSearchResults(graph);
+
+        // Post-highlight validation check
+        if (abortController.signal.aborted || graph.destroyed) {
+          console.log("[HypergraphView] Graph destroyed after highlight");
+          if (graph && !graph.destroyed) graph.destroy();
+          return;
+        }
         
         graphRef.current = graph;
         console.log("[HypergraphView] Full re-initialization completed");
       } catch (error) {
         console.warn("[HypergraphView] Error during full recreation:", error);
+        if (graphRef.current && !graphRef.current.destroyed) {
+          try {
+            graphRef.current.destroy();
+          } catch (e) {
+            console.warn("[HypergraphView] Error destroying graph in error handler:", e);
+          }
+          graphRef.current = null;
+        }
       }
     };
 
-    fullRecreate();
+    fullRecreate().catch(error => {
+      console.error("[HypergraphView] Unhandled error in fullRecreate:", error);
+    });
+
+    // Cleanup for abort controller
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [resetTrigger]);
 
   // Update hyperedge and node styles when selection changes (without redrawing)
@@ -641,6 +686,9 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     if (!graphRef.current || !data) return;
 
     const updateStyles = async () => {
+      const graph = graphRef.current;
+      if (!graph || graph.destroyed) return;
+
       try {
         // Update node styles based on selection and highlight state
         data.nodes?.forEach((node: any) => {
@@ -649,7 +697,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           const visualState = getNodeVisualState(isSelected, isHighlighted);
           const nodeStyle = HYPERGRAPH_NODE_STYLES[visualState];
           
-          graphRef.current?.updateNodeData([{
+          graph.updateNodeData([{
             id: node.id,
             style: {
               fill: nodeStyle.fill,
@@ -675,7 +723,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           const pluginKey = `bubble-sets-${hyperedge.id}`;
 
           try {
-            graphRef.current?.updatePlugin({
+            graph.updatePlugin({
               key: pluginKey,
               fill: activeColors.fill,
               fillOpacity: fillOpacity,
@@ -688,8 +736,20 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           }
         });
 
+        // Pre-draw validation check
+        if (graph.destroyed) {
+          console.warn("[HypergraphView] Graph destroyed before draw");
+          return;
+        }
+
         // Draw immediately to show style changes
-        await graphRef.current?.draw();
+        await graph.draw();
+
+        // Post-draw validation check
+        if (graph.destroyed) {
+          console.warn("[HypergraphView] Graph destroyed after draw");
+          return;
+        }
       } catch (error) {
         console.warn("[HypergraphView] Error updating selection styles:", error);
       }

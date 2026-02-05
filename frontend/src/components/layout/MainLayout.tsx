@@ -20,14 +20,14 @@ export default function MainLayout() {
   const isGridViewMode = ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-background">
+    <div className="relative w-screen h-screen overflow-hidden bg-slate-50">
       {/* Canvas Background with subtle grid pattern */}
       <div 
-        className={`absolute inset-0 z-0 transition-opacity duration-300 ${isGridViewMode ? "opacity-20" : "opacity-100"}`}
+        className={`absolute inset-0 z-0 transition-opacity duration-300 ${isGridViewMode ? "opacity-20" : "opacity-40"}`}
         style={{
           backgroundImage: `
-            linear-gradient(to right, hsl(var(--border)/0.1) 1px, transparent 1px),
-            linear-gradient(to bottom, hsl(var(--border)/0.1) 1px, transparent 1px)
+            linear-gradient(to right, rgba(0,0,0,0.02) 1px, transparent 1px),
+            linear-gradient(to bottom, rgba(0,0,0,0.02) 1px, transparent 1px)
           `,
           backgroundSize: '40px 40px',
         }}
@@ -37,6 +37,11 @@ export default function MainLayout() {
       <div 
         className={`absolute inset-0 z-0 transition-all duration-300`}
       >
+        {/* White overlay for grid modes to keep it clean instead of grey */}
+        {isGridViewMode && (
+          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] z-[5] pointer-events-none" />
+        )}
+
         {/* Loading State */}
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
