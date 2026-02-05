@@ -1,6 +1,7 @@
 import { useState, memo } from "react";
-import { Search, MessageSquare, X } from "lucide-react";
+import { Search, MessageSquare, X, RotateCcw } from "lucide-react";
 import { cn } from "@/utils";
+import { useVisualization } from "@/hooks/useVisualization";
 import SearchPanel from "@/components/panels/SearchPanel";
 import ChatPanel from "@/components/panels/ChatPanel";
 
@@ -12,13 +13,14 @@ interface FloatingToolsProps {
 type DrawerType = "search" | "chat" | null;
 
 /**
- * FloatingTools - 右侧悬浮工具栏
- * 包含搜索和聊天按钮，点击展开对应的抽屉
+ * FloatingTools - 右侧中间浮动工具栏（玻璃长刃风格）
+ * 采用超轻态的垂直玻璃设计，强调纵向延伸感和通透性
  */
 const FloatingTools = memo(function FloatingTools({
   hasSearch = true,
   hasChat = true,
 }: FloatingToolsProps) {
+  const { loading, triggerLayoutReset } = useVisualization();
   const [openDrawer, setOpenDrawer] = useState<DrawerType>(null);
 
   const toggleDrawer = (type: DrawerType) => {
@@ -32,16 +34,17 @@ const FloatingTools = memo(function FloatingTools({
 
   return (
     <>
-      {/* 右侧悬浮工具栏 */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-3">
+      {/* 右侧中间浮动工具组 - 玻璃长刃风格 */}
+      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 p-2 rounded-full bg-background/20 backdrop-blur-3xl border-l border-t border-white/60 ring-1 ring-black/5 shadow-[0_0_25px_rgba(0,0,0,0.1)]"
+      >
         {hasSearch && (
           <button
             onClick={() => toggleDrawer("search")}
             className={cn(
-              "p-3 rounded-full shadow-lg transition-all duration-200",
+              "p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900",
               openDrawer === "search"
-                ? "bg-primary text-primary-foreground scale-110"
-                : "bg-background/80 backdrop-blur-md border border-border hover:scale-110 hover:shadow-xl"
+                ? "bg-primary/20 text-primary shadow-sm"
+                : "hover:bg-background/40"
             )}
             title="Search"
           >
@@ -52,16 +55,27 @@ const FloatingTools = memo(function FloatingTools({
           <button
             onClick={() => toggleDrawer("chat")}
             className={cn(
-              "p-3 rounded-full shadow-lg transition-all duration-200",
+              "p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900",
               openDrawer === "chat"
-                ? "bg-primary text-primary-foreground scale-110"
-                : "bg-background/80 backdrop-blur-md border border-border hover:scale-110 hover:shadow-xl"
+                ? "bg-primary/20 text-primary shadow-sm"
+                : "hover:bg-background/40"
             )}
             title="Chat Assistant"
           >
             <MessageSquare className="w-5 h-5" />
           </button>
         )}
+        {/* 分隔线 */}
+        <div className="h-px bg-background/40 mx-1" />
+        {/* 重置按钮 - 集成到工具组 */}
+        <button
+          onClick={() => triggerLayoutReset()}
+          disabled={loading}
+          className="p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-background/40 disabled:opacity-50 disabled:cursor-not-allowed group"
+          title="Reset view layout and fetch fresh data"
+        >
+          <RotateCcw className={`w-5 h-5 transition-transform duration-300 group-hover:rotate-180 ${loading ? 'animate-spin' : ''}`} />
+        </button>
       </div>
 
       {/* 搜索抽屉 */}

@@ -112,13 +112,25 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
     }
   }, []);
 
+  // Initialize graph only on mount
+  const hasInitializedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     // 检查 G6 是否已加载（通过 index.html 中的 script 标签引入）
     if (!containerRef.current || !data?.nodes || !window.G6) {
       return;
     }
 
-    // Clean up old graph
+    // Only initialize on first mount, not on every data prop change
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+    } else {
+      // If already initialized, skip recreation unless resetTrigger triggered
+      return;
+    }
+
+    // Clean up old graph (only on first mount)
     if (graphRef.current) {
       try {
         graphRef.current.destroy();
@@ -363,50 +375,247 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       console.error("[HypergraphView] Error creating graph:", error);
       return () => { };
     }
-  }, [data, handleNodeClick, handleHyperedgeClick, handleKeyDown, highlightSearchResults]);
+  }, []); // Empty dependency array - initialize only on mount
 
-  // Re-render graph when reset is triggered (full refresh with cold-start layout)
+  // Destroy and recreate graph when reset is triggered (full refresh with cold-start layout)
   useEffect(() => {
-    if (!graphRef.current || resetTrigger === 0) return;
+    if (!resetTrigger || !containerRef.current || !data?.nodes || !window.G6) return;
 
-    const fullRerender = async () => {
+    // Cancel any previous recreation operation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this operation
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const fullRecreate = async () => {
       try {
-        // Validate graph instance before proceeding
-        if (!graphRef.current) {
-          console.warn("[HypergraphView] Graph instance is null, skipping re-render");
+        console.log("[HypergraphView] Full re-initialization triggered by resetTrigger");
+        
+        // Check if operation was cancelled
+        if (abortController.signal.aborted) {
+          console.log("[HypergraphView] Recreation cancelled");
+          return;
+        }
+        
+        // Destroy old graph completely
+        if (graphRef.current) {
+          try {
+            graphRef.current.destroy();
+          } catch (e) {
+            console.warn("[HypergraphView] Error destroying graph during reset:", e);
+          }
+          graphRef.current = null;
+        }
+        
+        // Check again if operation was cancelled
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        // Reset initialization flag to allow re-initialization
+        hasInitializedRef.current = false;
+        
+        // Clear old hyperedge data before rebuilding
+        hyperedgesRef.current.clear();
+        hyperedgeColorsRef.current.clear();
+
+        // Build bubble-sets plugins from hyperedges
+        const bubbleSetPlugins = (data.hyperedges || []).map((hyperedge, index) => {
+          const paletteColors = getHyperedgeColorByIndex(index);
+          hyperedgesRef.current.set(hyperedge.id, hyperedge);
+          hyperedgeColorsRef.current.set(hyperedge.id, paletteColors);
+
+          const isSelected = selectedItems.has(hyperedge.id);
+          const isHighlighted = hyperedge.highlighted === true;
+          
+          const visualState = isHighlighted 
+            ? VisualState.HIGHLIGHTED 
+            : (isSelected ? VisualState.SELECTED : VisualState.NORMAL);
+          const activeColors = getHyperedgeColorByState(visualState, index);
+          const fillOpacity = HYPEREDGE_OPACITY[visualState];
+          const strokeOpacity = HYPEREDGE_STROKE_OPACITY[visualState];
+
+          return {
+            key: `bubble-sets-${hyperedge.id}`,
+            type: 'bubble-sets',
+            members: hyperedge.linked_nodes,
+            fill: activeColors.fill,
+            fillOpacity: fillOpacity,
+            stroke: activeColors.stroke,
+            strokeOpacity: strokeOpacity,
+            label: false,
+            hyperedge: hyperedge,
+          };
+        });
+
+        // Clear node coordinates for cold-start layout
+        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+        
+        // Create fresh graph instance
+        const graph = new window.G6.Graph({
+          container: containerRef.current!,
+          width: containerRef.current!.clientWidth,
+          height: containerRef.current!.clientHeight,
+          layout: {
+            type: 'force',
+            collide: {
+              radius: (d: any) => d.size / 2,
+            },
+            preventOverlap: true,
+          },
+          behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+          node: {
+            style: {
+              labelText: (d: any) => d.data?.label || d.id,
+              fontSize: 12,
+            },
+          },
+          edge: {
+            style: {
+              labelText: (d: any) => d.data?.label || '',
+              fontSize: 10,
+              ...HYPERGRAPH_EDGE_DEFAULT_STYLE,
+            },
+          },
+          data: {
+            nodes: cleanNodes.map((node: any) => {
+              const isSelected = selectedItems.has(node.id);
+              const isHighlighted = node.highlighted === true;
+              const visualState = getNodeVisualState(isSelected, isHighlighted);
+              const nodeStyle = HYPERGRAPH_NODE_STYLES[visualState];
+              
+              return {
+                ...node,
+                style: {
+                  ...node.style,
+                  fill: nodeStyle.fill,
+                  lineWidth: nodeStyle.lineWidth,
+                  stroke: nodeStyle.stroke,
+                },
+              };
+            }),
+            edges: (data.edges || []).map((edge: any) => {
+              const edgeStyle = HYPERGRAPH_EDGE_STYLES[VisualState.NORMAL];
+              return {
+                ...edge,
+                style: {
+                  stroke: edgeStyle.stroke,
+                  lineWidth: edgeStyle.lineWidth,
+                  opacity: edgeStyle.opacity,
+                  ...edge.style,
+                },
+              };
+            }),
+          },
+          plugins: bubbleSetPlugins,
+          autoFit: 'center',
+        });
+
+        // Check if cancelled before registering handlers
+        if (abortController.signal.aborted) {
+          graph.destroy();
           return;
         }
 
-        console.log("[HypergraphView] Full re-render with cold-start layout...");
-        
-        // Clear node coordinates for cold-start layout (not based on current positions)
-        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
-        
-        // Re-set data with cleaned coordinates
-        // setData() will trigger layout reconciliation automatically
-        graphRef.current.setData({
-          nodes: cleanNodes,
-          edges: data.edges || [],
+        // Register event handlers for nodes
+        graph.on("node:click", handleNodeClick);
+
+        // Helper function to handle bubble-sets click
+        const handleBubbleSetsEvent = (evt: any) => {
+          if (evt.targetType === "bubble-sets") {
+            const target = evt.target?.options || evt.target;
+            if (target) {
+              if (target.hyperedge?.id) {
+                handleHyperedgeClick(target.hyperedge.id);
+                return true;
+              }
+              const key = target.key?.replace('bubble-sets-', '');
+              if (key && hyperedgesRef.current.has(key)) {
+                handleHyperedgeClick(key);
+                return true;
+              }
+              for (const [hyperedgeId, hyperedgeData] of hyperedgesRef.current.entries()) {
+                const targetMembers = target.members || [];
+                if (hyperedgeData.node_set &&
+                    targetMembers.length === hyperedgeData.node_set.length &&
+                    targetMembers.every((m: string) => hyperedgeData.node_set.includes(m))) {
+                  handleHyperedgeClick(hyperedgeId);
+                  return true;
+                }
+              }
+            }
+          }
+          return false;
+        };
+
+        // Register global click handler
+        graph.on("click", (evt: any) => {
+          if (handleBubbleSetsEvent(evt)) {
+            return;
+          }
+          if (evt.targetType === "node") {
+            return;
+          }
+          if (evt.targetType === "canvas") {
+            clearSelection();
+            return;
+          }
         });
+
+        graph.on("pointerdown", (evt: any) => {
+          if (evt.targetType === "bubble-sets") {
+            handleBubbleSetsEvent(evt);
+          }
+        });
+
+        graph.on("pointermove", (evt: any) => {
+          if (evt.targetType === "bubble-sets") {
+            if (containerRef.current) {
+              containerRef.current.style.cursor = "pointer";
+            }
+          } else if (evt.targetType === "canvas") {
+            if (containerRef.current) {
+              containerRef.current.style.cursor = "default";
+            }
+          }
+        });
+
+        graph.on("node:dblclick", (evt: any) => {
+          try {
+            const nodeId = evt.target?.id;
+            if (!nodeId) return;
+            const neighbors = graph.getNeighborNodesData(nodeId) || [];
+            neighbors.forEach((neighbor: any) => {
+              graph.setElementState(neighbor.id, ['highlight']);
+            });
+          } catch (error) {
+            console.warn("[HypergraphView] Error in dblclick handler:", error);
+          }
+        });
+
+        // Render and apply highlighting
+        await graph.render();
         
-        // Full render: triggers data reconciliation -> layout calculation -> drawing
-        // This will also recalculate BubbleSet hyperedge paths
-        // Note: No need to explicitly call stopLayout() - G6 handles this internally
-        await graphRef.current.render();
-        
-        // Re-apply search highlighting after render completes
-        if (graphRef.current) {
-          highlightSearchResults(graphRef.current);
+        // Check if cancelled after render completes
+        if (abortController.signal.aborted) {
+          graph.destroy();
+          return;
         }
         
-        console.log("[HypergraphView] Full re-render completed");
+        highlightSearchResults(graph);
+        
+        graphRef.current = graph;
+        console.log("[HypergraphView] Full re-initialization completed");
       } catch (error) {
-        console.warn("[HypergraphView] Error during full re-render:", error);
+        console.warn("[HypergraphView] Error during full recreation:", error);
       }
     };
 
-    fullRerender();
-  }, [resetTrigger, data, highlightSearchResults]);
+    fullRecreate();
+  }, [resetTrigger]);
 
   // Update hyperedge and node styles when selection changes (without redrawing)
   useEffect(() => {

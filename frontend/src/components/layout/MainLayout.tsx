@@ -4,7 +4,7 @@ import StatsPanel from "@/components/panels/StatsPanel";
 import DetailPanel from "@/components/panels/DetailPanel";
 import FloatingTools from "@/components/layout/FloatingTools";
 import Island from "@/components/core/Island";
-import { RotateCcw, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 export default function MainLayout() {
   const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode, viewMode, clearHistory } = useVisualization();
@@ -66,10 +66,10 @@ export default function MainLayout() {
         {!loading && !error && data && <ViewRouter data={data} meta={meta} />}
       </div>
 
-      {/* Floating Islands Layer - Always on top of canvas */}
-      <div className="fixed inset-0 z-10 pointer-events-none">
+      {/* Floating Islands Layer - Always on top of everything including Grid Overlay, z-[90] for maximum interaction */}
+      <div className="fixed inset-0 z-[90] pointer-events-none">
         {/* Left Sidebar Island Container - Vertical Stack with relative width */}
-        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-[22vw] min-w-[280px] max-w-[350px] z-40">
+        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-[22vw] min-w-[280px] max-w-[350px]">
           {/* Stats Island - Top Left */}
           {meta?.stats && (
             <Island
@@ -88,7 +88,8 @@ export default function MainLayout() {
               position="custom"
               showClose
               onClose={clearHistory}
-              className="w-full flex-1 min-h-0 overflow-y-auto group"
+              className="w-full flex-1 min-h-0 group"
+              contentClassName="overflow-y-auto"
             >
               <DetailPanel />
             </Island>
@@ -99,20 +100,10 @@ export default function MainLayout() {
         </div>
       </div>
 
-      {/* Reset Button - Absolute positioning above all layers */}
-      {data && (
-        <button
-          onClick={() => triggerLayoutReset()}
-          className="fixed top-4 right-4 z-40 p-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 hover:scale-110 active:scale-95 transition-all duration-200 shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-          disabled={loading}
-          title="Reset view layout and fetch fresh data"
-        >
-          <RotateCcw className={`w-4 h-4 hover:rotate-180 transition-transform duration-300 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      )}
-
-      {/* Floating Toolbar (Search + Chat) */}
-      <FloatingTools hasSearch={hasSearch} hasChat={hasChat} />
+      {/* Floating Toolbar (Search + Chat + Reset) - Absolute priority z-[110] */}
+      <div className="relative z-[110]">
+        <FloatingTools hasSearch={hasSearch} hasChat={hasChat} />
+      </div>
     </div>
   );
 }

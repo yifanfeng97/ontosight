@@ -24,6 +24,8 @@ export interface ItemGalleryProps {
   selectedItems?: Map<string, any> | Set<string>;
   /** Click handler for item selection */
   onItemClick?: (id: string) => void;
+  /** Whether to show type badge on cards */
+  showTypeBadge?: boolean;
   /** Custom render function for each item (overrides default ItemCard rendering) */
   renderItem?: (item: any, index: number) => React.ReactNode;
 }
@@ -55,6 +57,7 @@ const ItemGallery: React.FC<ItemGalleryProps> = ({
   minHeight = "h-96",
   selectedItems = new Set(),
   onItemClick,
+  showTypeBadge = true,
   renderItem,
 }) => {
   const isEmpty = items.length === 0;
@@ -131,6 +134,7 @@ const ItemGallery: React.FC<ItemGalleryProps> = ({
             metadata={item}
             isSelected={isSelected}
             isHighlighted={isHighlighted}
+            showTypeBadge={showTypeBadge}
             onClick={() => onItemClick?.(itemId)}
           />
         );

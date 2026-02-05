@@ -1,12 +1,28 @@
 import { memo, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import ItemGallery from "./components/ItemGallery";
 import { useVisualization } from "@/hooks/useVisualization";
 import { Island } from "@/components/core";
 
 interface PaginatedGridViewProps {
-  type: "node" | "edge" | "hyperedge" | "item";
+  entityType: "node" | "edge" | "hyperedge" | "item";
   fetchFunction: (page: number, pageSize: number) => Promise<any>;
 }
+
+/**
+ * Utility to pluralize entity type for UI display
+ */
+const pluralizeType = (
+  type: "node" | "edge" | "hyperedge" | "item"
+): string => {
+  const pluralMap = {
+    node: "nodes",
+    edge: "edges",
+    hyperedge: "hyperedges",
+    item: "items",
+  };
+  return pluralMap[type];
+};
 
 /**
  * PaginatedGridView - displays paginated entity grid with unified UI
@@ -15,7 +31,7 @@ interface PaginatedGridViewProps {
  * Simplified compared to old UnifiedListView by leveraging EntityGrid component
  */
 const PaginatedGridView = memo(function PaginatedGridView({
-  type,
+  entityType,
   fetchFunction,
 }: PaginatedGridViewProps) {
   const { selectedItems, selectItem } = useVisualization();
@@ -38,8 +54,8 @@ const PaginatedGridView = memo(function PaginatedGridView({
       setTotal(result.total || 0);
       setPage(pageNum);
     } catch (err) {
-      console.error(`Failed to load ${type}s:`, err);
-      setError(`Failed to load ${type}s`);
+      console.error(`Failed to load ${pluralizeType(entityType)}:`, err);
+      setError(`Failed to load ${pluralizeType(entityType)}`);
     } finally {
       setLoading(false);
     }
@@ -61,78 +77,85 @@ const PaginatedGridView = memo(function PaginatedGridView({
       className="w-full h-full flex items-center justify-end overflow-hidden pr-[10vw] relative"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
-      {/* Local backdrop - only show when Gallery is active, contained within this component's context */}
+      {/* Subtle backdrop blur - creates gentle perspective depth, but transparent to layers above */}
       <div 
-        className="absolute inset-0 z-10 pointer-events-auto"
+        className="absolute inset-0 z-10 pointer-events-auto bg-white/[0.01]"
         onClick={handleBackdropClick}
       />
 
-      {/* Island gallery with relative dimensions - positioned to right of left sidebar */}
+      {/* Island gallery with unified style and fixed dimensions to prevent jump but slightly more compact */}
       <Island
         position="custom"
-        className="w-[60vw] max-h-[80vh] z-20 flex flex-col backdrop-blur-md pointer-events-auto relative"
+        className="w-[60vw] h-[72vh] z-20 flex flex-col pointer-events-auto relative border-t border-l border-white/60 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.2)]"
+        contentClassName="p-0"
       >
-        {/* Gallery content with safe padding - no title shown, top-aligned, stops event propagation */}
+        {/* Very subtle noise texture layer */}
         <div 
-          className="flex-1 overflow-auto p-4 flex flex-col items-start"
+          className="absolute inset-0 z-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
+          }}
+        />
+
+        {/* Gallery content - overflow-auto ensures scrollability if screen is small */}
+        <div 
+          className="flex-1 overflow-y-auto overflow-x-hidden p-10 pb-24 flex flex-col items-start relative z-10 custom-scrollbar scroll-smooth"
           onClick={(e) => e.stopPropagation()}
         >
           <ItemGallery
             items={items}
-            itemType={type}
+            itemType={entityType}
             loading={loading && items.length === 0}
             error={error}
             loadingMessage="Loading..."
-            emptyMessage={`No ${type}s found`}
+            emptyMessage={`No ${pluralizeType(entityType)} found`}
             selectedItems={selectedItems}
-            onItemClick={(itemId) => selectItem(itemId, type)}
-            gridClassName="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max w-full"
+            onItemClick={(itemId) => selectItem(itemId, entityType)}
+            showTypeBadge={false}
+            gridClassName="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max w-full"
+            minHeight="min-h-full"
           />
         </div>
 
-        {/* Pagination integrated inside island at bottom */}
+        {/* Floating pagination capsule - shifted slightly lower for tighter fit */}
         {totalPages > 1 && (
           <div 
-            className="flex items-center justify-center gap-3 px-4 py-3 border-t border-border/10"
+            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 p-1.5 rounded-full bg-white/70 backdrop-blur-3xl border border-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] ring-1 ring-black/[0.03] z-20 hover:shadow-[0_15px_40px_rgba(0,0,0,0.15)] transition-shadow duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Previous Button */}
             <button
               onClick={() => loadPage(Math.max(0, page - 1))}
               disabled={page === 0 || loading}
-              className={`p-1.5 rounded-full transition-all duration-200 ${
+              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 ${
                 page > 0 && !loading
-                  ? "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                  : "text-muted-foreground/40 cursor-not-allowed"
+                  ? "hover:bg-white text-foreground cursor-pointer shadow-sm active:scale-95"
+                  : "text-foreground/20 cursor-not-allowed"
               }`}
               title="Previous page"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Page Info */}
-            <div className="text-sm text-muted-foreground font-medium px-2 min-w-[100px] text-center">
-              <span className="text-foreground font-semibold">{page + 1}</span>
-              <span className="mx-1">/</span>
-              <span>{totalPages}</span>
+            <div className="flex items-center gap-2 px-4 py-1.5 bg-black/[0.03] rounded-full text-[12px] font-bold tracking-tight">
+              <span className="text-foreground/80">{page + 1}</span>
+              <span className="text-foreground/20 font-light select-none">/</span>
+              <span className="text-foreground/40">{totalPages}</span>
             </div>
 
             {/* Next Button */}
             <button
               onClick={() => loadPage(page + 1)}
               disabled={page >= totalPages - 1 || loading}
-              className={`p-1.5 rounded-full transition-all duration-200 ${
+              className={`w-9 h-9 flex items-center justify-center rounded-full transition-all duration-300 ${
                 page < totalPages - 1 && !loading
-                  ? "hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer"
-                  : "text-muted-foreground/40 cursor-not-allowed"
+                  ? "hover:bg-white text-foreground cursor-pointer shadow-sm active:scale-95"
+                  : "text-foreground/20 cursor-not-allowed"
               }`}
               title="Next page"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}

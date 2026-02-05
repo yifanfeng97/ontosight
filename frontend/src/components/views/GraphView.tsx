@@ -125,13 +125,24 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
     }
   }, []);
 
-  // Initialize graph when data changes
+  // Initialize graph only on mount
+  const hasInitializedRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   useEffect(() => {
     if (!containerRef.current || !data?.nodes) {
       return;
     }
 
-    // Clean up old graph
+    // Only initialize on first mount, not on every data prop change
+    if (!hasInitializedRef.current) {
+      hasInitializedRef.current = true;
+    } else {
+      // If already initialized, skip recreation unless resetTrigger triggered
+      return;
+    }
+
+    // Clean up old graph (only on first mount)
     if (graphRef.current) {
       try {
         graphRef.current.destroy();
@@ -276,45 +287,157 @@ const GraphView = memo(function GraphView({ data, meta }: GraphViewProps) {
       console.error("[GraphView] Error creating graph:", error);
       return () => { }; // Return empty cleanup
     }
-  }, [data, handleNodeClick, handleEdgeClick, handleCanvasClick, handleKeyDown, highlightSearchResults]);
+  }, []); // Empty dependency array - initialize only on mount
 
-  // Re-render graph when reset is triggered (full refresh with cold-start layout)
+  // Destroy and recreate graph when reset is triggered (full refresh with cold-start layout)
   useEffect(() => {
-    if (!graphRef.current || resetTrigger === 0) return;
+    if (!resetTrigger || !containerRef.current || !data?.nodes) return;
 
-    const fullRerender = async () => {
+    // Cancel any previous recreation operation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    
+    // Create new abort controller for this operation
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    const fullRecreate = async () => {
       try {
-        console.log("[GraphView] Full re-render with cold-start layout...");
+        console.log("[GraphView] Full re-initialization triggered by resetTrigger");
         
-        // Check if graphRef.current is still valid before proceeding
-        if (!graphRef.current) return;
-        
-        // Clear node coordinates for cold-start layout (not based on current positions)
-        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
-        
-        // Re-set data with cleaned coordinates and re-processed parallel edges
-        // G6's render() will automatically recalculate layout, no need for explicit stopLayout()
-        graphRef.current.setData({
-          nodes: cleanNodes,
-          edges: processParallelEdges(data.edges || []),
-        });
-        
-        // Full render: triggers data reconciliation -> layout calculation -> drawing
-        await graphRef.current.render();
-        
-        // Re-apply search highlighting after render completes
-        if (graphRef.current) {
-          highlightSearchResults(graphRef.current);
+        // Check if operation was cancelled
+        if (abortController.signal.aborted) {
+          console.log("[GraphView] Recreation cancelled");
+          return;
         }
         
-        console.log("[GraphView] Full re-render completed");
+        // Destroy old graph completely
+        if (graphRef.current) {
+          try {
+            graphRef.current.destroy();
+          } catch (e) {
+            console.warn("[GraphView] Error destroying graph during reset:", e);
+          }
+          graphRef.current = null;
+        }
+        
+        // Check again if operation was cancelled
+        if (abortController.signal.aborted) {
+          return;
+        }
+        
+        // Reset initialization flag to allow re-initialization
+        hasInitializedRef.current = false;
+        
+        // Clear node coordinates for cold-start layout
+        const cleanNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+        
+        // Create fresh graph instance
+        const graph = new Graph({
+          container: containerRef.current!,
+          width: containerRef.current!.clientWidth,
+          height: containerRef.current!.clientHeight,
+          layout: {
+            type: 'force',
+            collide: {
+              radius: (d: any) => d.size / 2,
+            },
+            preventOverlap: true,
+          },
+          behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
+          node: {
+            style: {
+              labelText: (d: any) => d.data?.label || d.id,
+              fontSize: 12,
+            },
+          },
+          edge: {
+            style: {
+              labelText: (d: any) => d.data?.label || '',
+              fontSize: 10,
+            },
+          },
+          data: {
+            nodes: cleanNodes.map((node: any) => {
+              const isSelected = selectedItems.has(node.id);
+              const isHighlighted = node.highlighted === true;
+              const visualState = getNodeVisualState(isSelected, isHighlighted);
+              const nodeStyle = GRAPH_NODE_STYLES[visualState];
+              
+              return {
+                ...node,
+                style: {
+                  ...node.style,
+                  fill: nodeStyle.fill,
+                  lineWidth: nodeStyle.lineWidth,
+                  stroke: nodeStyle.stroke,
+                },
+              };
+            }),
+            edges: processParallelEdges(data.edges || []).map((edge: any) => {
+              const isSelected = selectedItems.has(edge.id);
+              const isHighlighted = edge.highlighted === true;
+              const visualState = getEdgeVisualState(isSelected, isHighlighted);
+              const edgeStyle = GRAPH_EDGE_STYLES[visualState];
+              
+              return {
+                ...edge,
+                style: {
+                  stroke: edgeStyle.stroke,
+                  lineWidth: edgeStyle.lineWidth,
+                  opacity: edgeStyle.opacity,
+                  ...edge.style,
+                },
+              };
+            }),
+          },
+        });
+
+        // Check if cancelled before registering handlers
+        if (abortController.signal.aborted) {
+          graph.destroy();
+          return;
+        }
+
+        // Register event handlers
+        graph.on(NodeEvent.CLICK, handleNodeClick);
+        graph.on(EdgeEvent.CLICK, handleEdgeClick);
+        graph.on(CanvasEvent.CLICK, handleCanvasClick);
+
+        graph.on(NodeEvent.DBLCLICK, (evt: any) => {
+          try {
+            const nodeId = evt.target?.id;
+            if (!nodeId) return;
+            const neighbors = graph.getNeighborNodesData(nodeId) || [];
+            neighbors.forEach((neighbor: any) => {
+              graph.setElementState(neighbor.id, ['highlight']);
+            });
+          } catch (error) {
+            console.warn("[GraphView] Error in dblclick handler:", error);
+          }
+        });
+
+        // Render and apply highlighting
+        await graph.render();
+        
+        // Check if cancelled after render completes
+        if (abortController.signal.aborted) {
+          graph.destroy();
+          return;
+        }
+        
+        highlightSearchResults(graph);
+        
+        graphRef.current = graph;
+        console.log("[GraphView] Full re-initialization completed");
       } catch (error) {
-        console.warn("[GraphView] Error during full re-render:", error);
+        console.warn("[GraphView] Error during full recreation:", error);
       }
     };
 
-    fullRerender();
-  }, [resetTrigger, data, highlightSearchResults]);
+    fullRecreate();
+  }, [resetTrigger]);
 
   // Update node/edge styles when selection changes (without redrawing graph)
   useEffect(() => {

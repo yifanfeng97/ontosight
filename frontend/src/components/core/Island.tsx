@@ -19,6 +19,8 @@ export interface IslandProps {
   headerContent?: ReactNode;
   /** Position preset: 'top-left', 'top-center', 'bottom-left', 'selection' */
   position?: "top-left" | "top-center" | "bottom-left" | "selection" | "custom";
+  /** CSS classes for content area (inner scrollable container) */
+  contentClassName?: string;
 }
 
 /**
@@ -47,18 +49,19 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
       draggable = false,
       headerContent,
       position = "custom",
+      contentClassName,
     },
     ref
   ) => {
-    // Base glass-morphic styles that all islands share
-    const baseStyles = "rounded-2xl bg-background/40 backdrop-blur-xl border border-border/30 shadow-2xl overflow-hidden min-w-[280px]";
+    // Base glass-morphic styles - updated for consistency and transparency
+    const baseStyles = "flex flex-col rounded-[2.5rem] bg-white/20 backdrop-blur-2xl border border-white/40 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] overflow-hidden min-w-[280px]";
 
     // Position-specific classes
     const positionStyles = {
-      "top-left": "fixed top-6 left-6 max-w-sm z-10",
-      "top-center": "fixed top-6 left-1/2 -translate-x-1/2 max-w-md z-10",
-      "bottom-left": "fixed bottom-6 left-6 max-w-sm max-h-[60vh] overflow-y-auto z-10",
-      selection: "fixed bottom-6 left-6 max-w-xl max-h-[40vh] overflow-y-auto z-10",
+      "top-left": "fixed top-8 left-8 max-w-sm z-10",
+      "top-center": "fixed top-8 left-1/2 -translate-x-1/2 max-w-md z-10",
+      "bottom-left": "fixed bottom-8 left-8 max-w-sm max-h-[60vh] overflow-y-auto z-10",
+      selection: "fixed bottom-8 left-8 max-w-xl max-h-[40vh] overflow-y-auto z-10",
       custom: "",
     };
 
@@ -73,7 +76,7 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
       >
         {/* Header (if title or headerContent provided) - minimalist design */}
         {(title || headerContent || showClose) && (
-          <div className="flex items-center justify-between px-5 py-3 transition-all duration-200">
+          <div className="flex-none flex items-center justify-between px-5 py-3 transition-all duration-200">
             {headerContent ? (
               headerContent
             ) : (
@@ -92,7 +95,7 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
         )}
 
         {/* Content */}
-        <div className="px-5 py-4">{children}</div>
+        <div className={cn("flex-1 min-h-0 px-5 py-4", contentClassName)}>{children}</div>
       </div>
     );
   }

@@ -28,6 +28,9 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
     console.log("ViewRouter.TabChange", { tab, vizType });
     setViewMode(tab as any);
   };
+
+  // Determine if we're in list/grid view mode (overlay mode)
+  const isOverlayMode = ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
   
   if (!data) {
     return (
@@ -59,8 +62,90 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
 
   return (
     <div className="w-full h-full flex flex-col items-stretch overflow-hidden relative">
-      {/* View Switcher - Floating absolute positioned, aligned with ItemGallery */}
-      <div className="absolute top-4 right-[10vw] z-40 flex justify-center pointer-events-auto">
+      {/* View Content - Fill remaining space with layered rendering */}
+      <div className="flex-1 min-h-0 relative w-full">
+        {/* Canvas Layer - Always present, with conditional blur effect for modern glass-morphism */}
+        <div className={`absolute inset-0 transition-all duration-300 ${isOverlayMode ? 'blur-sm opacity-70' : 'blur-none opacity-100'}`}>
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center h-full">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                  <p className="text-sm text-muted-foreground">Loading view...</p>
+                </div>
+              </div>
+            }
+          >
+            {vizType === "graph" && <GraphView data={data} meta={meta} />}
+            {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
+            {vizType === "list" && <ListView data={data} meta={meta} />}
+          </Suspense>
+        </div>
+
+        {/* Overlay Layer - Gallery appears on top with backdrop */}
+        {isOverlayMode && (
+          <div className="absolute inset-0 z-50">
+            <Suspense
+              fallback={
+                <div className="flex items-center justify-center h-full">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
+                    <p className="text-sm text-muted-foreground">Loading gallery...</p>
+                  </div>
+                </div>
+              }
+            >
+              {vizType === "graph" && (
+                <>
+                  {viewMode === "nodes" && (
+                    <PaginatedGridView
+                      entityType="node"
+                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                    />
+                  )}
+                  {viewMode === "edges" && (
+                    <PaginatedGridView
+                      entityType="edge"
+                      fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
+                    />
+                  )}
+                </>
+              )}
+
+              {vizType === "hypergraph" && (
+                <>
+                  {viewMode === "nodes" && (
+                    <PaginatedGridView
+                      entityType="node"
+                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
+                    />
+                  )}
+                  {viewMode === "hyperedges" && (
+                    <PaginatedGridView
+                      entityType="hyperedge"
+                      fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
+                    />
+                  )}
+                </>
+              )}
+
+              {vizType === "list" && (
+                <>
+                  {viewMode === "items" && (
+                    <PaginatedGridView
+                      entityType="item"
+                      fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
+                    />
+                  )}
+                </>
+              )}
+            </Suspense>
+          </div>
+        )}
+      </div>
+
+      {/* View Switcher - MOVED TO BOTTOM of DOM for highest stacking priority, z-[100] */}
+      <div className="absolute top-4 right-[10vw] z-[100] flex justify-center pointer-events-auto">
         <div className="w-[60vw] flex justify-center">
           <FloatingNav
             vizType={vizType}
@@ -68,68 +153,6 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
             onViewChange={handleTabChange}
           />
         </div>
-      </div>
-
-      {/* View Content - Fill remaining space */}
-      <div className="flex-1 min-h-0 relative w-full">
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center h-full">
-              <div className="flex flex-col items-center gap-3">
-                <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
-                <p className="text-sm text-muted-foreground">Loading view...</p>
-              </div>
-            </div>
-          }
-        >
-          {vizType === "graph" && (
-            <>
-              {viewMode === "graph" && <GraphView data={data} meta={meta} />}
-              {viewMode === "nodes" && (
-                <PaginatedGridView
-                  type="node"
-                  fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                />
-              )}
-              {viewMode === "edges" && (
-                <PaginatedGridView
-                  type="edge"
-                  fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
-                />
-              )}
-            </>
-          )}
-
-          {vizType === "hypergraph" && (
-            <>
-              {viewMode === "graph" && <HypergraphView data={data} meta={meta} />}
-              {viewMode === "nodes" && (
-                <PaginatedGridView
-                  type="node"
-                  fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                />
-              )}
-              {viewMode === "hyperedges" && (
-                <PaginatedGridView
-                  type="hyperedge"
-                  fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
-                />
-              )}
-            </>
-          )}
-
-          {vizType === "list" && (
-            <>
-              {viewMode === "list" && <ListView data={data} meta={meta} />}
-              {viewMode === "items" && (
-                <PaginatedGridView
-                  type="item"
-                  fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
-                />
-              )}
-            </>
-          )}
-        </Suspense>
       </div>
     </div>
   );
