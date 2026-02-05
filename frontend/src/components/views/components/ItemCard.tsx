@@ -7,7 +7,12 @@
 
 import React, { useMemo } from "react";
 import { cn, extractDisplayMetadata, formatMetadataValue } from "@/utils";
-import { getCardStateClasses, UI_CARD_TYPE_COLORS, UI_CARD_TYPE_BORDERS } from "@/theme/visual-config";
+import { 
+  getCardStateClasses, 
+  UI_CARD_TYPE_COLORS, 
+  UI_CARD_TYPE_BORDERS,
+  BACKDROP_BLUR_CONFIG 
+} from "@/theme/visual-config";
 
 export interface ItemCardProps {
   /** Unique item identifier */
@@ -66,7 +71,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        "group relative p-4 cursor-pointer transition-all duration-500 rounded-[1.5rem] bg-white/30 backdrop-blur-xl border border-white shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.04] hover:ring-black/[0.08] hover:bg-white/60 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden",
+        "group relative p-4 cursor-pointer transition-all duration-500 rounded-[1.5rem] bg-white/30 border border-white shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.04] hover:ring-black/[0.08] hover:bg-white/60 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden",
+        BACKDROP_BLUR_CONFIG.STRONG,
         isSelected && "ring-2 ring-indigo-500/50 bg-white shadow-[0_10px_25px_-5px_rgba(79,70,229,0.15)]",
         isHighlighted && "ring-2 ring-amber-400/50 bg-amber-500/5",
         className

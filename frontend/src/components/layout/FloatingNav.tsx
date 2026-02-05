@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { List, Link2, Layers } from "lucide-react";
 import { cn } from "@/utils";
+import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 
 interface FloatingNavProps {
   vizType: "graph" | "hypergraph" | "list";
@@ -35,7 +36,10 @@ const FloatingNav = memo(function FloatingNav({
   const options = viewOptions[vizType] || viewOptions.list;
 
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border shadow-lg">
+    <div className={cn(
+      "flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 border border-border shadow-lg",
+      BACKDROP_BLUR_CONFIG.BASE
+    )}>
       {options.map(({ value, label, icon: Icon }) => {
           const isActive = activeView === value;
           return (

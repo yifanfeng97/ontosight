@@ -1,6 +1,7 @@
 import React, { ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/utils";
+import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 
 export interface IslandProps {
   /** Island title/header */
@@ -54,7 +55,10 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
     ref
   ) => {
     // Base glass-morphic styles - updated for maximum transparency and color bleed
-    const baseStyles = "flex flex-col rounded-[2.5rem] bg-white/[0.03] backdrop-blur-[64px] border border-white/20 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] overflow-hidden min-w-[280px]";
+    const baseStyles = cn(
+      "flex flex-col rounded-[2.5rem] bg-white/[0.03] border border-white/20 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] overflow-hidden min-w-[280px]",
+      BACKDROP_BLUR_CONFIG.STRONG
+    );
 
     // Position-specific classes
     const positionStyles = {

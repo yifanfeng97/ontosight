@@ -243,6 +243,16 @@ export const HYPEREDGE_LABEL_CONFIG = {
 };
 
 /**
+ * 统一的毛玻璃（Backdrop Blur）配置
+ * 确保全站视觉层级一致
+ */
+export const BACKDROP_BLUR_CONFIG = {
+  LIGHT: 'backdrop-blur-sm',    // 轻量：用于覆盖层、非交互背景
+  BASE: 'backdrop-blur-md',     // 基础：用于导航栏、普通弹出层
+  STRONG: 'backdrop-blur-xl',   // 强化：用于核心卡片、Island 容器
+};
+
+/**
  * UI卡片（ItemCard）的Tailwind样式配置
  */
 export const UI_CARD_STATE_CLASSES = {

@@ -5,6 +5,8 @@ import DetailPanel from "@/components/panels/DetailPanel";
 import FloatingTools from "@/components/layout/FloatingTools";
 import Island from "@/components/core/Island";
 import { AlertCircle } from "lucide-react";
+import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
+import { cn } from "@/utils";
 
 export default function MainLayout() {
   const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode, viewMode, clearHistory } = useVisualization();
@@ -39,12 +41,12 @@ export default function MainLayout() {
       >
         {/* White overlay for grid modes to keep it clean instead of grey */}
         {isGridViewMode && (
-          <div className="absolute inset-0 bg-white/20 backdrop-blur-[1px] z-[5] pointer-events-none" />
+          <div className={cn("absolute inset-0 bg-white/20 z-[5] pointer-events-none", BACKDROP_BLUR_CONFIG.LIGHT)} />
         )}
 
         {/* Loading State */}
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-50">
+          <div className={cn("absolute inset-0 flex items-center justify-center bg-background/80 z-50", BACKDROP_BLUR_CONFIG.LIGHT)}>
             <div className="flex flex-col items-center gap-3">
               <div className="animate-spin h-8 w-8 border-2 border-primary border-t-transparent rounded-full"></div>
               <p className="text-sm text-muted-foreground">Loading...</p>

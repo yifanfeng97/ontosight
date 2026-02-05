@@ -3,6 +3,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import ItemGallery from "./components/ItemGallery";
 import { useVisualization } from "@/hooks/useVisualization";
 import { Island } from "@/components/core";
+import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
+import { cn } from "@/utils";
 
 interface PaginatedGridViewProps {
   entityType: "node" | "edge" | "hyperedge" | "item";
@@ -120,7 +122,10 @@ const PaginatedGridView = memo(function PaginatedGridView({
         {/* Floating pagination capsule - shifted slightly lower for tighter fit */}
         {totalPages > 1 && (
           <div 
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 p-1.5 rounded-full bg-white/70 backdrop-blur-3xl border border-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] ring-1 ring-black/[0.03] z-20 hover:shadow-[0_15px_40px_rgba(0,0,0,0.15)] transition-shadow duration-300"
+            className={cn(
+              "absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 p-1.5 rounded-full bg-white/70 border border-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] ring-1 ring-black/[0.03] z-20 hover:shadow-[0_15px_40px_rgba(0,0,0,0.15)] transition-shadow duration-300",
+              BACKDROP_BLUR_CONFIG.STRONG
+            )}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Previous Button */}

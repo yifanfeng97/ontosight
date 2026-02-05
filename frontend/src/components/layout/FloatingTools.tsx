@@ -4,6 +4,7 @@ import { cn } from "@/utils";
 import { useVisualization } from "@/hooks/useVisualization";
 import SearchPanel from "@/components/panels/SearchPanel";
 import ChatPanel from "@/components/panels/ChatPanel";
+import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 
 interface FloatingToolsProps {
   hasSearch?: boolean;
@@ -35,8 +36,10 @@ const FloatingTools = memo(function FloatingTools({
   return (
     <>
       {/* 右侧中间浮动工具组 - 玻璃长刃风格 */}
-      <div className="fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 p-2 rounded-full bg-background/20 backdrop-blur-3xl border-l border-t border-white/60 ring-1 ring-black/5 shadow-[0_0_25px_rgba(0,0,0,0.1)]"
-      >
+      <div className={cn(
+        "fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 p-2 rounded-full bg-background/20 border-l border-t border-white/60 ring-1 ring-black/5 shadow-[0_0_25px_rgba(0,0,0,0.1)]",
+        BACKDROP_BLUR_CONFIG.STRONG
+      )}>
         {hasSearch && (
           <button
             onClick={() => toggleDrawer("search")}
@@ -81,7 +84,10 @@ const FloatingTools = memo(function FloatingTools({
       {/* Search Capsule - Modern Raycast-style HUD */}
       {openDrawer === "search" && hasSearch && (
         <div className="fixed top-8 left-1/2 -translate-x-1/2 w-[550px] max-w-[90vw] z-[120] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className="bg-white/[0.03] backdrop-blur-[64px] rounded-[2rem] border-t border-l border-white/40 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.02] overflow-hidden relative">
+          <div className={cn(
+            "bg-white/[0.03] rounded-[2rem] border-t border-l border-white/40 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.02] overflow-hidden relative",
+            BACKDROP_BLUR_CONFIG.STRONG
+          )}>
             {/* Grain Texture Overlay */}
             <div 
               className="absolute inset-0 z-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
@@ -98,7 +104,10 @@ const FloatingTools = memo(function FloatingTools({
 
       {/* Chat Drawer - Keep sidebar for vertical reading flow */}
       {openDrawer === "chat" && hasChat && (
-        <div className="fixed right-0 top-0 h-full w-[400px] bg-background/95 backdrop-blur-md border-l border-border shadow-2xl z-40 animate-in slide-in-from-right duration-300">
+        <div className={cn(
+          "fixed right-0 top-0 h-full w-[400px] bg-background/95 border-l border-border shadow-2xl z-40 animate-in slide-in-from-right duration-300",
+          BACKDROP_BLUR_CONFIG.BASE
+        )}>
           <div className="flex flex-col h-full">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border">
