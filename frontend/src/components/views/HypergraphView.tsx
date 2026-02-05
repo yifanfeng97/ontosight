@@ -186,15 +186,25 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
         layout: {
           type: 'force',
           collide: {
-            radius: (d: any) => d.size / 2,
+            radius: (d: any) => (d.size / 2) + 20, // Increased to account for label space
           },
           preventOverlap: true,
         },
         behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
         node: {
           style: {
-            labelText: (d: any) => d.data?.label || d.id,
-            fontSize: 12,
+            labelText: (d: any) => {
+              const label = d.data?.label || d.id;
+              return label.length > 10 ? label.substring(0, 10) + '...' : label;
+            },
+            labelFill: '#1e293b', // Deep slate text
+            labelFontSize: 11,
+            labelPlacement: 'bottom',
+            labelOffsetY: 4,
+            // Optimized: Using halo effect (stroke) instead of a solid box
+            labelStroke: '#ffffff',
+            labelLineWidth: 2,
+            labelBackground: false,
           },
         },
         edge: {
@@ -462,15 +472,24 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
           layout: {
             type: 'force',
             collide: {
-              radius: (d: any) => d.size / 2,
+              radius: (d: any) => (d.size / 2) + 20, // Increased to account for label space
             },
             preventOverlap: true,
           },
           behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
           node: {
             style: {
-              labelText: (d: any) => d.data?.label || d.id,
-              fontSize: 12,
+              labelText: (d: any) => {
+                const label = d.data?.label || d.id;
+                return label.length > 10 ? label.substring(0, 10) + '...' : label;
+              },
+              labelFill: '#1e293b',
+              labelFontSize: 11,
+              labelPlacement: 'bottom',
+              labelOffsetY: 4,
+              labelStroke: '#ffffff',
+              labelLineWidth: 2,
+              labelBackground: false,
             },
           },
           edge: {
