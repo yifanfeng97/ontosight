@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from "react";
+import { Suspense, lazy, useEffect } from "react";
 import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
 import FloatingNav from "@/components/layout/FloatingNav";
@@ -18,17 +18,14 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   // Get visualization type from meta
   const vizType = meta?.type;
   const { setViewMode, viewMode } = useVisualization();
-  const [activeTab, setActiveTab] = useState("graph");
 
   useEffect(() => {
-    const defaultTab = vizType === "hypergraph" || vizType === "graph" ? "graph" : "list";
-    setActiveTab(defaultTab);
-    setViewMode(defaultTab as any);
+    const defaultMode = vizType === "hypergraph" || vizType === "graph" ? "graph" : "list";
+    setViewMode(defaultMode as any);
   }, [vizType, setViewMode]);
 
   const handleTabChange = (tab: string) => {
     console.log("ViewRouter.TabChange", { tab, vizType });
-    setActiveTab(tab);
     setViewMode(tab as any);
   };
   
@@ -61,18 +58,20 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-stretch overflow-hidden">
-      {/* View Switcher - No longer absolute to avoid covering content */}
-      <div className="flex-shrink-0 flex justify-center py-4 z-10 bg-background/50 backdrop-blur-sm">
-        <FloatingNav
-          vizType={vizType}
-          activeView={activeTab}
-          onViewChange={handleTabChange}
-        />
+    <div className="w-full h-full flex flex-col items-stretch overflow-hidden relative">
+      {/* View Switcher - Floating absolute positioned, aligned with ItemGallery */}
+      <div className="absolute top-4 right-[10vw] z-40 flex justify-center pointer-events-auto">
+        <div className="w-[60vw] flex justify-center">
+          <FloatingNav
+            vizType={vizType}
+            activeView={viewMode}
+            onViewChange={handleTabChange}
+          />
+        </div>
       </div>
 
       {/* View Content - Fill remaining space */}
-      <div className="flex-1 min-h-0 relative">
+      <div className="flex-1 min-h-0 relative w-full">
         <Suspense
           fallback={
             <div className="flex items-center justify-center h-full">
@@ -85,14 +84,14 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
         >
           {vizType === "graph" && (
             <>
-              {activeTab === "graph" && <GraphView data={data} meta={meta} />}
-              {activeTab === "nodes" && (
+              {viewMode === "graph" && <GraphView data={data} meta={meta} />}
+              {viewMode === "nodes" && (
                 <PaginatedGridView
                   type="node"
                   fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
                 />
               )}
-              {activeTab === "edges" && (
+              {viewMode === "edges" && (
                 <PaginatedGridView
                   type="edge"
                   fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
@@ -103,14 +102,14 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
 
           {vizType === "hypergraph" && (
             <>
-              {activeTab === "graph" && <HypergraphView data={data} meta={meta} />}
-              {activeTab === "nodes" && (
+              {viewMode === "graph" && <HypergraphView data={data} meta={meta} />}
+              {viewMode === "nodes" && (
                 <PaginatedGridView
                   type="node"
                   fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
                 />
               )}
-              {activeTab === "hyperedges" && (
+              {viewMode === "hyperedges" && (
                 <PaginatedGridView
                   type="hyperedge"
                   fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
@@ -121,8 +120,8 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
 
           {vizType === "list" && (
             <>
-              {activeTab === "list" && <ListView data={data} meta={meta} />}
-              {activeTab === "items" && (
+              {viewMode === "list" && <ListView data={data} meta={meta} />}
+              {viewMode === "items" && (
                 <PaginatedGridView
                   type="item"
                   fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}

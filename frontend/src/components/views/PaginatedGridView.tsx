@@ -50,12 +50,27 @@ const PaginatedGridView = memo(function PaginatedGridView({
     loadPage(0);
   }, []);
 
+  const handleBackdropClick = () => {
+    const { setViewMode, meta } = useVisualization.getState();
+    const vizType = meta?.type || "graph";
+    setViewMode(vizType === "graph" ? "graph" : "hypergraph");
+  };
+
   return (
-    <div className="w-full h-full flex items-center justify-center overflow-hidden">
-      {/* Centered focused island gallery with stable fixed height - pagination integrated */}
+    <div 
+      className="w-full h-full flex items-center justify-end overflow-hidden pr-[10vw] relative"
+      onClick={(e: React.MouseEvent) => e.stopPropagation()}
+    >
+      {/* Local backdrop - only show when Gallery is active, contained within this component's context */}
+      <div 
+        className="absolute inset-0 z-10 pointer-events-auto"
+        onClick={handleBackdropClick}
+      />
+
+      {/* Island gallery with relative dimensions - positioned to right of left sidebar */}
       <Island
         position="custom"
-        className="fixed inset-0 m-auto w-11/12 max-w-3xl z-30 flex flex-col backdrop-blur-md h-[650px] pointer-events-auto"
+        className="w-[60vw] max-h-[80vh] z-20 flex flex-col backdrop-blur-md pointer-events-auto relative"
       >
         {/* Gallery content with safe padding - no title shown, top-aligned, stops event propagation */}
         <div 

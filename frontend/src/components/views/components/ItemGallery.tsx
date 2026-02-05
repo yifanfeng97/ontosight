@@ -51,7 +51,7 @@ const ItemGallery: React.FC<ItemGalleryProps> = ({
   error = null,
   loadingMessage = "Loading...",
   emptyMessage = "No items found",
-  gridClassName = "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 auto-rows-max",
+  gridClassName = "grid grid-cols-2 md:grid-cols-3 gap-4 auto-rows-max",
   minHeight = "h-96",
   selectedItems = new Set(),
   onItemClick,

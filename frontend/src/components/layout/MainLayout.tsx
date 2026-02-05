@@ -7,7 +7,7 @@ import Island from "@/components/core/Island";
 import { RotateCcw, AlertCircle } from "lucide-react";
 
 export default function MainLayout() {
-  const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode } = useVisualization();
+  const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode, viewMode, clearHistory } = useVisualization();
 
   // Determine which features are available based on meta
   const hasSearch = meta?.features?.search === true;
@@ -16,15 +16,8 @@ export default function MainLayout() {
   const vizType = meta?.type || "graph";
   const isHistorySelected = viewedHistory.length > 0;
 
-  // 判断是否处于列表/网格视图模式（此时需要应用模态背景模糊）
-  const isGridViewMode = ["nodes", "edges", "hyperedges", "items"].includes(meta?.viewMode || "");
-
-  // 处理背景点击以关闭 Gallery
-  const handleCanvasClick = () => {
-    if (isGridViewMode) {
-      setViewMode(vizType === "graph" ? "graph" : "hypergraph");
-    }
-  };
+  // 判断是否处于列表/网格视图模式（使用全局viewMode而非meta）
+  const isGridViewMode = ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background">
@@ -40,10 +33,9 @@ export default function MainLayout() {
         }}
       />
 
-      {/* Main ViewRouter - Full Screen Canvas with Close Handler */}
+      {/* Main ViewRouter - Full Screen Canvas */}
       <div 
-        className={`absolute inset-0 z-0 transition-all duration-300 cursor-pointer ${isGridViewMode ? "blur-xl" : ""}`}
-        onClick={handleCanvasClick}
+        className={`absolute inset-0 z-0 transition-all duration-300`}
       >
         {/* Loading State */}
         {loading && (
@@ -74,18 +66,10 @@ export default function MainLayout() {
         {!loading && !error && data && <ViewRouter data={data} meta={meta} />}
       </div>
 
-      {/* Modal Backdrop Overlay - Only show when Gallery is active */}
-      {isGridViewMode && (
-        <div 
-          className="fixed inset-0 z-[25] pointer-events-auto"
-          onClick={handleCanvasClick}
-        />
-      )}
-
       {/* Floating Islands Layer - Always on top of canvas */}
       <div className="fixed inset-0 z-10 pointer-events-none">
-        {/* Left Sidebar Island Container - Vertical Stack */}
-        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-80">
+        {/* Left Sidebar Island Container - Vertical Stack with relative width */}
+        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-[22vw] min-w-[280px] max-w-[350px] z-40">
           {/* Stats Island - Top Left */}
           {meta?.stats && (
             <Island
@@ -103,6 +87,7 @@ export default function MainLayout() {
               title="Details"
               position="custom"
               showClose
+              onClose={clearHistory}
               className="w-full flex-1 min-h-0 overflow-y-auto"
             >
               <DetailPanel />
