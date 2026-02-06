@@ -48,8 +48,8 @@ export default function SearchPanel({ onClose }: SearchPanelProps) {
               <Sparkles className="w-5 h-5 text-indigo-500" />
             </div>
             <div>
-              <h3 className="text-sm font-black tracking-widest text-slate-900 uppercase">Universal Search</h3>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Neural Semantic Linkage</p>
+              <h3 className="text-sm font-black tracking-widest text-slate-900 uppercase">Semantic Search</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">AI Linkage</p>
             </div>
           </div>
           <button
