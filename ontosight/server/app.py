@@ -8,6 +8,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+from ontosight import __version__
 from ontosight.server.routes import meta, data, search, chat
 
 
@@ -20,7 +21,7 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="OntoSight API",
         description="Core Visualization Engine for Interactive Knowledge Graphs",
-        version="0.1.0",
+        version=__version__,
     )
 
     # Add CORS middleware

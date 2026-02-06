@@ -1,6 +1,6 @@
 [project]
 name = "ontosight"
-version = "0.1.0"
+version = "0.1.1"
 description = "OntoSight: A flexible, AI-ready visualization engine for interactive knowledge graphs and hypergraphs."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -51,8 +51,8 @@ dev = [
 docs = ["mkdocs>=1.5.0", "mkdocs-material>=9.4.0"]
 
 [project.urls]
-"Source Code" = "https://github.com/ontosight/ontosight"
-"Bug Tracker" = "https://github.com/ontosight/ontosight/issues"
+"Source Code" = "https://github.com/yifanfeng97/ontosight"
+"Bug Tracker" = "https://github.com/yifanfeng97/ontosight/issues"
 "Documentation" = "https://ontosight.readthedocs.io"
 
 [build-system]
