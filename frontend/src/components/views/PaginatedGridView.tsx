@@ -75,7 +75,7 @@ const PaginatedGridView = memo(function PaginatedGridView({
 
   return (
     <div 
-      className="w-full h-full flex items-center justify-end overflow-hidden pr-[10vw] relative"
+      className="w-full h-full flex items-center justify-center md:justify-end overflow-hidden md:pr-[10vw] relative"
       onClick={(e: React.MouseEvent) => e.stopPropagation()}
     >
       {/* Subtle backdrop blur - creates gentle perspective depth, but transparent to layers above */}
@@ -87,8 +87,8 @@ const PaginatedGridView = memo(function PaginatedGridView({
       {/* Island gallery with unified style and fixed dimensions to prevent jump but slightly more compact */}
       <Island
         position="custom"
-        className="w-[60vw] h-[72vh] z-20 flex flex-col pointer-events-auto relative border-t border-l border-white/60 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.2)]"
-        contentClassName="p-0"
+        className="w-[90vw] md:w-[70vw] lg:w-[60vw] h-[80vh] md:h-[72vh] z-20 flex flex-col pointer-events-auto relative border-t border-l border-white/60 shadow-[0_40px_120px_-30px_rgba(0,0,0,0.2)]"
+        contentClassName="p-0 flex flex-col"
       >
         {/* Very subtle noise texture layer */}
         <div 
@@ -100,7 +100,7 @@ const PaginatedGridView = memo(function PaginatedGridView({
 
         {/* Gallery content - overflow-auto ensures scrollability if screen is small */}
         <div 
-          className="flex-1 overflow-y-auto overflow-x-hidden p-10 pb-24 flex flex-col items-start relative z-10 custom-scrollbar scroll-smooth"
+          className="flex-1 overflow-y-auto overflow-x-hidden p-10 pb-24 flex flex-col items-start relative z-10 scrollbar-thin scroll-smooth"
           onClick={(e) => e.stopPropagation()}
         >
           <ItemGallery
@@ -113,7 +113,7 @@ const PaginatedGridView = memo(function PaginatedGridView({
             selectedItems={selectedItems}
             onItemClick={(itemId) => selectItem(itemId, entityType)}
             showTypeBadge={false}
-            gridClassName="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max w-full"
+            gridClassName="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 auto-rows-max w-full"
             minHeight="min-h-full"
           />
         </div>

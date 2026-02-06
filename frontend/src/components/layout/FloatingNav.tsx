@@ -34,17 +34,18 @@ const FloatingNav = memo(function FloatingNav({
 
   return (
     <div className={cn(
-      "flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 border border-border shadow-lg",
+      "flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 border border-border shadow-lg overflow-x-auto overflow-y-hidden max-w-full scrollbar-none",
       BACKDROP_BLUR_CONFIG.BASE
     )}>
-      {options.map(({ value, label, icon: Icon }) => {
+      <div className="flex items-center gap-1 min-w-max">
+        {options.map(({ value, label, icon: Icon }) => {
           const isActive = activeView === value;
           return (
             <button
               key={value}
               onClick={() => onViewChange(value)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 shrink-0",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -56,6 +57,7 @@ const FloatingNav = memo(function FloatingNav({
           );
         })}
       </div>
+    </div>
   );
 });
 

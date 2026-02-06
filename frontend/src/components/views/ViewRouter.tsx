@@ -132,8 +132,8 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
       </div>
 
       {/* View Switcher - MOVED TO BOTTOM of DOM for highest stacking priority, z-[100] */}
-      <div className="absolute top-4 right-[10vw] z-[100] flex justify-center pointer-events-auto">
-        <div className="w-[60vw] flex justify-center">
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:right-[10vw] md:translate-x-0 z-[100] flex justify-center pointer-events-auto w-[90vw] md:w-[70vw] lg:w-[60vw]">
+        <div className="flex justify-center w-full">
           <FloatingNav
             vizType={vizType}
             activeView={viewMode}
