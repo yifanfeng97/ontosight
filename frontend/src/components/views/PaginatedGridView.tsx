@@ -80,7 +80,7 @@ const PaginatedGridView = memo(function PaginatedGridView({
     >
       {/* Subtle backdrop blur - creates gentle perspective depth, but transparent to layers above */}
       <div 
-        className="absolute inset-0 z-10 pointer-events-auto bg-white/[0.01]"
+        className="absolute inset-0 z-10 pointer-events-auto bg-white/1"
         onClick={handleBackdropClick}
       />
 

@@ -237,7 +237,7 @@ class GraphStorage(BaseStorage):
         items = []
         for edge in edge_items[start:end]:
             item = dict(edge)
-            item["label"] = edge.get("data", {}).get("label", "")
+            item["label"] = edge.get("data", {}).get("label", edge.get("id"))
             item["type"] = "edge"
             items.append(item)
 

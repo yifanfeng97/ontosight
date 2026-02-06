@@ -15,7 +15,8 @@ export function extractDisplayMetadata(
 ): Array<[string, any]> {
   if (!metadata) return []
 
-  const rawData = metadata.raw
+  // Check for 'raw' at top level or inside 'data' (common in graph structures)
+  const rawData = metadata.raw || (metadata.data && metadata.data.raw)
 
   if (rawData && typeof rawData === "object" && !Array.isArray(rawData)) {
     return Object.entries(rawData).slice(0, 2)

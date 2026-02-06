@@ -265,7 +265,7 @@ class HypergraphStorage(BaseStorage):
         items = []
         for he in he_items[start:end]:
             item = dict(he)
-            item["label"] = he.get("label", he.get("id"))
+            item["label"] = he.get("data", {}).get("label", he.get("id"))
             item["type"] = "hyperedge"
             items.append(item)
 
