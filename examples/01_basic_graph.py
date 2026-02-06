@@ -39,8 +39,8 @@ if __name__ == "__main__":
         edge_list=edges,
         node_schema=NodeSchema,
         edge_schema=EdgeSchema,
-        node_label_extractor=lambda node: node.name,
+        node_id_extractor=lambda node: node.name,
+        node_ids_in_edge_extractor=lambda edge: (edge.source, edge.target),
         edge_label_extractor=lambda edge: edge.action,
-        nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
     )
 

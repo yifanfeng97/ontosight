@@ -132,6 +132,27 @@ def open_browser(path: str = "") -> None:
     webbrowser.open(url)
 
 
+def default_label_formatter(identifier: str) -> str:
+    """
+    Format an identifier into a readable display label.
+    Processes snake_case, camelCase, and converts to Title Case.
+    
+    Example:
+        "user_profile_id" -> "User Profile Id"
+        "userName" -> "User Name"
+    """
+    if not identifier:
+        return ""
+    
+    # 1. Handle camelCase -> snake_case conversion first to simplify
+    import re
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', identifier)
+    s2 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    
+    # 2. Replace underscores with spaces and title case each word
+    return s2.replace("_", " ").title()
+
+
 def wait_for_user() -> None:
     """Block execution until the user explicitly stops the server."""
     print(f"\nOntoSight server is running at {get_server_url()}")

@@ -212,9 +212,10 @@ if __name__ == "__main__":
         edge_list=hyperedges,
         node_schema=NodeSchema,
         edge_schema=EdgeSchema,
-        node_name_extractor=lambda node: node.name,
-        edge_name_extractor=lambda edge: edge.label,
-        nodes_in_edge_extractor=lambda edge: tuple(edge.nodes),
+        node_id_extractor=lambda node: node.name,
+        node_ids_in_edge_extractor=lambda edge: tuple(edge.nodes),
+        edge_label_extractor=lambda edge: edge.label,
+        node_label_extractor=lambda node: node.name,
         on_search=on_search,
         on_chat=on_chat,
     )

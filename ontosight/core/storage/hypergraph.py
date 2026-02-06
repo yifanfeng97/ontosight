@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import random
 import logging
 
-from ontosight.utils import get_model_id, get_random_id
+from ontosight.utils import get_model_id, get_random_id, default_label_formatter
 from .base import BaseStorage
 
 logger = logging.getLogger(__name__)
@@ -21,43 +21,48 @@ class HypergraphStorage(BaseStorage):
         self,
         node_list: List[NodeSchema],
         edge_list: List[EdgeSchema],
-        node_name_extractor: Callable[[NodeSchema], str],
-        edge_name_extractor: Callable[[EdgeSchema], str],
-        nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
+        node_id_extractor: Callable[[NodeSchema], str],
+        node_ids_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, ...]],
+        edge_label_extractor: Callable[[EdgeSchema], str],
+        node_label_extractor: Optional[Callable[[NodeSchema], str]] = None,
     ):
         """Initialize hypergraph storage from raw schema items.
 
         Args:
             node_list: List of node schema objects
             edge_list: List of hyperedge schema objects
-            node_name_extractor: Function to extract display label from node
-            edge_name_extractor: Function to extract display label from hyperedge
-            nodes_in_edge_extractor: Function to extract node tuple from hyperedge
+            node_id_extractor: Function to extract unique ID from node
+            node_ids_in_edge_extractor: Function to extract node ID tuple from hyperedge
+            edge_label_extractor: Function to extract display label from hyperedge
+            node_label_extractor: Optional function to extract display label from node
         """
+        node_label_extractor = (
+            node_label_extractor if node_label_extractor else default_label_formatter
+        )
+        edge_id_extractor = get_model_id
         # Store extractors as class variables for later use
-        self.node_name_extractor = node_name_extractor
-        self.edge_name_extractor = edge_name_extractor
-        self.nodes_in_edge_extractor = nodes_in_edge_extractor
+        self.node_id_extractor = node_id_extractor
+        self.edge_id_extractor = edge_id_extractor
+        self.node_label_extractor = node_label_extractor
+        self.edge_label_extractor = edge_label_extractor
+        self.node_ids_in_edge_extractor = node_ids_in_edge_extractor
 
-        # Create label->ID mapping
-        self.label_to_id = {}
+        # Create nodes and data
         self.nodes = {}
         self.node_deg = {}
 
         for node in node_list:
-            label = node_name_extractor(node)
-            node_id = get_model_id(node)
-            self.label_to_id[label] = node_id
-            self.node_deg[node_id] = 0
+            node_id = node_id_extractor(node)
+            label = node_label_extractor(node)
             raw_data = node.model_dump() if hasattr(node, "model_dump") else dict(node)
             self.nodes[node_id] = {"id": node_id, "data": {"label": label, "raw": raw_data}}
+            self.node_deg[node_id] = 0
 
         # Compute node degrees from hyperedges
         for edge in edge_list:
-            nodes_in_edge = nodes_in_edge_extractor(edge)
-            for node_label in nodes_in_edge:
-                node_id = self.label_to_id.get(node_label)
-                if node_id:
+            node_ids_in_edge = node_ids_in_edge_extractor(edge)
+            for node_id in node_ids_in_edge:
+                if node_id in self.nodes:
                     self.node_deg[node_id] += 1
 
         # Build hyperedges and auxiliary layout edges
@@ -65,18 +70,18 @@ class HypergraphStorage(BaseStorage):
         self.node_to_hyperedges: Dict[str, Set[str]] = {node_id: set() for node_id in self.nodes}
 
         for i, edge in enumerate(edge_list):
-            edge_label = edge_name_extractor(edge)
-            nodes_in_edge = nodes_in_edge_extractor(edge)
+            edge_label = edge_label_extractor(edge)
+            node_ids_in_edge = node_ids_in_edge_extractor(edge)
 
-            # Map labels to IDs
+            # Map to string IDs and filter valid ones
             node_ids = [
-                self.label_to_id[label] for label in nodes_in_edge if label in self.label_to_id
+                node_id for node_id in node_ids_in_edge if node_id in self.nodes
             ]
             if not node_ids:
                 logger.warning(f"Hyperedge has no valid nodes: {edge_label}")
                 continue
 
-            he_id = get_model_id(edge)
+            he_id = edge_id_extractor(edge)
             raw_data = edge.model_dump() if hasattr(edge, "model_dump") else dict(edge)
 
             self.hyperedges[he_id] = {
@@ -301,21 +306,21 @@ class HypergraphStorage(BaseStorage):
         # Extract node IDs using node extractor and label_to_id mapping
         node_ids = []
         for node in node_list:
-            node_id = get_model_id(node)
+            node_id = self.node_id_extractor(node)
             if node_id in self.nodes:
                 node_ids.append(node_id)
             else:
-                logging.warning(f"Node {self.node_name_extractor(node)} not found in hypergraph")
+                logging.warning(f"Node {self.node_label_extractor(node)} not found in hypergraph")
 
         # Extract hyperedge IDs using edge extractor and label lookup
         hyperedge_ids = []
         for hyperedge in hyperedge_list:
-            hyperedge_id = get_model_id(hyperedge)
+            hyperedge_id = self.edge_id_extractor(hyperedge)
             if hyperedge_id in self.hyperedges:
                 hyperedge_ids.append(hyperedge_id)
             else:
                 logging.warning(
-                    f"Hyperedge {self.edge_name_extractor(hyperedge)} not found in hypergraph"
+                    f"Hyperedge {self.edge_label_extractor(hyperedge)} not found in hypergraph"
                 )
 
         # Combine node and hyperedge IDs and call get_sample

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 import random
 import logging
 
-from ...utils import get_model_id
+from ontosight.utils import get_model_id, default_label_formatter
 from .base import BaseStorage
 
 logger = logging.getLogger(__name__)
@@ -21,34 +21,38 @@ class GraphStorage(BaseStorage):
         self,
         node_list: List[NodeSchema],
         edge_list: List[EdgeSchema],
-        node_label_extractor: Callable[[NodeSchema], str],
+        node_id_extractor: Callable[[NodeSchema], str],
+        node_ids_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
         edge_label_extractor: Callable[[EdgeSchema], str],
-        nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
+        node_label_extractor: Optional[Callable[[NodeSchema], str]] = None,
     ):
         """Initialize graph storage from raw schema items.
 
         Args:
             node_list: List of node schema objects
             edge_list: List of edge schema objects
-            node_label_extractor: Function to extract display label from node
+            node_id_extractor: Function to extract unique ID from node
+            node_ids_in_edge_extractor: Function to extract (source_id, target_id) from edge
             edge_label_extractor: Function to extract display label from edge
-            nodes_in_edge_extractor: Function to extract (source, target) from edge
+            node_label_extractor: Optional function to extract display label from node
         """
+        node_label_extractor = (
+            node_label_extractor if node_label_extractor else default_label_formatter
+        )
+        edge_id_extractor = get_model_id
         # Store extractors as class variables for later use
+        self.node_id_extractor = node_id_extractor
+        self.edge_id_extractor = edge_id_extractor
         self.node_label_extractor = node_label_extractor
         self.edge_label_extractor = edge_label_extractor
-        self.nodes_in_edge_extractor = nodes_in_edge_extractor
+        self.node_ids_in_edge_extractor = node_ids_in_edge_extractor
 
-        # Create label->ID mapping (stable based on label hash)
-        self.label_to_id = {}
         self.nodes = {}  # {id: {"id": id, "data": {"label": label, "raw": raw_data}}}
         self.deg_node = {}
 
         for node in node_list:
+            node_id = node_id_extractor(node)
             label = node_label_extractor(node)
-            # Generate stable ID based on label
-            node_id = get_model_id(node)
-            self.label_to_id[label] = node_id
             raw_data = node.model_dump() if hasattr(node, "model_dump") else dict(node)
             self.nodes[node_id] = {"id": node_id, "data": {"label": label, "raw": raw_data}}
             self.deg_node[node_id] = 0
@@ -60,15 +64,13 @@ class GraphStorage(BaseStorage):
 
         for i, edge in enumerate(edge_list):
             edge_label = edge_label_extractor(edge)
-            source_label, target_label = nodes_in_edge_extractor(edge)
+            source_id, target_id = node_ids_in_edge_extractor(edge)
 
-            if source_label not in self.label_to_id or target_label not in self.label_to_id:
-                logger.warning(f"Edge references missing nodes: {source_label} -> {target_label}")
+            if source_id not in self.nodes or target_id not in self.nodes:
+                logger.warning(f"Edge references missing node IDs: {source_id} -> {target_id}")
                 continue
 
-            source_id = self.label_to_id[source_label]
-            target_id = self.label_to_id[target_label]
-            edge_id = get_model_id(edge)
+            edge_id = edge_id_extractor(edge)
 
             if source_id != target_id:
                 self.deg_node[source_id] += 1
@@ -272,7 +274,7 @@ class GraphStorage(BaseStorage):
         # Extract node IDs
         node_ids = []
         for node in node_list:
-            node_id = get_model_id(node)
+            node_id = self.node_id_extractor(node)
             if node_id in self.nodes:
                 node_ids.append(node_id)
             else:
@@ -281,7 +283,7 @@ class GraphStorage(BaseStorage):
         # Extract edge IDs
         edge_ids = []
         for edge in edge_list:
-            edge_id = get_model_id(edge)
+            edge_id = self.edge_id_extractor(edge)
             if edge_id in self.edges:
                 edge_ids.append(edge_id)
             else:

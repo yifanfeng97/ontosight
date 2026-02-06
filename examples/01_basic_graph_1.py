@@ -220,8 +220,9 @@ if __name__ == "__main__":
         edge_list=edges,
         node_schema=GameEntity,
         edge_schema=GameInteraction,
-        node_label_extractor=lambda node: node.name,
+        node_id_extractor=lambda node: node.name,
+        node_ids_in_edge_extractor=lambda edge: (edge.source, edge.target),
         edge_label_extractor=lambda edge: edge.action_type,
-        nodes_in_edge_extractor=lambda edge: (edge.source, edge.target),
+        node_label_extractor=lambda node: node.name,
         on_search=on_search,
     )

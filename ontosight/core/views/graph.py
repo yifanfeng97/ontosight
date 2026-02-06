@@ -23,9 +23,10 @@ def view_graph(
     edge_list: List[EdgeSchema],
     node_schema: Type[NodeSchema],
     edge_schema: Type[EdgeSchema],
-    node_label_extractor: Callable[[NodeSchema], str],
+    node_id_extractor: Callable[[NodeSchema], str],
+    node_ids_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
     edge_label_extractor: Callable[[EdgeSchema], str],
-    nodes_in_edge_extractor: Callable[[EdgeSchema], Tuple[str, str]],
+    node_label_extractor: Optional[Callable[[NodeSchema], str]] = None,
     on_search: Optional[Callable[[str, Dict], Any]] = None,
     on_chat: Optional[Callable[[str, Dict], Any]] = None,
     context: Optional[Dict[str, Any]] = None,
@@ -40,9 +41,10 @@ def view_graph(
         edge_list: List of edge objects/dicts connecting nodes
         node_schema: Schema describing node structure (for detail view)
         edge_schema: Schema describing edge structure (for detail view)
-        node_label_extractor: Function to extract display label from a node object (required)
+        node_id_extractor: Function to extract unique ID from a node object (required)
+        node_ids_in_edge_extractor: Function returning (source_id, target_id) from an edge object (required)
         edge_label_extractor: Function to extract display label from an edge object (required)
-        nodes_in_edge_extractor: Function returning (source_id, target_id) tuple from an edge object (required)
+        node_label_extractor: Optional function to extract display label from a node object
         on_search: Optional callback for search queries
         on_chat: Optional callback for chat queries
         context: Optional context data to store with visualization
@@ -75,9 +77,10 @@ def view_graph(
         storage = GraphStorage(
             node_list=node_list,
             edge_list=edge_list,
-            node_label_extractor=node_label_extractor,
+            node_id_extractor=node_id_extractor,
+            node_ids_in_edge_extractor=node_ids_in_edge_extractor,
             edge_label_extractor=edge_label_extractor,
-            nodes_in_edge_extractor=nodes_in_edge_extractor,
+            node_label_extractor=node_label_extractor,
         )
         global_state.set_storage(storage)
 
