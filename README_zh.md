@@ -5,9 +5,14 @@
 </p>
 
 <p align="center">
-  <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version"></a>
+  <a href="https://pypi.org/project/ontosight/"><img src="https://img.shields.io/pypi/v/ontosight.svg" alt="PyPI Version"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.11+-blue.svg" alt="Python Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green.svg" alt="License"></a>
   <a href="#"><img src="https://img.shields.io/badge/Interactive-UI-brightgreen.svg" alt="Interactive UI"></a>
+</p>
+
+<p align="center">
+  <a href="README.md">English</a> | <b>简体中文</b>
 </p>
 
 **AI 赋能的交互式知识图谱与超图可视化引擎**
