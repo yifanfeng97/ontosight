@@ -3,8 +3,8 @@ name = "ontosight"
 version = "0.1.0"
 description = "OntoSight: A flexible, AI-ready visualization engine for interactive knowledge graphs and hypergraphs."
 readme = "README.md"
-requires-python = ">=3.10"
-authors = [{ name = "OntoSight Team" }]
+requires-python = ">=3.11"
+authors = [{ name = "Yifan Feng", email = "evanfeng97@gmail.com" }]
 keywords = [
     "visualization",
     "graph",
@@ -18,9 +18,8 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -33,12 +32,6 @@ dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "pydantic>=2.5.0",
-    "pydantic-settings>=2.1.0",
-    # Data processing
-    "python-multipart>=0.0.6",
-    # Configuration
-    "python-dotenv>=1.0.0",
-    "httpx>=0.28.1",
 ]
 
 [project.optional-dependencies]
@@ -55,11 +48,6 @@ dev = [
     "isort>=5.13.0",
 ]
 
-frontend = [
-    # Frontend dependencies would be managed by npm/yarn
-    # This section is for documentation purposes
-]
-
 docs = ["mkdocs>=1.5.0", "mkdocs-material>=9.4.0"]
 
 [project.urls]
@@ -71,8 +59,17 @@ docs = ["mkdocs>=1.5.0", "mkdocs-material>=9.4.0"]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.sdist]
+include = ["/ontosight"]
 [tool.hatch.build.targets.wheel]
 packages = ["ontosight"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"ontosight/static" = "ontosight/static"
+
+
+[tool.hatch.build.targets.sdist.force-include]
+"ontosight/static" = "ontosight/static"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

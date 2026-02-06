@@ -1,8 +1,18 @@
 # OntoSight 🔍
 
+<p align="center">
+  <img src="docs/assets/hypergraph_chat.png" width="800px" alt="OntoSight Banner">
+</p>
+
+<p align="center">
+  <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green.svg" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Interactive-UI-brightgreen.svg" alt="Interactive UI"></a>
+</p>
+
 **AI 赋能的交互式知识图谱与超图可视化引擎**
 
-OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可视化与动态 AI 探索之间的隔阂。它允许开发者仅用几行代码，就为复杂的知识结构创建高度交互、可搜索且“支持对话 (Chat-ready)”的可视化界面。
+OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可视化与动态 AI 探索之间的隔阂。它允许开发者仅用几行代码，就为复杂的知识结构创建高度交互、可搜索、可对话的可视化界面。
 
 ---
 
@@ -18,11 +28,26 @@ OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可�
 
 ## 📸 可视化预览
 
-### 1. 交互式图可视化
-*(在此处插入 graph_preview.png)*
+### 1. 核心架构展示
+OntoSight 通过统一的接口同时支持传统图和超图。
 
-### 2. 交互式超图可视化
-*(在此处插入 hypergraph_preview.png)*
+| 标准图 (Graph) | 超图 (Hypergraph) |
+| :---: | :---: |
+| <img src="docs/assets/graph_main.png" width="380px"> | <img src="docs/assets/hypergraph_main.png" width="380px"> |
+
+### 2. 智能搜索 (对接向量数据库)
+定义自定义搜索回调，通过 Embedding 检索在图谱中实现“指哪亮哪”。
+
+| 图内搜索 | 超图内搜索 |
+| :---: | :---: |
+| <img src="docs/assets/graph_search.png" width="380px"> | <img src="docs/assets/hypergraph_search.png" width="380px"> |
+
+### 3. GraphRAG 与 AI 对话
+将图谱与 LLM 深度融合。在生成文本答案的同时，自动高亮显示相关的实体上下文。
+
+| AI 对话 (图谱) | AI 对话 (超图) |
+| :---: | :---: |
+| <img src="docs/assets/graph_chat.png" width="380px"> | <img src="docs/assets/hypergraph_chat.png" width="380px"> |
 
 ---
 
@@ -84,7 +109,6 @@ def my_vector_search(query: str):
 
 view_graph(..., on_search=my_vector_search)
 ```
-*(在此处插入 search_interaction.gif)*
 
 ### 图谱问答 (GraphRAG)
 将聊天界面直接连接到图谱。当用户提出问题时，大模型在生成文本答案的同时，OntoSight 会自动在图谱中高亮显示相关的知识子图。
@@ -97,7 +121,6 @@ def my_chat_handler(question: str):
 
 view_graph(..., on_chat=my_chat_handler)
 ```
-*(在此处插入 chat_interaction.gif)*
 
 ---
 
@@ -109,4 +132,4 @@ view_graph(..., on_chat=my_chat_handler)
 ---
 
 ## 📄 开源协议
-OntoSight 基于 [MIT License](LICENSE) 协议发布。
+OntoSight 基于 [Apache License 2.0](LICENSE) 协议发布。

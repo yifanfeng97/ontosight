@@ -37,7 +37,9 @@ class GraphStorage(BaseStorage):
             node_label_extractor: Optional function to extract display label from node
         """
         node_label_extractor = (
-            node_label_extractor if node_label_extractor else default_label_formatter
+            node_label_extractor
+            if node_label_extractor
+            else lambda n: default_label_formatter(node_id_extractor(n))
         )
         edge_id_extractor = get_model_id
         # Store extractors as class variables for later use

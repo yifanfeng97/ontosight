@@ -33,7 +33,7 @@ export default function DetailPanel() {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto scrollbar-thin pt-1">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin pt-1">
         <div className="space-y-3 px-1 py-0">
           {viewedHistory.map((item, index) => {
             const itemDetails = getItemDetails(item.id);

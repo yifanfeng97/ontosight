@@ -2,14 +2,6 @@
 
 A simple, powerful library for creating interactive visualizations of graphs,
 trees, lists, and other structured data with Python.
-
-Example:
-    >>> from ontosight import view_graph, view_hypergraph
-    >>>
-    >>> # Create a graph visualization
-    >>> nodes = [{"id": "1", "label": "Node 1"}, {"id": "2", "label": "Node 2"}]
-    >>> edges = [{"source": "1", "target": "2", "label": "connects"}]
-    >>> view_graph(node_list=nodes, edge_list=edges)
 """
 
 from ontosight.core import (
@@ -18,6 +10,8 @@ from ontosight.core import (
 )
 
 __version__ = "0.1.0"
+__author__ = "Yifan Feng"
+__email__ = "evanfeng97@gmail.com"
 
 __all__ = [
     "view_graph",

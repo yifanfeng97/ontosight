@@ -1,5 +1,15 @@
 # OntoSight 🔍
 
+<p align="center">
+  <img src="docs/assets/hypergraph_chat.png" width="800px" alt="OntoSight Banner">
+</p>
+
+<p align="center">
+  <a href="https://python.org"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-green.svg" alt="License"></a>
+  <a href="#"><img src="https://img.shields.io/badge/Interactive-UI-brightgreen.svg" alt="Interactive UI"></a>
+</p>
+
 **Interactive Visualization Engine for AI-Enhanced Knowledge Graphs & Hypergraphs**
 
 OntoSight is a lightweight yet powerful Python library designed to bridge the gap between static graph visualizations and dynamic AI-driven exploration. It allows developers to create highly interactive, searchable, and "chat-ready" visualizations for complex knowledge structures with just a few lines of code.
@@ -18,11 +28,26 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
 
 ## 📸 Visualization Previews
 
-### 1. Interactive Graph Visualization
-*(Insert graph_preview.png here)*
+### 1. Core Architectures
+OntoSight supports both traditional graphs and hypergraphs with a unified interface.
 
-### 2. Interactive Hypergraph Visualization
-*(Insert hypergraph_preview.png here)*
+| Graph | Hypergraph |
+| :---: | :---: |
+| <img src="docs/assets/graph_main.png" width="380px"> | <img src="docs/assets/hypergraph_main.png" width="380px"> |
+
+### 2. Intelligent Search (Vector DB Ready)
+Define custom search callbacks to highlight matching subgraphs via embedding-based retrieval.
+
+| Search in Graph | Search in Hypergraph |
+| :---: | :---: |
+| <img src="docs/assets/graph_search.png" width="380px"> | <img src="docs/assets/hypergraph_search.png" width="380px"> |
+
+### 3. GraphRAG & AI Chat
+Seamlessly connect your Graph to LLMs. Auto-highlight relevant entities while generating textual answers.
+
+| AI Chat (Graph) | AI Chat (Hypergraph) |
+| :---: | :---: |
+| <img src="docs/assets/graph_chat.png" width="380px"> | <img src="docs/assets/hypergraph_chat.png" width="380px"> |
 
 ---
 
@@ -84,7 +109,6 @@ def my_vector_search(query: str):
 
 view_graph(..., on_search=my_vector_search)
 ```
-*(Insert search_interaction.gif here)*
 
 ### GraphRAG & Chat
 Connect a Chat interface directly to your Graph. When a user asks a question, the LLM can provide a textual answer, and OntoSight will auto-highlight the relevant subgraph.
@@ -97,7 +121,6 @@ def my_chat_handler(question: str):
 
 view_graph(..., on_chat=my_chat_handler)
 ```
-*(Insert chat_interaction.gif here)*
 
 ---
 
@@ -109,4 +132,4 @@ view_graph(..., on_chat=my_chat_handler)
 ---
 
 ## 📄 License
-OntoSight is released under the [MIT License](LICENSE).
+OntoSight is released under the [Apache License 2.0](LICENSE).
