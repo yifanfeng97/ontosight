@@ -305,7 +305,7 @@ class HypergraphStorage(BaseStorage):
             if node_id in self.nodes:
                 node_ids.append(node_id)
             else:
-                logging.warning(f"Node {self.node_label_extractor(node)} not found in hypergraph")
+                logging.warning(f"Node {self.node_name_extractor(node)} not found in hypergraph")
 
         # Extract hyperedge IDs using edge extractor and label lookup
         hyperedge_ids = []
@@ -315,7 +315,7 @@ class HypergraphStorage(BaseStorage):
                 hyperedge_ids.append(hyperedge_id)
             else:
                 logging.warning(
-                    f"Hyperedge {self.hyperedge_label_extractor(hyperedge)} not found in hypergraph"
+                    f"Hyperedge {self.edge_name_extractor(hyperedge)} not found in hypergraph"
                 )
 
         # Combine node and hyperedge IDs and call get_sample

@@ -54,10 +54,10 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
     },
     ref
   ) => {
-    // Base glass-morphic styles - updated for maximum transparency and color bleed
+    // Base glass-morphic styles - Jelly Mica Style
     const baseStyles = cn(
-      "flex flex-col rounded-[2.5rem] bg-white/[0.03] border border-white/20 shadow-[0_12px_48px_-12px_rgba(0,0,0,0.12)] overflow-hidden min-w-[280px]",
-      BACKDROP_BLUR_CONFIG.STRONG
+      "flex flex-col rounded-[3rem] bg-white/60 border border-white/40 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden min-w-[280px]",
+      "backdrop-blur-[60px] ring-1 ring-black/[0.02]"
     );
 
     // Position-specific classes
@@ -75,31 +75,32 @@ const Island = React.forwardRef<HTMLDivElement, IslandProps>(
         className={cn(
           baseStyles,
           positionStyles[position],
+          "group transition-all duration-500 hover:shadow-[0_25px_60px_rgba(0,0,0,0.08)]",
           className
         )}
       >
         {/* Header (if title or headerContent provided) - minimalist design */}
         {(title || headerContent || showClose) && (
-          <div className="flex-none flex items-center justify-between px-5 py-3 transition-all duration-200">
+          <div className="flex-none flex items-center justify-between px-8 pt-6 pb-2 transition-all duration-200">
             {headerContent ? (
               headerContent
             ) : (
-              <h3 className="text-xs font-semibold text-muted-foreground/60 tracking-wide uppercase">{title}</h3>
+              <h3 className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">{title}</h3>
             )}
             {showClose && onClose && (
               <button
                 onClick={onClose}
-                className="shrink-0 p-1 rounded-lg hover:bg-white/10 text-muted-foreground hover:text-foreground transition-all duration-200 opacity-0 hover:opacity-100 group-hover:opacity-100"
+                className="shrink-0 p-2 rounded-full hover:bg-black/5 text-slate-400 hover:text-slate-900 transition-all duration-300 opacity-20 hover:opacity-100 group-hover:opacity-60 active:scale-95"
                 aria-label="Close"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
         )}
 
         {/* Content */}
-        <div className={cn("flex-1 min-h-0 px-5 py-4", contentClassName)}>{children}</div>
+        <div className={cn("flex-1 min-h-0 px-2 pt-0 pb-6", contentClassName)}>{children}</div>
       </div>
     );
   }

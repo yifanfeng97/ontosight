@@ -80,67 +80,81 @@ const ItemCard: React.FC<ItemCardProps> = ({
     <div
       onClick={onClick}
       className={cn(
-        "group relative p-4 cursor-pointer transition-all duration-500 rounded-[1.5rem] bg-white/30 border border-white shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] ring-1 ring-black/[0.04] hover:ring-black/[0.08] hover:bg-white/60 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2 overflow-hidden",
-        BACKDROP_BLUR_CONFIG.STRONG,
-        isSelected && "ring-2 ring-indigo-500/50 bg-white shadow-[0_10px_25px_-5px_rgba(79,70,229,0.15)]",
-        isHighlighted && "ring-2 ring-amber-400/50 bg-amber-500/5",
+        "group relative px-5 py-6 cursor-pointer transition-all duration-500 rounded-[2.5rem] bg-white/40 border border-white backdrop-blur-[40px] ring-1 ring-black/[0.02] flex flex-col",
+        stateClasses,
         className
       )}
     >
-      {/* Subtle Grain for the Card - extremely light */}
+      {/* Subtle Grain Overlay */}
       <div 
-        className="absolute inset-0 z-0 pointer-events-none opacity-[0.01] mix-blend-overlay group-hover:opacity-[0.03] transition-opacity duration-500"
+        className="absolute inset-0 z-0 pointer-events-none opacity-[0.015] mix-blend-overlay group-hover:opacity-[0.04] transition-opacity duration-700"
         style={{
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
         }}
       />
 
-      <div className={cn("relative z-10", !shouldTruncate ? "space-y-4" : "space-y-3")}>
-        {/* Label */}
-        <div className={cn(
-          "font-bold leading-tight truncate text-foreground group-hover:text-indigo-600 transition-colors",
-          !shouldTruncate ? "text-base tracking-tight" : "text-[15px]"
-        )}>
-          {label}
-        </div>
+      <div className={cn("relative z-10 flex-1 flex flex-col", !shouldTruncate ? "gap-5" : "gap-4")}>
+        {/* Header Section */}
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 min-w-0">
+             <div className={cn(
+              "font-black tracking-tight text-slate-900 group-hover:text-indigo-600 transition-colors duration-500",
+              !shouldTruncate ? "text-xl leading-tight" : "text-base truncate"
+            )}>
+              {label || id}
+            </div>
+          </div>
 
-        {/* Type Badge - unified indigo color, shown only if showTypeBadge is true */}
-        {showTypeBadge && (
-          <div className={cn("flex", !shouldTruncate ? "pb-2" : "pb-1")}>
-            <span className="inline-block text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full font-bold bg-indigo-500/10 text-indigo-600 border border-indigo-500/10">
+          {showTypeBadge && (
+             <span className={cn(
+              "px-3 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest shadow-sm border border-transparent transition-all duration-500",
+              type === "node" ? "bg-indigo-500/10 text-indigo-600 border-indigo-500/10" :
+              type === "edge" ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/10" :
+              "bg-violet-500/10 text-violet-600 border-violet-500/10"
+            )}>
               {type}
             </span>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* Metadata preview - show key-value pairs from raw data */}
+        {/* Metadata Grid */}
         {displayEntries.length > 0 && (
           <div className={cn(
-            "text-[11px] text-muted-foreground/80",
-            !shouldTruncate ? "space-y-2.5" : "space-y-1.5"
+            "grid gap-4 p-5 rounded-[1.5rem] bg-black/[0.02] border border-black/[0.03] transition-colors duration-500 group-hover:bg-indigo-500/[0.02]",
+            !shouldTruncate ? "grid-cols-1" : "grid-cols-1"
           )}>
-            {displayEntries.map(([key, value], idx) => (
-              <div key={key} className={cn(
-                "flex justify-between items-baseline gap-2",
-                !shouldTruncate ? "flex-col items-stretch" : "truncate"
-              )}>
-                <span className="font-semibold opacity-50 uppercase text-[8px] tracking-wider">{key}</span>
-                <span className={cn(
-                  "font-bold text-foreground/90 flex-1",
-                  shouldTruncate ? "text-right truncate" : "text-left break-words"
+            {displayEntries.map(([key, value]) => (
+              <div key={key} className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] leading-none">
+                    {key}
+                  </span>
+                  {shouldTruncate && <span className="w-8 h-[1px] bg-slate-100" />}
+                </div>
+                <div className={cn(
+                  "text-xs font-bold text-slate-700 leading-relaxed",
+                  shouldTruncate ? "truncate text-right" : "break-words"
                 )}>
-                  {formatMetadataValue(value, 15, shouldTruncate)}
-                </span>
+                  {formatMetadataValue(value, 30, shouldTruncate)}
+                </div>
               </div>
             ))}
-            {shouldTruncate && displayEntries.length > 0 && metadata && Object.keys(metadata).length > displayEntries.length && (
-              <div className="text-[9px] font-bold text-indigo-500/60 text-right pt-1 tracking-tighter">+{Object.keys(metadata).length - displayEntries.length} MORE</div>
+            
+            {shouldTruncate && metadata && Object.keys(metadata).length > displayEntries.length && (
+              <div className="pt-2 border-t border-black/[0.03] flex justify-end">
+                <span className="text-[8px] font-black text-indigo-500 animate-bounce">
+                  VIEW +{Object.keys(metadata).length - displayEntries.length} MORE PROPERTIES
+                </span>
+              </div>
             )}
           </div>
         )}
 
-        {children}
+        {children && <div className="mt-auto">{children}</div>}
       </div>
+
+      {/* Decorative Corner Glow */}
+      <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-indigo-500/5 blur-[50px] rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000 pointer-events-none" />
     </div>
   );
 };

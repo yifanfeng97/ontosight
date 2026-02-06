@@ -34,10 +34,10 @@ const FloatingNav = memo(function FloatingNav({
 
   return (
     <div className={cn(
-      "flex items-center gap-1 px-2 py-1.5 rounded-full bg-background/80 border border-border shadow-lg overflow-x-auto overflow-y-hidden max-w-full scrollbar-none",
-      BACKDROP_BLUR_CONFIG.BASE
+      "flex items-center gap-1 px-2.5 py-2.5 rounded-[2rem] bg-white/70 border border-white/40 shadow-[0_12px_40px_rgba(0,0,0,0.06)] backdrop-blur-[40px] overflow-hidden",
+      "transition-all duration-500 hover:scale-[1.02] hover:shadow-[0_15px_50px_rgba(0,0,0,0.08)]"
     )}>
-      <div className="flex items-center gap-1 min-w-max">
+      <div className="flex items-center gap-2 min-w-max">
         {options.map(({ value, label, icon: Icon }) => {
           const isActive = activeView === value;
           return (
@@ -45,13 +45,13 @@ const FloatingNav = memo(function FloatingNav({
               key={value}
               onClick={() => onViewChange(value)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 shrink-0",
+                "flex items-center gap-2.5 px-6 py-2.5 rounded-[1.5rem] text-xs font-black uppercase tracking-[0.15em] transition-all duration-300 shrink-0",
                 isActive
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-slate-900 text-white shadow-[0_8px_20px_rgba(0,0,0,0.2)] scale-105"
+                  : "text-slate-400 hover:text-slate-600 hover:bg-black/5"
               )}
             >
-              <Icon className="w-4 h-4" />
+              <Icon className={cn("w-3.5 h-3.5", isActive ? "text-indigo-400" : "text-slate-300")} />
               <span>{label}</span>
             </button>
           );

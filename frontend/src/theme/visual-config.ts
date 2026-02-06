@@ -243,22 +243,24 @@ export const HYPEREDGE_LABEL_CONFIG = {
 };
 
 /**
- * 统一的毛玻璃（Backdrop Blur）配置
- * 确保全站视觉层级一致
+ * 统一的毛玻璃（Backdrop Blur）配置 - 云母果冻风格 (Mica Jelly Style)
+ * 采用更高的模糊值以隔离复杂的背景图谱
  */
 export const BACKDROP_BLUR_CONFIG = {
-  LIGHT: 'backdrop-blur-sm',    // 轻量：用于覆盖层、非交互背景
-  BASE: 'backdrop-blur-md',     // 基础：用于导航栏、普通弹出层
-  STRONG: 'backdrop-blur-xl',   // 强化：用于核心卡片、Island 容器
+  LIGHT: 'backdrop-blur-[20px]',
+  BASE: 'backdrop-blur-[40px]',
+  STRONG: 'backdrop-blur-[60px]',
+  ULTRA: 'backdrop-blur-[80px]',
 };
 
 /**
  * UI卡片（ItemCard）的Tailwind样式配置
+ * 使用更具有物理感的阴影和圆角
  */
 export const UI_CARD_STATE_CLASSES = {
-  [VisualState.DEFAULT]: 'shadow hover:shadow-md',
-  [VisualState.SELECTED]: 'shadow-lg ring-2 ring-offset-2 ring-primary',
-  [VisualState.HIGHLIGHTED]: 'shadow-lg ring-2 ring-offset-2 ring-yellow-400 bg-yellow-50',
+  [VisualState.DEFAULT]: 'shadow-[0_2px_15px_-5px_rgba(0,0,0,0.05)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-2',
+  [VisualState.SELECTED]: 'shadow-[0_15px_35px_rgba(79,70,229,0.15)] ring-2 ring-indigo-500/50 bg-white/90 scale-[1.02]',
+  [VisualState.HIGHLIGHTED]: 'shadow-[0_15px_35px_rgba(245,158,11,0.15)] ring-2 ring-amber-400/50 bg-amber-50/80 scale-[1.02]',
 };
 
 /**

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Search, X, Loader2, ArrowRight } from "lucide-react";
+import { Search, X, Loader2, ArrowRight, Sparkles, Command } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
 import { cn } from "@/utils";
@@ -21,7 +21,7 @@ export default function SearchPanel({ onClose }: SearchPanelProps) {
   }, []);
 
   const handleSearch = async () => {
-    if (query.trim()) {
+    if (query.trim() && !loading) {
       const result = await search({ query: query.trim() });
       
       // Update main visualization with search results data
@@ -39,82 +39,99 @@ export default function SearchPanel({ onClose }: SearchPanelProps) {
   };
 
   return (
-    <div className="flex flex-col gap-0 w-full relative group p-2">
-      {/* HUD Accent - Amber Glow when focusing */}
-      <div className={cn(
-        "absolute inset-0 bg-amber-500/5 transition-opacity duration-500 rounded-[2.2rem] pointer-events-none opacity-0 group-focus-within:opacity-100"
-      )} />
-      
-      <div className="flex items-center gap-5 px-8 py-8 relative z-10">
-        {/* Large Modern Search Icon */}
-        <div className="flex-shrink-0">
-          {loading ? (
-            <div className="relative">
-              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
-              <div className="absolute inset-0 blur-md bg-amber-500/30 rounded-full animate-pulse" />
+    <div className="flex flex-col gap-0 w-full relative">
+      <div className="flex flex-col px-10 py-10 gap-8">
+        {/* Header - Jelly Title */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/10">
+              <Sparkles className="w-5 h-5 text-indigo-500" />
             </div>
-          ) : (
-            <Search className={cn(
-              "w-8 h-8 transition-all duration-300",
-              query ? "text-amber-500" : "text-white/30"
-            )} />
-          )}
-        </div>
-
-        {/* Cinematic Input Field */}
-        <input
-          ref={inputRef}
-          placeholder="What would you like to explore?"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleSearch();
-            if (e.key === "Escape") onClose?.();
-          }}
-          className="flex-1 bg-transparent border-none outline-none text-2xl font-medium tracking-tight placeholder:text-white/20 text-white placeholder:font-light"
-        />
-
-        {/* Action Button - Shows when query exists */}
-        <div className="flex items-center gap-3">
-          {query && (
-            <button
-              onClick={handleSearch}
-              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-xl font-bold text-sm hover:bg-amber-400 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
-            >
-              Search
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
-
-          {/* Close Action */}
+            <div>
+              <h3 className="text-sm font-black tracking-widest text-slate-900 uppercase">Universal Search</h3>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Neural Semantic Linkage</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-white/10 transition-all text-white/30 hover:text-white/80"
-            title="Close (Esc)"
+            className="p-2.5 rounded-full hover:bg-black/5 text-slate-300 transition-all active:scale-95"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
-      </div>
 
-      {/* Meta/Keyboard Hints Layer - Precision Grids style */}
-      <div className="px-8 pb-6 flex justify-between items-center relative z-10">
-        <div className="flex gap-4">
-          <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
-            <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse" />
-            Graph Intelligence Active
-          </span>
+        {/* Jelly Capsule Input */}
+        <div className="relative group">
+          <div className={cn(
+            "flex items-center gap-6 px-10 py-8 rounded-[2.5rem] bg-white transition-all duration-500",
+            "border border-white shadow-[0_15px_40px_rgba(0,0,0,0.03)]",
+            "group-focus-within:shadow-[0_25px_60px_rgba(0,0,0,0.08)] group-focus-within:scale-[1.02] group-focus-within:-translate-y-1",
+            "ring-8 ring-transparent group-focus-within:ring-indigo-500/5"
+          )}>
+            {/* Morphing Search Icon */}
+            <div className="flex-shrink-0">
+              {loading ? (
+                <div className="relative w-8 h-8 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />
+                </div>
+              ) : (
+                <Search className={cn(
+                  "w-8 h-8 transition-all duration-500",
+                  query ? "text-indigo-600 scale-110" : "text-slate-200"
+                )} />
+              )}
+            </div>
+
+            {/* Cinematic Large Input */}
+            <input
+              ref={inputRef}
+              placeholder="What would you like to explore?"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleSearch();
+                if (e.key === "Escape") onClose?.();
+              }}
+              className="flex-1 bg-transparent border-none outline-none text-2xl font-bold tracking-tight text-slate-800 placeholder:text-slate-200"
+            />
+
+            {/* Jelly Action Button - Float in */}
+            <div className={cn(
+              "flex items-center transition-all duration-500 origin-right",
+              query ? "opacity-100 scale-100 w-auto" : "opacity-0 scale-90 w-0 overflow-hidden"
+            )}>
+              <button
+                onClick={handleSearch}
+                className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-2xl font-black text-sm hover:bg-indigo-700 transition-all hover:shadow-[0_8px_30px_rgba(79,70,229,0.3)] active:scale-95"
+              >
+                Go
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
         </div>
-        
-        <div className="flex items-center gap-4">
-          <span className="text-[10px] text-white/30 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.15em]">
-            <kbd className="font-sans px-2 py-0.5 bg-white/10 rounded-md border border-white/10 shadow-sm text-white/60 normal-case tracking-normal">Esc</kbd>
-            Cancel
-          </span>
-          <span className="text-[10px] text-white/30 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.15em]">
-            <kbd className="font-sans px-2 py-0.5 bg-white/10 rounded-md border border-white/10 shadow-sm text-white/60 normal-case tracking-normal">↵ Enter</kbd>
-            Confirm
-          </span>
+
+        {/* Hints Layer - Minimalist */}
+        <div className="flex justify-between items-center px-4">
+          <div className="flex gap-4">
+            <span className="text-[10px] text-slate-400 font-black uppercase tracking-[0.2em] flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+              Engine Stable
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-6">
+             <div className="flex items-center gap-2 opacity-30 group-focus-within:opacity-100 transition-opacity">
+                <Command className="w-3 h-3 text-slate-400" />
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Semantic Analysis Ready</span>
+             </div>
+             <div className="flex items-center gap-3">
+                <span className="text-[9px] text-slate-300 font-bold uppercase tracking-widest flex items-center gap-1.5">
+                  <kbd className="px-1.5 py-0.5 bg-black/5 rounded-md border border-black/5 font-sans normal-case">Enter</kbd>
+                  to search
+                </span>
+             </div>
+          </div>
         </div>
       </div>
     </div>

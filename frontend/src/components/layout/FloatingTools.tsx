@@ -35,74 +35,88 @@ const FloatingTools = memo(function FloatingTools({
 
   return (
     <>
-      {/* 右侧中间浮动工具组 - 玻璃长刃风格 */}
+      {/* Right Tool Blade - Mica Jelly Style */}
       <div className={cn(
-        "fixed right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-2 p-2 rounded-full bg-background/20 border-l border-t border-white/60 ring-1 ring-black/5 shadow-[0_0_25px_rgba(0,0,0,0.1)]",
-        BACKDROP_BLUR_CONFIG.STRONG
+        "fixed top-1/2 -translate-y-1/2 z-[100] flex flex-col gap-3 p-2.5 rounded-[2rem] bg-white/70 border border-white/50 shadow-[0_15px_45px_rgba(0,0,0,0.06)] backdrop-blur-[40px] pointer-events-auto",
+        "transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
+        openDrawer === "chat" ? "right-[420px]" : "right-8",
+        "hover:shadow-[0_20px_60px_rgba(0,0,0,0.1)] hover:scale-[1.03]"
       )}>
         {hasSearch && (
           <button
             onClick={() => toggleDrawer("search")}
             className={cn(
-              "p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900",
+              "p-4 rounded-[1.5rem] transition-all duration-300 group relative",
               openDrawer === "search"
-                ? "bg-primary/20 text-primary shadow-sm"
-                : "hover:bg-background/40"
+                ? "bg-slate-900 text-white shadow-lg scale-110"
+                : "text-slate-400 hover:text-slate-900 hover:bg-black/5"
             )}
-            title="Search"
+            title="Search (Universal Intelligence)"
           >
-            <Search className="w-5 h-5" />
+            <Search className={cn("w-5 h-5", openDrawer === "search" ? "animate-pulse" : "")} />
+            {openDrawer !== "search" && (
+              <div className="absolute right-full mr-4 px-2 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                Search
+              </div>
+            )}
           </button>
         )}
         {hasChat && (
           <button
             onClick={() => toggleDrawer("chat")}
             className={cn(
-              "p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900",
+              "p-4 rounded-[1.5rem] transition-all duration-300 group relative",
               openDrawer === "chat"
-                ? "bg-primary/20 text-primary shadow-sm"
-                : "hover:bg-background/40"
+                ? "bg-slate-900 text-white shadow-lg scale-110"
+                : "text-slate-400 hover:text-slate-900 hover:bg-black/5"
             )}
-            title="Chat Assistant"
+            title="Chat Assistant (Deep Memory)"
           >
-            <MessageSquare className="w-5 h-5" />
+            <MessageSquare className={cn("w-5 h-5", openDrawer === "chat" ? "animate-bounce" : "")} />
+             {openDrawer !== "chat" && (
+              <div className="absolute right-full mr-4 px-2 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                Chat
+              </div>
+            )}
           </button>
         )}
-        {/* 分隔线 */}
-        <div className="h-px bg-background/40 mx-1" />
-        {/* 重置按钮 - 集成到工具组 */}
+        
+        <div className="h-px bg-slate-100 mx-3 my-1" />
+        
         <button
           onClick={() => triggerLayoutReset()}
           disabled={loading}
-          className="p-3 rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-background/40 disabled:opacity-50 disabled:cursor-not-allowed group"
-          title="Reset view layout and fetch fresh data"
+          className="p-4 rounded-[1.5rem] transition-all duration-300 text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 group relative disabled:opacity-30"
+          title="Reset Visualization"
         >
-          <RotateCcw className={`w-5 h-5 transition-transform duration-300 group-hover:rotate-180 ${loading ? 'animate-spin' : ''}`} />
+          <RotateCcw className={cn("w-5 h-5 transition-transform duration-700 group-hover:rotate-180", loading ? "animate-spin" : "")} />
+           <div className="absolute right-full mr-4 px-2 py-1 bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+            Reset
+          </div>
         </button>
       </div>
 
-      {/* Search Capsule - Modern Raycast-style HUD */}
+      {/* Search Capsule - Modern Pure Mica HUD */}
       {openDrawer === "search" && hasSearch && (
         <div className="fixed inset-0 z-[120] flex items-start justify-center pt-[15vh]">
-          {/* Deep Focus Backdrop Mask */}
+          {/* Airy Pure Mask */}
           <div 
             className={cn(
-              "absolute inset-0 bg-slate-900/40 animate-in fade-in duration-500",
-              BACKDROP_BLUR_CONFIG.BASE
+              "absolute inset-0 bg-white/10 backdrop-blur-[4px] animate-in fade-in duration-500",
             )}
             onClick={() => toggleDrawer(null)}
           />
 
-          <div className="relative w-[650px] max-w-[95vw] animate-in zoom-in-95 slide-in-from-top-8 duration-300">
+          <div className="relative w-[680px] max-w-[95vw] animate-in zoom-in-95 slide-in-from-top-12 duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)]">
             <div className={cn(
-              "bg-white/10 rounded-[2.5rem] border border-white/20 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.4)] ring-1 ring-white/10 overflow-hidden relative",
-              BACKDROP_BLUR_CONFIG.STRONG
+              "bg-white/80 rounded-[3rem] border border-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.12)] overflow-hidden relative",
+              "backdrop-blur-[80px]"
             )}>
-              {/* Grain Texture Overlay */}
+              {/* White Mica Grain Overlay */}
               <div 
-                className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
+                className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-soft-light"
                 style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
                 }}
               />
               <div className="relative z-10">
@@ -110,45 +124,41 @@ const FloatingTools = memo(function FloatingTools({
               </div>
             </div>
             
-            {/* Minimalist Footnote info */}
-            <div className="mt-4 flex justify-center animate-in fade-in slide-in-from-top-2 duration-700 delay-300">
-              <span className="text-[10px] text-white/40 font-medium tracking-[0.2em] uppercase">
-                OntoSight Engine • Semantic Search v1.0
+            {/* Minimalist Footnote - Bright style */}
+            <div className="mt-6 flex justify-center animate-in fade-in slide-in-from-top-2 duration-1000 delay-300">
+              <span className="text-[10px] text-slate-400 font-black tracking-[0.3em] uppercase">
+                OntoSight Engine • Neural Search v2.0
               </span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Chat Drawer - Keep sidebar for vertical reading flow */}
+      {/* Chat Drawer - Pure Mica Jelly Sidebar (Option A) */}
       {openDrawer === "chat" && hasChat && (
         <div className={cn(
-          "fixed right-0 top-0 h-full w-[400px] bg-background/95 border-l border-border shadow-2xl z-40 animate-in slide-in-from-right duration-300",
-          BACKDROP_BLUR_CONFIG.BASE
+          "fixed right-0 top-0 h-full w-[400px] max-w-full z-[110]",
+          "bg-white/60 border-l border-white/60 shadow-[-20px_0_80px_rgba(0,0,0,0.08)]",
+          "backdrop-blur-[60px] transition-all duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] animate-in slide-in-from-right"
         )}>
-          <div className="flex flex-col h-full">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-              <h2 className="text-lg font-semibold">Chat Assistant</h2>
-              <button
-                onClick={() => setOpenDrawer(null)}
-                className="p-1 rounded-md hover:bg-muted transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {/* Content */}
-            <div className="flex-1 overflow-hidden">
-              <ChatPanel />
-            </div>
+          {/* White Mica Grain Overlay */}
+          <div 
+            className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-soft-light"
+            style={{
+              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
+            }}
+          />
+          
+          <div className="relative z-10 h-full flex flex-col">
+            <ChatPanel onClose={() => setOpenDrawer(null)} />
           </div>
         </div>
       )}
 
-      {/* 点击画布关闭抽屉的蒙层（可选，半透明） */}
+      {/* 点击画布关闭抽屉的蒙层 - 更加通透的果冻感 */}
       {openDrawer && (
         <div
-          className="fixed inset-0 bg-black/20 z-35 animate-in fade-in duration-300"
+          className="fixed inset-0 bg-white/10 dark:bg-black/5 z-35 backdrop-blur-[2px] animate-in fade-in duration-500"
           onClick={() => setOpenDrawer(null)}
         />
       )}
