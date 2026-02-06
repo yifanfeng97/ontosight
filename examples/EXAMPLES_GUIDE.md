@@ -64,13 +64,6 @@ start_daemon(reload=True)
 - **Server**: Auto-starts when you run the script
 - **How to run**: `python 01_basic_graph.py`
 
-### 02_basic_list.py
-- **Type**: Visualization Example
-- **Use daemon.py**: ❌ No
-- **What it does**: Displays a list of users in a table
-- **Server**: Auto-starts
-- **How to run**: `python 02_basic_list.py`
-
 ### 03_basic_hypergraph.py
 - **Type**: Visualization Example
 - **Use daemon.py**: ❌ No
@@ -130,9 +123,6 @@ start_daemon(reload=True)
 
 **Visualize a simple graph**
 → Use: `01_basic_graph.py`
-
-**Display a data table**
-→ Use: `02_basic_list.py`
 
 **Show complex relationships**
 → Use: `03_basic_hypergraph.py`
@@ -218,8 +208,8 @@ Manual Flow (You use start_daemon()):
 
 ## Troubleshooting
 
-### Q: Do I have to call start_daemon()?
-**A**: No! Just call view_graph(), view_list(), or view_hypergraph() and it handles everything.
+### No, just call view_graph() or view_hypergraph()!
+Automatically handles everything.
 
 ### Q: Can I use multiple servers on different ports?
 **A**: Yes! Use daemon.py with different ports:
@@ -264,9 +254,9 @@ stop_daemon()
 - No special optimization needed
 
 ### Medium Datasets (1k-10k items)
-- Recommended: Use `02_basic_list.py` for table views
-- Use virtual scrolling (automatic)
-- May need to filter displayed edges
+- Use hypergraph or graph views
+- Implement efficient search callbacks to filter results
+- May need to filter displayed edges for large graphs
 
 ### Large Datasets (10k-100k items)
 - Use hypergraph or list views only
@@ -287,8 +277,6 @@ stop_daemon()
 ```
 Beginner:
     01_basic_graph.py
-        ↓
-    02_basic_list.py
         ↓
     03_basic_hypergraph.py
 

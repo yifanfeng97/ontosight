@@ -70,10 +70,6 @@ async def get_meta() -> MetaResponse:
         if "hyperedge_schema" in data and data["hyperedge_schema"] is not None:
             schemas["hyperedges"] = data["hyperedge_schema"].model_json_schema()
 
-    elif viz_type == "list":
-        if "item_schema" in data and data["item_schema"] is not None:
-            schemas["items"] = data["item_schema"].model_json_schema()
-
     return MetaResponse(
         type=viz_type,
         features=features,

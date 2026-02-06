@@ -4,7 +4,7 @@ import { cn } from "@/utils";
 import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 
 interface FloatingNavProps {
-  vizType: "graph" | "hypergraph" | "list";
+  vizType: "graph" | "hypergraph";
   activeView: string;
   onViewChange: (view: string) => void;
 }
@@ -18,7 +18,7 @@ const FloatingNav = memo(function FloatingNav({
   activeView,
   onViewChange,
 }: FloatingNavProps) {
-  // 根据 vizType 决定显示哪些按钮（移除 Graph/Hypergraph 按钮，仅保留列表类）
+  // 根据 vizType 决定显示哪些按钮
   const viewOptions = {
     graph: [
       { value: "nodes", label: "Nodes", icon: List },
@@ -28,12 +28,9 @@ const FloatingNav = memo(function FloatingNav({
       { value: "nodes", label: "Nodes", icon: List },
       { value: "hyperedges", label: "Hyperedges", icon: Layers },
     ],
-    list: [
-      { value: "items", label: "All Items", icon: List },
-    ],
   };
 
-  const options = viewOptions[vizType] || viewOptions.list;
+  const options = viewOptions[vizType];
 
   return (
     <div className={cn(

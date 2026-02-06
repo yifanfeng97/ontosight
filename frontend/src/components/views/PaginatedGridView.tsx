@@ -7,7 +7,7 @@ import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 import { cn } from "@/utils";
 
 interface PaginatedGridViewProps {
-  entityType: "node" | "edge" | "hyperedge" | "item";
+  entityType: "node" | "edge" | "hyperedge";
   fetchFunction: (page: number, pageSize: number) => Promise<any>;
 }
 
@@ -15,20 +15,19 @@ interface PaginatedGridViewProps {
  * Utility to pluralize entity type for UI display
  */
 const pluralizeType = (
-  type: "node" | "edge" | "hyperedge" | "item"
+  type: "node" | "edge" | "hyperedge"
 ): string => {
   const pluralMap = {
     node: "nodes",
     edge: "edges",
     hyperedge: "hyperedges",
-    item: "items",
   };
   return pluralMap[type];
 };
 
 /**
  * PaginatedGridView - displays paginated entity grid with unified UI
- * Supports nodes, edges, hyperedges, and items
+ * Supports nodes, edges, and hyperedges
  * 
  * Simplified compared to old UnifiedListView by leveraging EntityGrid component
  */

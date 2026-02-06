@@ -1,7 +1,7 @@
 """Tests for SDK view functions."""
 
 import pytest
-from ontosight.core import view_graph, view_list, view_hypergraph
+from ontosight.core import view_graph, view_hypergraph
 from ontosight.server.state import global_state
 
 
@@ -85,37 +85,6 @@ class TestViewGraph:
 
         context = global_state._context
         assert context["title"] == "My Graph"
-
-
-class TestViewList:
-    """Tests for view_list function."""
-
-    def test_view_list_simple_strings(self, clear_state):
-        """Test list with strings."""
-        items = ["apple", "banana", "cherry"]
-
-        view_list(item_list=items)
-
-        data = global_state.get_all_visualization_data()
-        assert len(data["items"]) == 3
-
-    def test_view_list_dict_objects(self, clear_state):
-        """Test list with dict objects."""
-        items = [
-            {"name": "Item 1"},
-            {"name": "Item 2"},
-        ]
-
-        view_list(item_list=items, item_name_extractor="name")
-
-        data = global_state.get_all_visualization_data()
-        assert data["items"][0]["label"] == "Item 1"
-        assert data["items"][1]["label"] == "Item 2"
-
-    def test_view_list_requires_list(self, clear_state):
-        """Test that view_list requires list/tuple."""
-        with pytest.raises(TypeError):
-            view_list(item_list="not a list")
 
 
 class TestViewHypergraph:

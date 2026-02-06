@@ -19,7 +19,7 @@ export default function MainLayout() {
   const isHistorySelected = viewedHistory.length > 0;
 
   // 判断是否处于列表/网格视图模式（使用全局viewMode而非meta）
-  const isGridViewMode = ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
+  const isGridViewMode = ["nodes", "edges", "hyperedges"].includes(viewMode || "");
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-slate-50">

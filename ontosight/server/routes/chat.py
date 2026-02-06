@@ -9,9 +9,8 @@ from ontosight.server.models.api import (
     ChatResponse,
     GraphData,
     HypergraphData,
-    ListData,
 )
-from ontosight.core.storage import GraphStorage, HypergraphStorage, ListStorage
+from ontosight.core.storage import GraphStorage, HypergraphStorage
 from ontosight.server.state import global_state
 
 logger = logging.getLogger(__name__)
@@ -90,19 +89,6 @@ async def chat(request: ChatRequest) -> ChatResponse:
                         edges=sample.get("edges", []),
                         hyperedges=sample["hyperedges"],
                     )
-
-            elif viz_type == "list":
-                # Unpack related_data (item_list, _) from callback
-                item_list = related_data[0] if isinstance(related_data, tuple) else related_data
-                # Only process if there's actual data
-                if item_list:
-                    sample = storage.get_sample_from_data(item_list, highlight_center=True)
-                    highlighted_items = sum(1 for i in sample["items"] if i.get("highlighted"))
-                    logger.info(
-                        f"[/api/chat] List chat returned {len(sample['items'])} items "
-                        f"({highlighted_items} highlighted)"
-                    )
-                    highlighted_data = ListData(items=sample["items"])
 
         return ChatResponse(response=str(response_text), data=highlighted_data.model_dump() if highlighted_data else None)
 

@@ -7,10 +7,9 @@ from typing import Union
 from ontosight.server.models.api import (
     GraphData,
     HypergraphData,
-    ListData,
 )
 
-from ontosight.core.storage import GraphStorage, HypergraphStorage, ListStorage
+from ontosight.core.storage import GraphStorage, HypergraphStorage
 
 from ontosight.server.models.api import SearchRequest
 from ontosight.server.state import global_state
@@ -19,15 +18,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/search", response_model=Union[GraphData, HypergraphData, ListData])
-async def search(request: SearchRequest) -> Union[GraphData, HypergraphData, ListData]:
+@router.post("/search", response_model=Union[GraphData, HypergraphData])
+async def search(request: SearchRequest) -> Union[GraphData, HypergraphData]:
     """Search visualization for matching nodes and return highlighted sample data.
 
     Args:
         request: Search request with query string
 
     Returns:
-        Visualization data (GraphData, HypergraphData, or ListData) with highlighted 
+        Visualization data (GraphData or HypergraphData) with highlighted 
         matching elements and surrounding context
 
     Raises:
@@ -78,23 +77,6 @@ async def search(request: SearchRequest) -> Union[GraphData, HypergraphData, Lis
                 edges=sample.get("edges", []),
                 hyperedges=sample["hyperedges"]
             )
-            
-        elif viz_type == "list":
-            storage: ListStorage = global_state.get_storage()
-            if not storage:
-                raise HTTPException(status_code=400, detail="Storage not initialized")
-            
-            # Unpack results (item_list, _) from callback
-            item_list = results[0] if isinstance(results, tuple) else results
-            
-            # Get sample with highlighting injected at storage layer
-            sample = storage.get_sample_from_data(item_list, highlight_center=True)
-            
-            logger.info(
-                f"[/api/search] List search returned {len(sample['items'])} items "
-                f"({sum(1 for i in sample['items'] if i.get('highlighted'))} highlighted)"
-            )
-            return ListData(items=sample["items"])
             
         else:
             raise NotImplementedError(f"Search not implemented for visualization type: {viz_type}")

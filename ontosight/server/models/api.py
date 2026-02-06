@@ -11,7 +11,6 @@ Models:
     - ChatResponse: Chat response with optional sources
     - GraphData: Graph visualization payload
     - HypergraphData: Hypergraph visualization payload
-    - ListData: List visualization payload
 
 Example:
     >>> from ontosight.server.models.api import MetaResponse
@@ -37,15 +36,14 @@ class MetaResponse(BaseModel):
     3. Dynamically render property panels based on schemas
 
     Attributes:
-        type: Visualization type (graph, list, or hypergraph)
+        type: Visualization type (graph or hypergraph)
         features: Dict of feature flags (e.g., {"search": true, "chat": false})
         schemas: Dict mapping element types to their JSON Schemas
                  For graph: {"nodes": {...}, "edges": {...}}
-                 For list: {"items": {...}}
                  For hypergraph: {"nodes": {...}, "edges": {...}, "hyperedges": {...}}
     """
 
-    type: Literal["graph", "list", "hypergraph"] = Field(
+    type: Literal["graph", "hypergraph"] = Field(
         ..., description="Type of visualization"
     )
     features: Dict[str, bool] = Field(
@@ -92,7 +90,7 @@ class ChatResponse(BaseModel):
 
     response: str = Field(..., description="Response text")
     data: Optional[Dict[str, Any]] = Field(
-        None, description="Visualization data (GraphData, HypergraphData, or ListData) with highlighted related elements"
+        None, description="Visualization data (GraphData or HypergraphData) with highlighted related elements"
     )
 
 
@@ -109,16 +107,6 @@ class HypergraphData(BaseModel):
     hyperedges: List[Dict[str, Any]] = Field(..., description="List of hyperedge objects (may include 'highlighted' bool)")
 
 
-class ListData(BaseModel):
-    """Data for list/table visualization.
-    
-    Returns a sample/subset of items. For full paginated list, use /api/items_paginated.
-    """
-    items: List[Dict[str, Any]] = Field(..., description="List of items (may include 'highlighted' bool)")
-
-
-
-
 __all__ = [
     "MetaResponse",
     "SearchRequest",
@@ -126,5 +114,4 @@ __all__ = [
     "ChatResponse",
     "GraphData",
     "HypergraphData",
-    "ListData",
 ]

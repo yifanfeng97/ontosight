@@ -3,7 +3,7 @@ import { apiClient } from "@/services/api";
 
 export interface SelectedItem {
   id: string;
-  type: "node" | "edge" | "item" | "hyperedge";
+  type: "node" | "edge" | "hyperedge";
 }
 
 export interface VisualizationState {
@@ -16,7 +16,7 @@ export interface VisualizationState {
   viewedHistory: SelectedItem[]; // History of all clicked items (no dedup)
   selectedItemDetails: Map<string, any>; // Cache for item details
   highlightedNodes: Set<string>;
-  viewMode: "graph" | "list" | "items" | "nodes" | "edges" | "hyperedges" | "hypergraph";
+  viewMode: "graph" | "nodes" | "edges" | "hyperedges" | "hypergraph";
   zoomLevel: number;
   resetTrigger: number;
   currentPage: number;
@@ -28,7 +28,7 @@ export interface VisualizationState {
   setLoading: (loading: boolean) => void;
   setDetailLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  selectItem: (itemId: string, itemType?: "node" | "edge" | "item" | "hyperedge") => void;
+  selectItem: (itemId: string, itemType?: "node" | "edge" | "hyperedge") => void;
   deselectItem: (itemId: string) => void;
   clearSelection: () => void;
   removeFromHistory: (itemId: string) => void;

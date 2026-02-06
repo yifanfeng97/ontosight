@@ -250,18 +250,6 @@ export const apiClient = {
     url.searchParams.append("page_size", pageSize.toString());
     return await fetchWithRetry<any>(url.toString());
   },
-
-  /**
-   * Get paginated list of items (for list visualization).
-   *
-   * GET /api/items_paginated
-   */
-  async getItemsPaginated(page: number = 0, pageSize: number = 30): Promise<any> {
-    const url = new URL(`${API_BASE_URL}/api/items_paginated`);
-    url.searchParams.append("page", page.toString());
-    url.searchParams.append("page_size", pageSize.toString());
-    return await fetchWithRetry<any>(url.toString());
-  },
 };
 
 /**

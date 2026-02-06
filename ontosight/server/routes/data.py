@@ -8,7 +8,7 @@ Endpoint:
     GET /api/data
 
 Response:
-    GraphData | HypergraphData | ListData depending on visualization type
+    GraphData or HypergraphData with sampled neighborhood
 """
 
 import logging
@@ -18,9 +18,8 @@ from fastapi import APIRouter, HTTPException, Query
 from ontosight.server.models.api import (
     GraphData,
     HypergraphData,
-    ListData,
 )
-from ontosight.core.storage import GraphStorage, HypergraphStorage, ListStorage
+from ontosight.core.storage import GraphStorage, HypergraphStorage
 from ontosight.server.state import global_state
 
 logger = logging.getLogger(__name__)
@@ -34,15 +33,14 @@ async def get_data(
     """Get sampled visualization data for display.
 
     - Graph/Hypergraph: Returns neighborhood around specified IDs (or random if empty). 2 hops.
-    - List: Returns paginated items.
 
     Args:
         ids: Comma-separated list of element IDs (optional, for graph/hypergraph)
-        page: Page number for list views (0-indexed)
-        page_size: Items per page for list views
+        page: Page number for paginated views (0-indexed)
+        page_size: Items per page for paginated views
 
     Returns:
-        GraphData, HypergraphData, or ListData with sampled neighborhood
+        GraphData or HypergraphData with sampled neighborhood
     """
     viz_type = global_state.get_visualization_type()
 
@@ -70,18 +68,6 @@ async def get_data(
             return HypergraphData(
                 nodes=sub_hg["nodes"], edges=sub_hg["edges"], hyperedges=sub_hg["hyperedges"]
             )
-
-        elif viz_type == "list":
-            storage = global_state.get_storage()
-            if not storage:
-                raise HTTPException(status_code=400, detail="Storage not initialized")
-
-            # Get a sample of items (not paginated, default ~50 items)
-            sample_data = storage.get_sample()
-            logger.info(
-                f"[/api/data] List sample: {len(sample_data['items'])} items"
-            )
-            return ListData(items=sample_data["items"])
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown viz type: {viz_type}")
@@ -184,26 +170,4 @@ async def get_hyperedges_paginated(page: int = Query(0), page_size: int = Query(
         return storage.get_all_hyperedges_paginated(page=page, page_size=page_size)
     except Exception as e:
         logger.error(f"[/api/hyperedges_paginated] Exception: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-@router.get("/items_paginated")
-async def get_items_paginated(page: int = Query(0), page_size: int = Query(30)):
-    """Get paginated list of all items (for list visualization).
-
-    Args:
-        page: Page number (0-indexed)
-        page_size: Items per page
-
-    Returns:
-        Paginated item list
-    """
-    storage: ListStorage = global_state.get_storage()
-    if not storage:
-        raise HTTPException(status_code=400, detail="Storage not initialized")
-
-    try:
-        return storage.get_all_items_paginated(page=page, page_size=page_size)
-    except Exception as e:
-        logger.error(f"[/api/items_paginated] Exception: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

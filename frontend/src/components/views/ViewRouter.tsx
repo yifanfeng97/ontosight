@@ -5,7 +5,6 @@ import FloatingNav from "@/components/layout/FloatingNav";
 import { AlertCircle } from "lucide-react";
 
 const GraphView = lazy(() => import("./GraphView"));
-const ListView = lazy(() => import("./ListView"));
 const PaginatedGridView = lazy(() => import("./PaginatedGridView"));
 const HypergraphView = lazy(() => import("./HypergraphView"));
 
@@ -20,7 +19,7 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   const { setViewMode, viewMode } = useVisualization();
 
   useEffect(() => {
-    const defaultMode = vizType === "hypergraph" || vizType === "graph" ? "graph" : "list";
+    const defaultMode = vizType === "hypergraph" || vizType === "graph" ? "graph" : "graph";
     setViewMode(defaultMode as any);
   }, [vizType, setViewMode]);
 
@@ -78,7 +77,6 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
           >
             {vizType === "graph" && <GraphView data={data} meta={meta} />}
             {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
-            {vizType === "list" && <ListView data={data} meta={meta} />}
           </Suspense>
         </div>
 
@@ -124,17 +122,6 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
                     <PaginatedGridView
                       entityType="hyperedge"
                       fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
-                    />
-                  )}
-                </>
-              )}
-
-              {vizType === "list" && (
-                <>
-                  {viewMode === "items" && (
-                    <PaginatedGridView
-                      entityType="item"
-                      fetchFunction={(page, pageSize) => apiClient.getItemsPaginated(page, pageSize)}
                     />
                   )}
                 </>

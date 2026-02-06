@@ -58,7 +58,6 @@ class TestMetaEndpoint:
         edges = [Edge(source="1", target="2", data={}, label="edge")]
         state.set_visualization_data("nodes", nodes)
         state.set_visualization_data("edges", edges)
-        state.set_visualization_data("items", [])
         state.set_visualization_data("hyperedges", [])
 
         response = client.get("/api/meta")
@@ -85,7 +84,6 @@ class TestDataEndpoint:
         edges = []
         state.set_visualization_data("nodes", nodes)
         state.set_visualization_data("edges", edges)
-        state.set_visualization_data("items", [])
         state.set_visualization_data("hyperedges", [])
 
         response = client.get("/api/data")

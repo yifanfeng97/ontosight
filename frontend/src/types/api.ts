@@ -81,13 +81,10 @@ export interface Edge<T> {
 /**
  * Generic item for list/table visualization.
  * 
- * @template T - Type of item data
+ * DEPRECATED: List visualization has been removed to focus on graph and hypergraph.
+ * This interface is kept for backward compatibility only.
  * 
- * @example
- * const item: Item<PersonData> = {
- *   id: "person_1",
- *   data: { label: "Alice", raw: { name: "Alice", age: 30 } }
- * };
+ * @template T - Type of item data
  */
 export interface Item<T> {
   /** Unique item identifier */
@@ -146,7 +143,7 @@ export interface Hyperedge<T> {
  */
 export interface MetaResponse {
   /** Visualization type: determines which component to render */
-  type: "graph" | "list" | "hypergraph";
+  type: "graph" | "hypergraph";
   /** Feature availability flags (e.g., {"search": true, "chat": false}) */
   features: Record<string, boolean>;
   /** Map of element types to their JSON Schemas */
@@ -185,9 +182,9 @@ export interface ChatResponse {
  * Complete visualization data payload for /api/data endpoint.
  * 
  * Returns raw data without type wrapping (type is known from /api/meta).
- * The actual response will be one of: GraphData, HypergraphData, or ListData
+ * The actual response will be one of: GraphData or HypergraphData
  */
-export type VisualizationData = GraphData | HypergraphData | ListData;
+export type VisualizationData = GraphData | HypergraphData;
 
 export interface GraphData {
   /** List of nodes in the graph */
@@ -209,9 +206,4 @@ export interface HypergraphData {
     data: any;
     highlighted?: boolean;
   }>;
-}
-
-export interface ListData {
-  /** List of items */
-  items: Array<Item<any>>;
 }
