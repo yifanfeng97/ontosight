@@ -1,12 +1,24 @@
-import { useState } from "react";
-import { Search, X, Loader2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Search, X, Loader2, ArrowRight } from "lucide-react";
 import { useSearch } from "@/hooks/useSearch";
 import { useVisualization } from "@/hooks/useVisualization";
+import { cn } from "@/utils";
 
-export default function SearchPanel() {
+interface SearchPanelProps {
+  onClose?: () => void;
+}
+
+export default function SearchPanel({ onClose }: SearchPanelProps) {
   const [query, setQuery] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
   const { loading, search, clear } = useSearch();
   const { setData, refreshView } = useVisualization();
+
+  // Auto-focus logic
+  useEffect(() => {
+    const timer = setTimeout(() => inputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleSearch = async () => {
     if (query.trim()) {
@@ -16,6 +28,7 @@ export default function SearchPanel() {
       if (result) {
         setData(result);
         refreshView(); // Rebuild graph with new data (clears old positions)
+        onClose?.();   // Close HUD on successful search
       }
     }
   };
@@ -25,55 +38,84 @@ export default function SearchPanel() {
     clear();
   };
 
-
-
   return (
-    <div className="flex flex-col gap-0 w-full relative group">
-      {/* Container with golden highlight accent at the top */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-amber-500/50 to-transparent pointer-events-none rounded-t-3xl" />
+    <div className="flex flex-col gap-0 w-full relative group p-2">
+      {/* HUD Accent - Amber Glow when focusing */}
+      <div className={cn(
+        "absolute inset-0 bg-amber-500/5 transition-opacity duration-500 rounded-[2.2rem] pointer-events-none opacity-0 group-focus-within:opacity-100"
+      )} />
       
-      <div className="flex items-center gap-3 px-5 py-3.5">
-        {/* Modern Search Icon with subtle pulse when loading */}
+      <div className="flex items-center gap-5 px-8 py-8 relative z-10">
+        {/* Large Modern Search Icon */}
         <div className="flex-shrink-0">
           {loading ? (
-            <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
+            <div className="relative">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+              <div className="absolute inset-0 blur-md bg-amber-500/30 rounded-full animate-pulse" />
+            </div>
           ) : (
-            <Search className="w-5 h-5 text-slate-400 group-hover:text-amber-500 transition-colors duration-300" />
+            <Search className={cn(
+              "w-8 h-8 transition-all duration-300",
+              query ? "text-amber-500" : "text-white/30"
+            )} />
           )}
         </div>
 
-        {/* Minimalist Input Field */}
+        {/* Cinematic Input Field */}
         <input
-          placeholder="Search items, nodes, or relationships..."
+          ref={inputRef}
+          placeholder="What would you like to explore?"
           value={query}
-          autoFocus
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter") handleSearch();
-            if (e.key === "Escape") handleClear();
+            if (e.key === "Escape") onClose?.();
           }}
-          className="flex-1 bg-transparent border-none outline-none text-[15px] placeholder:text-slate-400 text-slate-800 placeholder:font-light"
+          className="flex-1 bg-transparent border-none outline-none text-2xl font-medium tracking-tight placeholder:text-white/20 text-white placeholder:font-light"
         />
 
-        {/* Result Counter and Navigation Pills - Integrated HUD style */}
+        {/* Action Button - Shows when query exists */}
+        <div className="flex items-center gap-3">
+          {query && (
+            <button
+              onClick={handleSearch}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-black rounded-xl font-bold text-sm hover:bg-amber-400 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(245,158,11,0.3)]"
+            >
+              Search
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          )}
 
-        {/* Clear Action */}
-        {query && (
+          {/* Close Action */}
           <button
-            onClick={handleClear}
-            className="p-1.5 rounded-full hover:bg-black/5 transition-all text-slate-400 hover:text-slate-600 active:rotate-90"
-            title="Clear search (Esc)"
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-white/10 transition-all text-white/30 hover:text-white/80"
+            title="Close (Esc)"
           >
-            <X className="w-4.5 h-4.5" />
+            <X className="w-6 h-6" />
           </button>
-        )}
+        </div>
       </div>
 
-      {/* Meta/Keyboard Hints Layer - Raycast aesthetic */}
-      <div className="px-5 pb-2.5 flex justify-end">
-        <span className="text-[9px] text-slate-300 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.1em]">
-          Press <kbd className="font-sans px-1.5 py-0.5 bg-white/60 rounded border border-black/5 shadow-sm text-slate-500 normal-case tracking-normal">↵ Enter</kbd> to search
-        </span>
+      {/* Meta/Keyboard Hints Layer - Precision Grids style */}
+      <div className="px-8 pb-6 flex justify-between items-center relative z-10">
+        <div className="flex gap-4">
+          <span className="text-[10px] text-white/30 font-bold uppercase tracking-widest flex items-center gap-2">
+            <span className="w-1 h-1 bg-amber-500 rounded-full animate-pulse" />
+            Graph Intelligence Active
+          </span>
+        </div>
+        
+        <div className="flex items-center gap-4">
+          <span className="text-[10px] text-white/30 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.15em]">
+            <kbd className="font-sans px-2 py-0.5 bg-white/10 rounded-md border border-white/10 shadow-sm text-white/60 normal-case tracking-normal">Esc</kbd>
+            Cancel
+          </span>
+          <span className="text-[10px] text-white/30 font-medium select-none flex items-center gap-1.5 uppercase tracking-[0.15em]">
+            <kbd className="font-sans px-2 py-0.5 bg-white/10 rounded-md border border-white/10 shadow-sm text-white/60 normal-case tracking-normal">↵ Enter</kbd>
+            Confirm
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -83,20 +83,38 @@ const FloatingTools = memo(function FloatingTools({
 
       {/* Search Capsule - Modern Raycast-style HUD */}
       {openDrawer === "search" && hasSearch && (
-        <div className="fixed top-8 left-1/2 -translate-x-1/2 w-[550px] max-w-[90vw] z-[120] animate-in slide-in-from-top-4 fade-in duration-300">
-          <div className={cn(
-            "bg-white/[0.03] rounded-[2rem] border-t border-l border-white/40 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.15)] ring-1 ring-black/[0.02] overflow-hidden relative",
-            BACKDROP_BLUR_CONFIG.STRONG
-          )}>
-            {/* Grain Texture Overlay */}
-            <div 
-              className="absolute inset-0 z-0 pointer-events-none opacity-[0.015] mix-blend-overlay"
-              style={{
-                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
-              }}
-            />
-            <div className="relative z-10">
-              <SearchPanel />
+        <div className="fixed inset-0 z-[120] flex items-start justify-center pt-[15vh]">
+          {/* Deep Focus Backdrop Mask */}
+          <div 
+            className={cn(
+              "absolute inset-0 bg-slate-900/40 animate-in fade-in duration-500",
+              BACKDROP_BLUR_CONFIG.BASE
+            )}
+            onClick={() => toggleDrawer(null)}
+          />
+
+          <div className="relative w-[650px] max-w-[95vw] animate-in zoom-in-95 slide-in-from-top-8 duration-300">
+            <div className={cn(
+              "bg-white/10 rounded-[2.5rem] border border-white/20 shadow-[0_32px_128px_-32px_rgba(0,0,0,0.4)] ring-1 ring-white/10 overflow-hidden relative",
+              BACKDROP_BLUR_CONFIG.STRONG
+            )}>
+              {/* Grain Texture Overlay */}
+              <div 
+                className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] mix-blend-overlay"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch' /%3E%3C/filter%3E%3Crect width='100' height='100' filter='url(%23noiseFilter)' /%3E%3C/svg%3E")`,
+                }}
+              />
+              <div className="relative z-10">
+                <SearchPanel onClose={() => toggleDrawer(null)} />
+              </div>
+            </div>
+            
+            {/* Minimalist Footnote info */}
+            <div className="mt-4 flex justify-center animate-in fade-in slide-in-from-top-2 duration-700 delay-300">
+              <span className="text-[10px] text-white/40 font-medium tracking-[0.2em] uppercase">
+                OntoSight Engine • Semantic Search v1.0
+              </span>
             </div>
           </div>
         </div>
