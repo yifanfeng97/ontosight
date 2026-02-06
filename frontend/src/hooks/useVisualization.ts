@@ -39,6 +39,7 @@ export interface VisualizationState {
   setZoomLevel: (level: number) => void;
   resetVisualization: () => void;
   triggerLayoutReset: () => void;
+  refreshView: () => void;
   setCurrentPage: (page: number) => void;
   setPageSize: (size: number) => void;
   // New async methods
@@ -117,6 +118,10 @@ export const useVisualization = create<VisualizationState>((set, get) => ({
 
   resetVisualization: () => set((state) => ({
     selectedItems: new Map(),
+    resetTrigger: state.resetTrigger + 1,
+  })),
+
+  refreshView: () => set((state) => ({
     resetTrigger: state.resetTrigger + 1,
   })),
 

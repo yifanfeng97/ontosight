@@ -234,22 +234,21 @@ class HypergraphStorage(BaseStorage):
         }
 
     def get_all_nodes_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
-        """Get paginated list of all nodes (with id for internal use, not displayed)."""
-        node_list = [
-            {
-                "id": node.get("id"),  # Keep for backend queries, not displayed
-                "label": node.get("data", {}).get("label", node.get("id")),
-                "type": "node",
-                **node.get("data", {}),  # Include all data fields
-            }
-            for node in self.nodes.values()
-        ]
-        total = len(node_list)
+        """Get paginated list of all nodes."""
+        node_items = list(self.nodes.values())
+        total = len(node_items)
         start = page * page_size
         end = start + page_size
 
+        items = []
+        for node in node_items[start:end]:
+            item = dict(node)
+            item["label"] = node.get("data", {}).get("label", node.get("id"))
+            item["type"] = "node"
+            items.append(item)
+
         return {
-            "items": node_list[start:end],
+            "items": items,
             "page": page,
             "page_size": page_size,
             "total": total,
@@ -257,23 +256,21 @@ class HypergraphStorage(BaseStorage):
         }
 
     def get_all_hyperedges_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
-        """Get paginated list of all hyperedges (with id for internal use, not displayed)."""
-        he_list = [
-            {
-                "id": he.get("id"),  # Keep for backend queries, not displayed
-                "label": he.get("data", {}).get("label", he.get("id")),
-                "type": "hyperedge",
-                "linked_nodes": he.get("linked_nodes", []),
-                **he.get("data", {}),  # Include all data fields (label and raw)
-            }
-            for he in self.hyperedges.values()
-        ]
-        total = len(he_list)
+        """Get paginated list of all hyperedges."""
+        he_items = list(self.hyperedges.values())
+        total = len(he_items)
         start = page * page_size
         end = start + page_size
 
+        items = []
+        for he in he_items[start:end]:
+            item = dict(he)
+            item["label"] = he.get("label", he.get("id"))
+            item["type"] = "hyperedge"
+            items.append(item)
+
         return {
-            "items": he_list[start:end],
+            "items": items,
             "page": page,
             "page_size": page_size,
             "total": total,

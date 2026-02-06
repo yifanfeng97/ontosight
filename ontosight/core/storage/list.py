@@ -103,23 +103,14 @@ class ListStorage(BaseStorage):
         return {"items": items_sample}
 
     def get_all_items_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
-        """Get paginated list of all items (with id for internal use, not displayed)."""
-        item_list = [
-            {
-                "id": item.get("id"),  # Keep for backend queries, not displayed
-                "label": item.get("data", {}).get("label", item.get("id")),
-                "type": "item",
-                **item.get("data", {}),  # Include all data fields
-            }
-            for item_id in self.item_order
-            for item in [self.items[item_id]]
-        ]
-        total = len(item_list)
+        """Get paginated list of all items."""
+        item_objects = [self.items[item_id] for item_id in self.item_order]
+        total = len(item_objects)
         start = page * page_size
         end = start + page_size
 
         return {
-            "items": item_list[start:end],
+            "items": item_objects[start:end],
             "page": page,
             "page_size": page_size,
             "total": total,

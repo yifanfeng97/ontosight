@@ -50,11 +50,11 @@ async def search(request: SearchRequest) -> Union[GraphData, HypergraphData, Lis
             # Get sample with highlighting injected at storage layer
             sample = storage.get_sample_from_data(node_list, edge_list, highlight_center=True)
             
-            highlighted_nodes = sum(1 for n in sample["nodes"] if n.get("highlighted"))
+            highlighted_nodes_count = sum(1 for n in sample["nodes"] if n.get("highlighted"))
             highlighted_edges = sum(1 for e in sample["edges"] if e.get("highlighted"))
             logger.info(
                 f"[/api/search] Graph search returned {len(sample['nodes'])} nodes, {len(sample['edges'])} edges "
-                f"({highlighted_nodes} highlighted nodes, {highlighted_edges} highlighted edges)"
+                f"({highlighted_nodes_count} highlighted nodes, {highlighted_edges} highlighted edges)"
             )
             return GraphData(nodes=sample["nodes"], edges=sample["edges"])
             

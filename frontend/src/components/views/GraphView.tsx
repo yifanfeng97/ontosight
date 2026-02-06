@@ -24,53 +24,50 @@ interface GraphViewProps {
 const GraphView = memo(function GraphView({ data }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<Graph | null>(null);
+  const isReadyRef = useRef(false); // 追踪图表是否完成初次渲染
   const { selectedItems, selectItem, clearSelection, resetTrigger } = useVisualization();
 
   // 统一的状态更新函数
   const updateGraphStates = useCallback((currentData: any, currentSelection: Map<string, any>) => {
     const graph = graphRef.current;
-    if (!graph || graph.destroyed || !currentData) return;
+    // 关键：如果图表未就绪或已销毁，绝对不要操作 ElementState
+    if (!graph || graph.destroyed || !currentData || !isReadyRef.current) return;
 
-    const stateMap: Record<string, string[]> = {};
+    try {
+      const stateMap: Record<string, string[]> = {};
 
-    // 处理节点状态
-    currentData.nodes?.forEach((node: any) => {
-      const states: string[] = [];
-      if (currentSelection.has(node.id)) states.push(VisualState.SELECTED);
-      if (node.highlighted) states.push(VisualState.HIGHLIGHTED);
-      stateMap[node.id] = states;
-    });
+      // 处理节点状态
+      currentData.nodes?.forEach((node: any) => {
+        // 双重检查：节点 ID 存在且 G6 已经将其挂载到内部模型中
+        if (!node.id || !graph.getNodeData(node.id)) return;
 
-    // 处理边状态
-    currentData.edges?.forEach((edge: any) => {
-      const states: string[] = [];
-      if (currentSelection.has(edge.id)) states.push(VisualState.SELECTED);
-      if (edge.highlighted) states.push(VisualState.HIGHLIGHTED);
-      stateMap[edge.id] = states;
-    });
+        const states: string[] = [];
+        if (currentSelection.has(node.id)) states.push(VisualState.SELECTED);
+        if (node.highlighted) states.push(VisualState.HIGHLIGHTED);
+        stateMap[node.id] = states;
+      });
 
-    graph.setElementState(stateMap);
+      // 处理边状态
+      currentData.edges?.forEach((edge: any) => {
+        if (!edge.id || !graph.getEdgeData(edge.id)) return;
+
+        const states: string[] = [];
+        if (currentSelection.has(edge.id)) states.push(VisualState.SELECTED);
+        if (edge.highlighted) states.push(VisualState.HIGHLIGHTED);
+        stateMap[edge.id] = states;
+      });
+
+      // 如果没有任何状态变化，直接返回
+      if (Object.keys(stateMap).length === 0) return;
+      
+      graph.setElementState(stateMap);
+    } catch (e) {
+      // 捕获异常，防止因异步数据同步导致的 draw 错误崩溃
+      // console.warn("[GraphView] Failed to update states:", e);
+    }
   }, []);
 
-  // 处理数据更新 (受控于 data prop)
-  useEffect(() => {
-    const graph = graphRef.current;
-    if (graph && !graph.destroyed && data) {
-      graph.setData(data);
-      graph.render().then(() => {
-        if (!graph.destroyed) {
-          updateGraphStates(data, selectedItems);
-        }
-      });
-    }
-  }, [data, updateGraphStates, selectedItems]);
-
-  // 单独监听选中项变化（数据未变时，仅切换状态，极快）
-  useEffect(() => {
-    updateGraphStates(data, selectedItems);
-  }, [selectedItems, data, updateGraphStates]);
-
-  // 图实例生命周期管理（全量重建）
+  // 1. 图实例生命周期管理（全量重建与数据同步）
   useEffect(() => {
     if (!containerRef.current || !data?.nodes) return;
 
@@ -81,7 +78,7 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
 
     // 准备基础数据（重置逻辑下清除坐标以触发冷启动布局）
     const initialNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
-    const initialEdges = data.edges || [];
+    const initialEdges = (data.edges || []).map(({ x, y, ...rest }: any) => rest);
 
     try {
       const graph = new Graph({
@@ -162,14 +159,16 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         graph.setElementState(stateMapping);
       });
 
-      // 渲染
+      // 保存实例（但此时 isReadyRef 仍为 false）
+      graphRef.current = graph;
+
+      // 渲染并在渲染成功后同步状态
       graph.render().then(() => {
         if (!graph.destroyed) {
+          isReadyRef.current = true; // 只有渲染完成后才允许状态更新
           updateGraphStates(data, selectedItems);
         }
       });
-
-      graphRef.current = graph;
 
       // 响应式处理
       const handleResize = () => {
@@ -187,11 +186,17 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         window.removeEventListener("resize", handleResize);
         graph.destroy();
         graphRef.current = null;
+        isReadyRef.current = false;
       };
     } catch (error) {
       console.error("[GraphView] Error initializing graph:", error);
     }
-  }, [resetTrigger]); // 仅在手动重核或挂载时触发全量重建
+  }, [resetTrigger, data]); // 响应触发器和数据变化，统一管理生命周期
+
+  // 2. 只有选中项发生变化时，才进行部分状态更新
+  useEffect(() => {
+    updateGraphStates(data, selectedItems);
+  }, [selectedItems, data, updateGraphStates]);
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">

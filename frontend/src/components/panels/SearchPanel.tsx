@@ -6,16 +6,16 @@ import { useVisualization } from "@/hooks/useVisualization";
 export default function SearchPanel() {
   const [query, setQuery] = useState("");
   const { loading, search, clear } = useSearch();
-  const { setData, triggerLayoutReset } = useVisualization();
+  const { setData, refreshView } = useVisualization();
 
   const handleSearch = async () => {
     if (query.trim()) {
       const result = await search({ query: query.trim() });
+      
       // Update main visualization with search results data
       if (result) {
         setData(result);
-        // Force a layout reset/re-render to reflect the new data structure
-        triggerLayoutReset();
+        refreshView(); // Rebuild graph with new data (clears old positions)
       }
     }
   };

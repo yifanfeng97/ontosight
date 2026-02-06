@@ -65,7 +65,10 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
       elements.forEach((item: any) => {
         const states: string[] = [];
         if (selection.has(item.id)) states.push(VisualState.SELECTED);
+        
+        // 统一标准：只检查根路径的 highlighted
         if (item.highlighted) states.push(VisualState.HIGHLIGHTED);
+        
         stateMap[item.id] = states;
       });
       graph.setElementState(stateMap);
@@ -184,7 +187,10 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
 
         hyperedgesRef.current.clear();
         const bubbleSetPlugins = getBubbleSetPlugins(data.hyperedges || [], itemsRef.current);
-        const initialNodes = data.nodes.map(({ x, y, ...rest }: any) => rest); // 冷启动布局
+        
+        // 准备基础数据（剔除坐标以触发初次布局）
+        const initialNodes = data.nodes.map(({ x, y, ...rest }: any) => rest);
+        const initialEdges = (data.edges || []).map(({ x, y, ...rest }: any) => rest);
 
         const graph = new window.G6.Graph({
           container: containerRef.current!,
@@ -222,7 +228,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
               [VisualState.HIGHLIGHTED]: HYPERGRAPH_EDGE_STYLES[VisualState.HIGHLIGHTED],
             },
           },
-          data: { nodes: initialNodes, edges: data.edges || [] },
+          data: { nodes: initialNodes, edges: initialEdges },
           plugins: bubbleSetPlugins,
           autoFit: 'center',
         });

@@ -119,7 +119,9 @@ class GraphStorage(BaseStorage):
         """Get graph statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+    def get_sample(
+        self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False
+    ) -> Dict[str, Any]:
         """Get a subgraph around given center nodes/edges (or random if not provided).
 
         Args:
@@ -200,22 +202,24 @@ class GraphStorage(BaseStorage):
         return {"nodes": sub_nodes, "edges": sub_edges}
 
     def get_all_nodes_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
-        """Get paginated list of all nodes (with id for internal use, not displayed)."""
-        node_list = [
-            {
-                "id": node.get("id"),  # Keep for backend queries, not displayed
-                "label": node.get("data", {}).get("label", node.get("id")),
-                "type": "node",
-                **node.get("data", {}),  # Include all data fields
-            }
-            for node in self.nodes.values()
-        ]
-        total = len(node_list)
+        """Get paginated list of all nodes."""
+        # Use values directly to keep the nested {id, data} structure
+        node_items = list(self.nodes.values())
+
+        total = len(node_items)
         start = page * page_size
         end = start + page_size
 
+        # For list view, we ensure 'label' and 'type' are at root
+        items = []
+        for node in node_items[start:end]:
+            item = dict(node)
+            item["label"] = node.get("data", {}).get("label", node.get("id"))
+            item["type"] = "node"
+            items.append(item)
+
         return {
-            "items": node_list[start:end],
+            "items": items,
             "page": page,
             "page_size": page_size,
             "total": total,
@@ -223,22 +227,22 @@ class GraphStorage(BaseStorage):
         }
 
     def get_all_edges_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
-        """Get paginated list of all edges (with id for internal use, not displayed)."""
-        edge_list = [
-            {
-                "id": edge.get("id"),  # Keep for backend queries, not displayed
-                "label": edge.get("data", {}).get("label", edge.get("id")),
-                "type": "edge",
-                **edge.get("data", {}),  # Include all data fields
-            }
-            for edge in self.edges.values()
-        ]
-        total = len(edge_list)
+        """Get paginated list of all edges."""
+        edge_items = list(self.edges.values())
+
+        total = len(edge_items)
         start = page * page_size
         end = start + page_size
 
+        items = []
+        for edge in edge_items[start:end]:
+            item = dict(edge)
+            item["label"] = edge.get("data", {}).get("label", "")
+            item["type"] = "edge"
+            items.append(item)
+
         return {
-            "items": edge_list[start:end],
+            "items": items,
             "page": page,
             "page_size": page_size,
             "total": total,
