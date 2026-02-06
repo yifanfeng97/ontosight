@@ -103,24 +103,35 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
         node: {
           style: {
             labelText: (d: any) => d.data?.label || d.id,
+            labelBackground: true,
             ...GRAPH_NODE_STYLES[VisualState.DEFAULT],
           },
           state: {
-            [VisualState.SELECTED]: GRAPH_NODE_STYLES[VisualState.SELECTED],
-            [VisualState.HIGHLIGHTED]: GRAPH_NODE_STYLES[VisualState.HIGHLIGHTED],
+            [VisualState.SELECTED]: {
+              labelBackground: true,
+              ...GRAPH_NODE_STYLES[VisualState.SELECTED],
+            },
+            [VisualState.HIGHLIGHTED]: {
+              labelBackground: true,
+              ...GRAPH_NODE_STYLES[VisualState.HIGHLIGHTED],
+            },
           },
         },
         edge: {
           style: {
             labelText: (d: any) => d.data?.label || '',
+            labelBackground: true, // 显式开启标签背景以增加可读性
             ...GRAPH_EDGE_STYLES[VisualState.DEFAULT],
-            // 边缘标签默认为辅助信息，稍微淡一些
-            labelFill: '#94a3b8',
-            labelFontSize: 10,
           },
           state: {
-            [VisualState.SELECTED]: GRAPH_EDGE_STYLES[VisualState.SELECTED],
-            [VisualState.HIGHLIGHTED]: GRAPH_EDGE_STYLES[VisualState.HIGHLIGHTED],
+            [VisualState.SELECTED]: {
+              labelBackground: true,
+              ...GRAPH_EDGE_STYLES[VisualState.SELECTED],
+            },
+            [VisualState.HIGHLIGHTED]: {
+              labelBackground: true,
+              ...GRAPH_EDGE_STYLES[VisualState.HIGHLIGHTED],
+            },
           },
         },
         data: {

@@ -11,26 +11,27 @@
  */
 
 /**
- * 全局色彩调色板
+ * 全局色彩调色板 - 进化为饱满的“紫罗兰宝石 (Vibrant Amethyst)”风格
  */
 export const COLOR_PALETTE = {
   primary: {
-    normal: '#6366F1',      // Indigo - 主品牌色，科技感强
-    hover: '#4F46E5',       // 深紫罗兰
-    glow: '#6366F1',        // 用于发光效果
+    normal: '#6366F1',      // Indigo - 核心智能力量
+    hover: '#4F46E5',
+    glow: '#818CF8',        // 亮靛蓝
   },
   success: {
-    normal: '#10B981',      // Emerald - 节点默认，清新自然
-    hover: '#059669',       // 深翡翠
+    normal: '#8B5CF6',      // Violet - 节点改为饱满的紫罗兰宝石色
+    hover: '#7C3AED',
   },
   warning: {
-    normal: '#F59E0B',      // Amber - 高亮/搜索，温暖亮眼
-    hover: '#D97706',       // 深琥珀
+    normal: '#FFD700',      // Cyber Gold - 更加明亮的赛博金
+    hover: '#F59E0B',
+    glow: '#FDE68A',        // 亮金光
   },
   neutral: {
-    light: '#CBD5E1',       // Slate-300 - 浅灰，用于边线
-    lighter: '#E2E8F0',     // Slate-200 - 更浅
-    muted: '#94A3B8',       // Slate-400 - 次要文字
+    light: '#64748B',       // Slate-500 - 调深以确保在亮色云母背景下依然清晰
+    lighter: '#F1F5F9',     // Slate-100
+    muted: '#94A3B8',
   },
 };
 
@@ -47,15 +48,15 @@ export const TEXT_PALETTE = {
 
 /**
  * 基础标签配置
- * 统一图中所有元素的文字呈现方式
+ * 统一图中所有元素的文字呈现方式 - 增加 Halo 效果确保在气泡深处可见
  */
 export const BASE_LABEL_CONFIG = {
   fontSize: 12,
-  fontFamily: 'system-ui, -apple-system, sans-serif',
-  fontWeight: 400,
+  fontFamily: 'SF Pro Display, system-ui, -apple-system, sans-serif',
+  fontWeight: 600,
   fill: TEXT_PALETTE.label,
   stroke: TEXT_PALETTE.halo,
-  lineWidth: 2,             // Halo 效果
+  lineWidth: 3,             // 3px Halo 确保在任何背景下清晰
   lineAppendWidth: 2,
 };
 
@@ -78,69 +79,91 @@ export enum VisualState {
 }
 
 /**
- * G6图表中的节点样式配置
- * 包含default、selected、highlighted三种状态
+ * G6图表中的节点样式配置 - 紫罗兰宝石 (Vibrant Amethyst Beads)
  */
 export const GRAPH_NODE_STYLES = {
   [VisualState.DEFAULT]: {
     fill: COLOR_PALETTE.success.normal,
-    stroke: COLOR_PALETTE.success.normal,
+    stroke: '#FFFFFF',
     lineWidth: 1.5,
-    shadowBlur: 8,
-    shadowColor: `${COLOR_PALETTE.success.normal}40`,
-    // 基础标签配置
+    shadowBlur: 15,
+    shadowColor: `${COLOR_PALETTE.success.normal}80`, // 更加饱满的紫色霓虹光
+    // 默认标签 - 保持低干扰
     labelFill: TEXT_PALETTE.label,
     labelStroke: TEXT_PALETTE.halo,
-    labelLineWidth: 2,
+    labelLineWidth: 3,
     labelFontSize: 12,
-    labelBackgroundFill: 'rgba(255, 255, 255, 0.7)',
-    labelBackgroundRadius: 4,
-    labelPadding: [2, 4],
+    labelFontWeight: 500,
+    labelBackgroundFill: 'rgba(255, 255, 255, 0.4)',
+    labelBackgroundRadius: 6,
+    labelPadding: [2, 6],
     labelPlacement: 'bottom' as any,
-    labelDy: 8,
+    labelDy: 10,
   },
   [VisualState.SELECTED]: {
     fill: COLOR_PALETTE.primary.normal,
-    stroke: COLOR_PALETTE.primary.normal,
-    lineWidth: 2.5,
-    shadowBlur: 16,
-    shadowColor: `${COLOR_PALETTE.primary.glow}60`,
-    // 选中时标签加粗，对比度更高
-    labelFontWeight: 700,
-    labelFill: TEXT_PALETTE.label,
+    stroke: '#FFFFFF',
+    lineWidth: 3,
+    shadowBlur: 30,
+    shadowColor: `${COLOR_PALETTE.primary.glow}B0`, // 极强发光
+    // 选中时标签加重
+    labelFontWeight: 800,
+    labelFill: COLOR_PALETTE.primary.normal,
+    labelFontSize: 14,
   },
   [VisualState.HIGHLIGHTED]: {
     fill: COLOR_PALETTE.warning.normal,
-    stroke: COLOR_PALETTE.warning.normal,
-    lineWidth: 2.5,
-    shadowBlur: 20,
-    shadowColor: `${COLOR_PALETTE.warning.normal}70`,
-    // 高亮时标签更醒目
-    labelFontWeight: 700,
+    stroke: '#FFFFFF',
+    lineWidth: 3,
+    shadowBlur: 35,
+    shadowColor: `${COLOR_PALETTE.warning.normal}A0`,
+    labelFontWeight: 800,
     labelFill: '#000000',
+    labelFontSize: 14,
   },
 };
 
 /**
- * G6图表中的边样式配置
- * 包含default、selected、highlighted三种状态
- * 采用更清晰的设计，提升边线在毛玻璃背景下的可见性
+ * G6图表中的边样式配置 - 发光光纤 (Glowing Optical Fibers)
  */
 export const GRAPH_EDGE_STYLES = {
   [VisualState.DEFAULT]: {
-    stroke: COLOR_PALETTE.neutral.light,
+    stroke: '#CBD5E1', // 更淡的 Slate-300
     lineWidth: 1.2,
-    opacity: 0.55,
+    opacity: 0.45, // 降低浓度但保持线条轮廓
+    // 默认标签样式
+    labelFill: '#1E293B',  // Slate-800，最高对比度
+    labelFontSize: 11,
+    labelFontWeight: 700,
+    labelBackgroundFill: '#FFFFFF',
+    labelBackgroundOpacity: 0.75, // 降低背景不透明度，使其更自然
+    labelBackgroundRadius: 4,
+    labelPadding: [2, 4],
   },
   [VisualState.SELECTED]: {
     stroke: COLOR_PALETTE.primary.normal,
-    lineWidth: 1.8,
-    opacity: 0.95,
+    lineWidth: 3,
+    opacity: 1,
+    shadowBlur: 10,
+    shadowColor: `${COLOR_PALETTE.primary.normal}80`,
+    // 选中时标签加粗加深
+    labelFill: COLOR_PALETTE.primary.normal,
+    labelFontSize: 12,
+    labelFontWeight: 800,
+    labelBackgroundFill: '#FFFFFF',
+    labelBackgroundOpacity: 0.85, // 从纯白改为微透
   },
   [VisualState.HIGHLIGHTED]: {
     stroke: COLOR_PALETTE.warning.normal,
-    lineWidth: 1.8,
+    lineWidth: 3.5,
     opacity: 1,
+    shadowBlur: 10,
+    shadowColor: `${COLOR_PALETTE.warning.normal}60`,
+    labelFill: '#000000',
+    labelFontWeight: 800,
+    labelBackgroundFill: '#FFFFFF',
+    labelBackgroundOpacity: 0.85,
+    labelBackgroundRadius: 4,
   },
 };
 
@@ -199,47 +222,52 @@ export const HYPEREDGE_COLOR_PALETTE = [
 ];
 
 /**
- * 超边状态下的特殊样式覆盖
- * 用于在selected或highlighted时覆盖调色板颜色
+ * 超边样式配置 - 有机薄膜 (Organic Membranes)
+ * 为气泡集添加柔和的阴影扩散，使其看起来像浮动的星云
  */
 export const HYPEREDGE_STATE_OVERRIDES = {
   [VisualState.DEFAULT]: null, // 使用调色板颜色
   [VisualState.SELECTED]: {
     fill: COLOR_PALETTE.primary.normal,
     stroke: COLOR_PALETTE.primary.hover,
+    shadowBlur: 50,
+    shadowColor: `${COLOR_PALETTE.primary.glow}40`,
   },
   [VisualState.HIGHLIGHTED]: {
     fill: COLOR_PALETTE.warning.normal,
     stroke: COLOR_PALETTE.warning.hover,
+    shadowBlur: 60,
+    shadowColor: `${COLOR_PALETTE.warning.normal}50`,
   },
 };
 
 /**
  * 超边的opacity配置
- * 在毛玻璃背景下的透明度调整，确保清晰度
+ * 提高色彩饱满度，界面层级更清晰
  */
 export const HYPEREDGE_OPACITY = {
-  [VisualState.DEFAULT]: 0.08,      // 极淡，像一片能量场
-  [VisualState.SELECTED]: 0.25,    // 更清晰的选中状态
-  [VisualState.HIGHLIGHTED]: 0.3,  // 高亮状态最清晰
+  [VisualState.DEFAULT]: 0.20,      // 更有存在感的超边背景
+  [VisualState.SELECTED]: 0.35,    // 选中时晶体效果增强
+  [VisualState.HIGHLIGHTED]: 0.40,  // 搜索时高亮最强
 };
 
 export const HYPEREDGE_STROKE_OPACITY = {
-  [VisualState.DEFAULT]: 0.6,
-  [VisualState.SELECTED]: 1,
-  [VisualState.HIGHLIGHTED]: 1,
+  [VisualState.DEFAULT]: 0.75,      // 增强边缘界限感
+  [VisualState.SELECTED]: 0.95,
+  [VisualState.HIGHLIGHTED]: 1.0,
 };
 
 /**
  * 超边标签配置
- * 统一超图气泡集的标签样式
+ * 强化大标签的现代感
  */
 export const HYPEREDGE_LABEL_CONFIG = {
-  labelFontSize: 14,
-  labelFontWeight: 600,
+  labelFontSize: 15,
+  labelFontWeight: 800,
   labelFill: TEXT_PALETTE.label,
   labelStroke: TEXT_PALETTE.halo,
-  labelLineWidth: 3,             // 气泡集背景较深，加厚 Halo
+  labelLineWidth: 4,             // 超边光影复杂，Halo 最大
+  labelLetterSpacing: 1.5,
 };
 
 /**

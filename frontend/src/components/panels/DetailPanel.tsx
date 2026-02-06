@@ -51,17 +51,6 @@ export default function DetailPanel() {
                   showTypeBadge={true}
                   className="bg-white/40 border-white/40 shadow-sm hover:shadow-md hover:translate-y-[-2px] transition-all duration-300 rounded-[1.5rem]"
                 >
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFromHistory(item.id);
-                    }}
-                    className="absolute top-3 right-3 p-1.5 rounded-full opacity-0 group-hover:opacity-100 bg-black/5 hover:bg-black/10 text-muted-foreground hover:text-foreground transition-all duration-200 z-20"
-                    title="Remove from history"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-
                   {detailLoading && !itemDetails && (
                     <div className="flex items-center justify-center py-4 text-xs text-muted-foreground">
                       <Loader2 className="w-3 h-3 mr-2 animate-spin" />

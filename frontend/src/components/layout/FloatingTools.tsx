@@ -134,7 +134,7 @@ const FloatingTools = memo(function FloatingTools({
         </div>
       )}
 
-      {/* Chat Drawer - Pure Mica Jelly Sidebar (Option A) */}
+      {/* Chat Drawer - Pure Mica Jelly Sidebar */}
       {openDrawer === "chat" && hasChat && (
         <div className={cn(
           "fixed right-0 top-0 h-full w-[400px] max-w-full z-[110]",
