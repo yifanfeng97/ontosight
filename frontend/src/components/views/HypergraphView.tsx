@@ -158,7 +158,7 @@ const HypergraphView = memo(function HypergraphView({ data, meta }: HypergraphVi
   // 1. 状态变化监听 (选中项/高亮) - 极快切换，无需 render
   useEffect(() => {
     updateAllStates(graphRef.current, data, selectedItems);
-  }, [selectedItems, data, updateAllStates]);
+  }, [selectedItems, updateAllStates]); // 移除 data 依赖，由渲染 Effect 处理数据变化后的状态同步
 
   // 2. 基础数据变化监听 (setData 为增量更新，类似 GraphView)
   useEffect(() => {

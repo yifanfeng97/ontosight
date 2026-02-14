@@ -223,9 +223,11 @@ class HypergraphStorage(BaseStorage):
             center_node_id = min(node_list, key=lambda nid: self.node_deg.get(nid, 0))
             for node_id in node_list:
                 if node_id != center_node_id:
+                    # Use stable IDs to avoid frontend rendering race conditions
+                    edge_id = f"edge-{sub_hyperedge['id']}-{node_id}"
                     sub_edges.append(
                         {
-                            "id": get_random_id(),
+                            "id": edge_id,
                             "source": center_node_id,
                             "target": node_id,
                         }

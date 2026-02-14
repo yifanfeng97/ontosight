@@ -28,11 +28,6 @@ const FloatingTools = memo(function FloatingTools({
     setOpenDrawer(openDrawer === type ? null : type);
   };
 
-  // 如果没有任何功能启用，不显示工具栏
-  if (!hasSearch && !hasChat) {
-    return null;
-  }
-
   return (
     <>
       {/* Right Tool Blade - Mica Jelly Style */}
@@ -81,7 +76,7 @@ const FloatingTools = memo(function FloatingTools({
           </button>
         )}
         
-        <div className="h-px bg-slate-100 mx-3 my-1" />
+        {(hasSearch || hasChat) && <div className="h-px bg-slate-100 mx-3 my-1" />}
         
         <button
           onClick={() => triggerLayoutReset()}

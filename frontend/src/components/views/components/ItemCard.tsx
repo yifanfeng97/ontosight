@@ -133,7 +133,7 @@ const ItemCard: React.FC<ItemCardProps> = ({
                 </div>
                 <div className={cn(
                   "text-xs font-bold text-slate-700 leading-relaxed",
-                  shouldTruncate ? "truncate text-right" : "break-words"
+                  shouldTruncate ? "truncate text-left" : "break-words"
                 )}>
                   {formatMetadataValue(value, 30, shouldTruncate)}
                 </div>
@@ -141,8 +141,8 @@ const ItemCard: React.FC<ItemCardProps> = ({
             ))}
             
             {shouldTruncate && metadata && Object.keys(metadata).length > displayEntries.length && (
-              <div className="pt-2 border-t border-black/[0.03] flex justify-end">
-                <span className="text-[8px] font-black text-indigo-500 animate-bounce">
+              <div className="pt-2 border-t border-black/[0.03] flex justify-start">
+                <span className="text-[8px] font-black text-indigo-500 animate-bounce uppercase tracking-wider">
                   VIEW +{Object.keys(metadata).length - displayEntries.length} MORE PROPERTIES
                 </span>
               </div>

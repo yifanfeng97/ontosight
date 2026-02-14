@@ -207,7 +207,7 @@ const GraphView = memo(function GraphView({ data }: GraphViewProps) {
   // 2. 只有选中项发生变化时，才进行部分状态更新
   useEffect(() => {
     updateGraphStates(data, selectedItems);
-  }, [selectedItems, data, updateGraphStates]);
+  }, [selectedItems, updateGraphStates]); // 移除 data 依赖，由渲染过程处理初次/更新渲染后的状态同步
 
   return (
     <div className="w-full h-full flex flex-col overflow-hidden">

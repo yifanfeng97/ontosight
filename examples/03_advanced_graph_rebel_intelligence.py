@@ -5,7 +5,7 @@ This example simulates an AI-powered GraphRAG system for intelligence analysis.
 It demonstrates custom 'on_search' and 'on_chat' callbacks to interact with the graph.
 """
 
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List
 from pydantic import BaseModel, Field
 from ontosight import view_graph
 
