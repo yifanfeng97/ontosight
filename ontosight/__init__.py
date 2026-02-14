@@ -9,7 +9,7 @@ from ontosight.core import (
     view_hypergraph,
 )
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __author__ = "Yifan Feng"
 __email__ = "evanfeng97@gmail.com"
 
