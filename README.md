@@ -34,7 +34,7 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
 
 ---
 
-## � Quick Start
+## 🚀 Quick Start
 
 ### Installation
 
