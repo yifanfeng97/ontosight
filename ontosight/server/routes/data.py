@@ -2,13 +2,14 @@
 
 This endpoint returns sampled visualization data for display:
 - Graph/Hypergraph: Returns a random neighborhood (2 hops)
+- Nodes: Returns all nodes
 - List: Returns paginated items
 
 Endpoint:
     GET /api/data
 
 Response:
-    GraphData or HypergraphData with sampled neighborhood
+    NodeData, GraphData or HypergraphData with sampled neighborhood
 """
 
 import logging
@@ -16,10 +17,11 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException, Query
 
 from ontosight.server.models.api import (
+    NodeData,
     GraphData,
     HypergraphData,
 )
-from ontosight.core.storage import GraphStorage, HypergraphStorage
+from ontosight.core.storage import GraphStorage, HypergraphStorage, NodeStorage
 from ontosight.server.state import global_state
 
 logger = logging.getLogger(__name__)
@@ -33,14 +35,15 @@ async def get_data(
     """Get sampled visualization data for display.
 
     - Graph/Hypergraph: Returns neighborhood around specified IDs (or random if empty). 2 hops.
+    - Nodes: Returns all nodes (or highlighted if IDs specified).
 
     Args:
-        ids: Comma-separated list of element IDs (optional, for graph/hypergraph)
+        ids: Comma-separated list of element IDs (optional, for graph/hypergraph/nodes)
         page: Page number for paginated views (0-indexed)
         page_size: Items per page for paginated views
 
     Returns:
-        GraphData or HypergraphData with sampled neighborhood
+        NodeData, GraphData or HypergraphData with sampled neighborhood
     """
     viz_type = global_state.get_visualization_type()
 
@@ -68,6 +71,15 @@ async def get_data(
             return HypergraphData(
                 nodes=sub_hg["nodes"], edges=sub_hg["edges"], hyperedges=sub_hg["hyperedges"]
             )
+
+        elif viz_type == "nodes":
+            storage = global_state.get_storage()
+            if not storage:
+                raise HTTPException(status_code=400, detail="Storage not initialized")
+            id_list = ids.split(",") if ids else None
+            node_data = storage.get_sample(center_ids=id_list, highlight_center=True)
+            logger.info(f"[/api/data] Nodes: {len(node_data['nodes'])} nodes")
+            return NodeData(nodes=node_data["nodes"])
 
         else:
             raise HTTPException(status_code=400, detail=f"Unknown viz type: {viz_type}")

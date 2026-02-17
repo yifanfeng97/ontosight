@@ -23,7 +23,10 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
 
 ## 🌟 Key Features
 
-- **Standard & Hypergraph Support**: Seamlessly switch between traditional node-edge graphs and advanced hypergraphs.
+- **Three Visualization Types**: 
+  - **Graphs** (`view_graph`): Traditional node-edge networks for pairwise relationships
+  - **Hypergraphs** (`view_hypergraph`): Multi-node relationships and complex pathways
+  - **Nodes** (`view_nodes`): Pure entity collections without edges - perfect for archives, semantic spaces, and clusters
 - **AI-Ready Callbacks**: Flexible `on_search` and `on_chat` hooks to integrate with any LLM (GPT-4, Claude, Llama 3) or Vector Database (Milvus, Pinecone, Chroma).
 - **Interactive Exploration**: Built-in detail panels, filtering, and real-time highlighting.
 - **Framework Agnostic**: Works with any data source. Define your schema using Pydantic and let OntoSight handle the rest.
@@ -33,12 +36,12 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
 
 ## 📸 Visualization Previews
 
-### 1. Core Architectures
-OntoSight supports both traditional graphs and hypergraphs with a unified interface.
+### 1. Core Visualization Types
+OntoSight supports graphs, hypergraphs, and pure node collections with a unified interface.
 
-| Graph | Hypergraph |
-| :---: | :---: |
-| <img src="docs/assets/graph_main.png" width="380px"> | <img src="docs/assets/hypergraph_main.png" width="380px"> |
+**Graphs** (pairwise relationships) | **Hypergraphs** (multi-node relationships) | **Nodes** (entity collections)
+:---: | :---: | :---:
+<img src="docs/assets/graph_main.png" width="250px"> | <img src="docs/assets/hypergraph_main.png" width="250px"> | Entity archives, semantic spaces, clusters
 
 ### 2. Intelligent Search (Vector DB Ready)
 Define custom search callbacks to highlight matching subgraphs via embedding-based retrieval.
@@ -64,7 +67,7 @@ Seamlessly connect your Graph to LLMs. Auto-highlight relevant entities while ge
 pip install ontosight
 ```
 
-### Basic Usage
+### Basic Usage - Graphs
 
 Define your data structure using Pydantic models:
 
@@ -94,6 +97,34 @@ view_graph(
     node_id_extractor=lambda n: n.name,
     node_ids_in_edge_extractor=lambda e: (e.source, e.target),
     edge_label_extractor=lambda e: e.relation
+)
+```
+
+### Basic Usage - Pure Nodes
+
+For visualizing entity collections without edges:
+
+```python
+from pydantic import BaseModel
+from ontosight import view_nodes
+
+class Recipe(BaseModel):
+    name: str
+    cuisine: str
+    difficulty: str
+
+# Your data
+recipes = [
+    Recipe(name="Pasta Carbonara", cuisine="Italian", difficulty="Easy"),
+    Recipe(name="Dim Sum", cuisine="Chinese", difficulty="Medium"),
+]
+
+# Launch visualization
+view_nodes(
+    node_list=recipes,
+    node_schema=Recipe,
+    node_id_extractor=lambda r: r.name,
+    node_label_extractor=lambda r: r.name,
 )
 ```
 

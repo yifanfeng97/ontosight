@@ -5,6 +5,7 @@ import FloatingNav from "@/components/layout/FloatingNav";
 import { AlertCircle } from "lucide-react";
 
 const GraphView = lazy(() => import("./GraphView"));
+const NodeView = lazy(() => import("./NodeView"));
 const PaginatedGridView = lazy(() => import("./PaginatedGridView"));
 const HypergraphView = lazy(() => import("./HypergraphView"));
 
@@ -19,7 +20,7 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   const { setViewMode, viewMode } = useVisualization();
 
   useEffect(() => {
-    const defaultMode = vizType === "hypergraph" || vizType === "graph" ? "graph" : "graph";
+    const defaultMode = vizType === "graph" || vizType === "hypergraph" ? "graph" : "nodes";
     setViewMode(defaultMode as any);
   }, [vizType, setViewMode]);
 
@@ -29,7 +30,8 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   };
 
   // Determine if we're in list/grid view mode (overlay mode)
-  const isOverlayMode = ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
+  // For nodes visualization, overlay mode is disabled (pure node canvas)
+  const isOverlayMode = vizType !== "nodes" && ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
   
   if (!data) {
     return (
@@ -77,6 +79,7 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
           >
             {vizType === "graph" && <GraphView data={data} meta={meta} />}
             {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
+            {vizType === "nodes" && <NodeView data={data} meta={meta} />}
           </Suspense>
         </div>
 

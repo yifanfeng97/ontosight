@@ -13,6 +13,7 @@ Example:
 """
 
 from ontosight.core.views import (
+    view_nodes,
     view_graph,
     view_hypergraph,
 )
@@ -20,6 +21,7 @@ from ontosight.core.views import (
 from .storage import BaseStorage, GraphStorage, HypergraphStorage
 
 __all__ = [
+    "view_nodes",
     "view_graph",
     "view_hypergraph",
     "BaseStorage",

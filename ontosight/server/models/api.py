@@ -43,7 +43,7 @@ class MetaResponse(BaseModel):
                  For hypergraph: {"nodes": {...}, "edges": {...}, "hyperedges": {...}}
     """
 
-    type: Literal["graph", "hypergraph"] = Field(
+    type: Literal["graph", "hypergraph", "nodes"] = Field(
         ..., description="Type of visualization"
     )
     features: Dict[str, bool] = Field(
@@ -94,6 +94,11 @@ class ChatResponse(BaseModel):
     )
 
 
+class NodeData(BaseModel):
+    """Data for node-only visualization."""
+    nodes: List[Dict[str, Any]] = Field(..., description="List of node objects (may include 'highlighted' bool)")
+
+
 class GraphData(BaseModel):
     """Data for graph visualization."""
     nodes: List[Dict[str, Any]] = Field(..., description="List of node objects (may include 'highlighted' bool)")
@@ -112,6 +117,7 @@ __all__ = [
     "SearchRequest",
     "ChatRequest",
     "ChatResponse",
+    "NodeData",
     "GraphData",
     "HypergraphData",
 ]

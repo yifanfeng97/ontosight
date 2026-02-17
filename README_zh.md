@@ -23,7 +23,10 @@ OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可�
 
 ## 🌟 核心特性
 
-- **支持标准图与超图**：在节点-边的传统图谱与更高级的超图 (Hypergraph) 视图间无缝切换。
+- **三种可视化模式**：
+  - **图** (`view_graph`)：用于二元关系的传统节点-边网络
+  - **超图** (`view_hypergraph`)：用于多元关系和复杂路径
+  - **节点** (`view_nodes`)：纯实体集合 - 无边，适合档案库、语义空间和聚类展示
 - **AI 友好的扩展性**：通过灵活的 `on_search` 和 `on_chat` 回调，轻松对接任何大模型 (GPT-4, Claude, Llama 3) 或向量数据库 (Milvus, Pinecone, Chroma)。
 - **交互式探索**：内置属性详情面板、过滤功能以及实时节点高亮显示。
 - **架构无关**：支持任何数据源。使用 Pydantic 定义 Schema，剩下的交给 OntoSight。
@@ -33,12 +36,12 @@ OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可�
 
 ## 📸 可视化预览
 
-### 1. 核心架构展示
-OntoSight 通过统一的接口同时支持传统图和超图。
+### 1. 核心可视化类型
+OntoSight 通过统一的接口支持图、超图和纯节点集合。
 
-| 标准图 (Graph) | 超图 (Hypergraph) |
-| :---: | :---: |
-| <img src="docs/assets/graph_main.png" width="380px"> | <img src="docs/assets/hypergraph_main.png" width="380px"> |
+**标准图** (二元关系) | **超图** (多元关系) | **节点** (实体集合)
+:---: | :---: | :---:
+<img src="docs/assets/graph_main.png" width="250px"> | <img src="docs/assets/hypergraph_main.png" width="250px"> | 档案库、语义空间、聚类展示
 
 ### 2. 智能搜索 (对接向量数据库)
 定义自定义搜索回调，通过 Embedding 检索在图谱中实现“指哪亮哪”。
@@ -64,7 +67,7 @@ OntoSight 通过统一的接口同时支持传统图和超图。
 pip install ontosight
 ```
 
-### 基础用法
+### 基础用法 - 图谱
 
 使用 Pydantic 模型定义你的数据结构：
 
@@ -94,6 +97,34 @@ view_graph(
     node_id_extractor=lambda n: n.name,
     node_ids_in_edge_extractor=lambda e: (e.source, e.target),
     edge_label_extractor=lambda e: e.relation
+)
+```
+
+### 基础用法 - 纯节点
+
+用于可视化没有边的实体集合：
+
+```python
+from pydantic import BaseModel
+from ontosight import view_nodes
+
+class Recipe(BaseModel):
+    name: str
+    cuisine: str
+    difficulty: str
+
+# 准备数据
+recipes = [
+    Recipe(name="意大利面", cuisine="意大利", difficulty="简单"),
+    Recipe(name="点心", cuisine="中国", difficulty="中等"),
+]
+
+# 启动可视化
+view_nodes(
+    node_list=recipes,
+    node_schema=Recipe,
+    node_id_extractor=lambda r: r.name,
+    node_label_extractor=lambda r: r.name,
 )
 ```
 

@@ -14,6 +14,11 @@ These examples demonstrate how to use `on_search` and `on_chat` callbacks to bui
 - **[03_advanced_graph_rebel_intelligence.py](03_advanced_graph_rebel_intelligence.py)**: An intelligence analysis tool where you can ask natural language questions about security threats.
 - **[04_advanced_hypergraph_biomedical_discovery.py](04_advanced_hypergraph_biomedical_discovery.py)**: A scientific tool for exploring drug-protein-disease interactions in metabolic pathways.
 
+### 3. Node-Only Visualizations (Entities & Collections)
+These examples show how to visualize pure entity collections without any edges - perfect for archives, catalogs, and semantic entity spaces.
+- **[05_nodes_culinary_archive.py](05_nodes_culinary_archive.py)**: A node-only view showcasing a galactic recipe database. Perfect for displaying large collections of independent items.
+- **[06_advanced_nodes_flavor_clusters.py](06_advanced_nodes_flavor_clusters.py)**: Advanced node visualization with semantic search and an AI chef assistant that recommends dishes based on taste preferences, difficulty level, and cuisine type.
+
 ## 🛠 How to Run
 
 1. Ensure you have the package installed:
@@ -31,3 +36,7 @@ These examples demonstrate how to use `on_search` and `on_chat` callbacks to bui
 - **Pydantic Integration**: Use standard Python type hints to define what your data looks like.
 - **Callback Pattern**: Hook up your own logic (or LLM/Vector DB calls) to the `on_search` and `on_chat` parameters.
 - **Schema-Based Details**: Click on any node or edge to see a structured detail view generated directly from your Pydantic models.
+- **Three Visualization Types**: 
+  - **Graphs** (`view_graph`): For pairwise relationships and networks
+  - **Hypergraphs** (`view_hypergraph`): For many-to-many relationships and complex pathways
+  - **Nodes** (`view_nodes`): For entity collections and semantic spaces without explicit edges

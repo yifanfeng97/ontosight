@@ -7,6 +7,7 @@ trees, lists, and other structured data with Python.
 from ontosight.core import (
     view_graph,
     view_hypergraph,
+    view_nodes,
 )
 
 __version__ = "0.1.3"
@@ -16,4 +17,5 @@ __email__ = "evanfeng97@gmail.com"
 __all__ = [
     "view_graph",
     "view_hypergraph",
+    "view_nodes",
 ]

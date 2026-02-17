@@ -4,7 +4,7 @@ import { cn } from "@/utils";
 import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 
 interface FloatingNavProps {
-  vizType: "graph" | "hypergraph";
+  vizType: "graph" | "hypergraph" | "nodes";
   activeView: string;
   onViewChange: (view: string) => void;
 }
@@ -27,6 +27,9 @@ const FloatingNav = memo(function FloatingNav({
     hypergraph: [
       { value: "nodes", label: "Nodes", icon: List },
       { value: "hyperedges", label: "Hyperedges", icon: Layers },
+    ],
+    nodes: [
+      { value: "nodes", label: "Nodes", icon: List },
     ],
   };
 

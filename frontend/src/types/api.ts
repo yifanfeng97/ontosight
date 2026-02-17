@@ -143,7 +143,7 @@ export interface Hyperedge<T> {
  */
 export interface MetaResponse {
   /** Visualization type: determines which component to render */
-  type: "graph" | "hypergraph";
+  type: "graph" | "hypergraph" | "nodes";
   /** Feature availability flags (e.g., {"search": true, "chat": false}) */
   features: Record<string, boolean>;
   /** Map of element types to their JSON Schemas */
@@ -182,9 +182,14 @@ export interface ChatResponse {
  * Complete visualization data payload for /api/data endpoint.
  * 
  * Returns raw data without type wrapping (type is known from /api/meta).
- * The actual response will be one of: GraphData or HypergraphData
+ * The actual response will be one of: NodeData, GraphData or HypergraphData
  */
-export type VisualizationData = GraphData | HypergraphData;
+export type VisualizationData = NodeData | GraphData | HypergraphData;
+
+export interface NodeData {
+  /** List of nodes (no edges in node-only visualization) */
+  nodes: Array<Node<any>>;
+}
 
 export interface GraphData {
   /** List of nodes in the graph */
