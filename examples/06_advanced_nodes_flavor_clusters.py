@@ -7,14 +7,14 @@ This example demonstrates advanced node visualization with:
 3. Nodes positioned in a semantic space based on flavor profiles
 """
 
-from typing import Any, Dict, List
+import random
+from typing import Any, Dict, List, Tuple
 from pydantic import BaseModel, Field
 from ontosight import view_nodes
 
 
 # 1. Define your data schema
 class DishWithCoordinates(BaseModel):
-    id: str = Field(..., description="Unique dish identifier")
     name: str = Field(..., description="Name of the dish")
     cuisine: str = Field(..., description="Cuisine origin")
     origin: str = Field(..., description="Home planet or region")
@@ -22,33 +22,11 @@ class DishWithCoordinates(BaseModel):
     taste_profile: str = Field(..., description="Sweet, Spicy, Savory, Bitter, or Mixed")
     preparation_time: int = Field(..., description="Minutes to prepare")
     difficulty: str = Field(..., description="Easy, Medium, Hard")
-    flavor_vector: List[float] = Field(
-        ..., description="5D flavor vector: [sweet, spicy, savory, bitter, umami]"
-    )
-
-
-# 2. Prepare the data with simulated flavor embeddings
-import random
-
-
-def generate_flavor_vector(taste_profile: str) -> List[float]:
-    """Generate a 5D flavor vector based on taste profile."""
-    vectors = {
-        "Sweet": [0.8, 0.1, 0.2, 0.0, 0.2],
-        "Spicy": [0.2, 0.9, 0.3, 0.1, 0.4],
-        "Savory": [0.1, 0.2, 0.9, 0.0, 0.8],
-        "Bitter": [0.1, 0.0, 0.2, 0.9, 0.3],
-        "Mixed": [0.4, 0.5, 0.5, 0.2, 0.5],
-    }
-    # Add some noise for variety
-    base = vectors.get(taste_profile, [0.4, 0.4, 0.4, 0.2, 0.4])
-    return [v + random.uniform(-0.1, 0.1) for v in base]
 
 
 dishes_data = [
     # Core Worlds Cuisine
     (
-        "d01",
         "Coruscant Imperial Roast",
         "Core Worlds",
         "Coruscant",
@@ -57,9 +35,8 @@ dishes_data = [
         45,
         "Hard",
     ),
-    ("d02", "Senate Plaza Salad", "Core Worlds", "Coruscant", "Mixed Greens", "Mixed", 15, "Easy"),
+    ("Senate Plaza Salad", "Core Worlds", "Coruscant", "Mixed Greens", "Mixed", 15, "Easy"),
     (
-        "d03",
         "Trandoshan Amber Tea",
         "Core Worlds",
         "Trandosha",
@@ -70,7 +47,6 @@ dishes_data = [
     ),
     # Outer Rim Street Food
     (
-        "d04",
         "Tatooine Moisture Cake",
         "Outer Rim",
         "Tatooine",
@@ -80,7 +56,6 @@ dishes_data = [
         "Easy",
     ),
     (
-        "d05",
         "Geonosis Dust Seasoning Stew",
         "Outer Rim",
         "Geonosis",
@@ -90,7 +65,6 @@ dishes_data = [
         "Medium",
     ),
     (
-        "d06",
         "Bespin Cloud City Noodles",
         "Outer Rim",
         "Bespin",
@@ -100,9 +74,8 @@ dishes_data = [
         "Medium",
     ),
     # Hutt Territories
-    ("d07", "Jabba's Treasure Feast", "Hutt Territories", "Tatooine", "Spice", "Spicy", 90, "Hard"),
+    ("Jabba's Treasure Feast", "Hutt Territories", "Tatooine", "Spice", "Spicy", 90, "Hard"),
     (
-        "d08",
         "Mos Eisley Cantina Drink Mix",
         "Hutt Territories",
         "Tatooine",
@@ -113,7 +86,6 @@ dishes_data = [
     ),
     # Allied Regions
     (
-        "d09",
         "Rebel Alliance Field Rations",
         "Allied Regions",
         "Yavin 4",
@@ -123,7 +95,6 @@ dishes_data = [
         "Easy",
     ),
     (
-        "d10",
         "Millennium Falcon Emergency Paste",
         "Allied Regions",
         "Unknown",
@@ -134,7 +105,6 @@ dishes_data = [
     ),
     # More variety
     (
-        "d11",
         "Endor Forest Mushroom Risotto",
         "Allied Regions",
         "Endor",
@@ -143,11 +113,10 @@ dishes_data = [
         35,
         "Medium",
     ),
-    ("d12", "Hoth Ice Cream", "Core Worlds", "Hoth", "Crystal Ice", "Sweet", 40, "Hard"),
-    ("d13", "Naboo Royal Pasta", "Core Worlds", "Naboo", "Wheat Flour", "Savory", 55, "Hard"),
-    ("d14", "Ewok Acorn Bread", "Allied Regions", "Endor", "Acorns", "Mixed", 30, "Medium"),
+    ("Hoth Ice Cream", "Core Worlds", "Hoth", "Crystal Ice", "Sweet", 40, "Hard"),
+    ("Naboo Royal Pasta", "Core Worlds", "Naboo", "Wheat Flour", "Savory", 55, "Hard"),
+    ("Ewok Acorn Bread", "Allied Regions", "Endor", "Acorns", "Mixed", 30, "Medium"),
     (
-        "d15",
         "Kamino Ocean Market Stew",
         "Outer Rim",
         "Kamino",
@@ -156,9 +125,8 @@ dishes_data = [
         40,
         "Medium",
     ),
-    ("d16", "Dagobah Swamp Broth", "Outer Rim", "Dagobah", "Marsh Plants", "Bitter", 60, "Hard"),
+    ("Dagobah Swamp Broth", "Outer Rim", "Dagobah", "Marsh Plants", "Bitter", 60, "Hard"),
     (
-        "d17",
         "Mustafar Spiced Selection",
         "Hutt Territories",
         "Mustafar",
@@ -168,7 +136,6 @@ dishes_data = [
         "Medium",
     ),
     (
-        "d18",
         "Cloud Wine Reduction",
         "Core Worlds",
         "Bespin",
@@ -178,7 +145,6 @@ dishes_data = [
         "Medium",
     ),
     (
-        "d19",
         "Canto Bight Cocktail",
         "Core Worlds",
         "Cantonica",
@@ -188,7 +154,6 @@ dishes_data = [
         "Easy",
     ),
     (
-        "d20",
         "Scarif Tropical Bowl",
         "Allied Regions",
         "Scarif",
@@ -201,28 +166,25 @@ dishes_data = [
 
 dishes = [
     DishWithCoordinates(
-        id=d[0],
-        name=d[1],
-        cuisine=d[2],
-        origin=d[3],
-        primary_ingredient=d[4],
-        taste_profile=d[5],
-        preparation_time=d[6],
-        difficulty=d[7],
-        flavor_vector=generate_flavor_vector(d[5]),
+        name=d[0],
+        cuisine=d[1],
+        origin=d[2],
+        primary_ingredient=d[3],
+        taste_profile=d[4],
+        preparation_time=d[5],
+        difficulty=d[6],
     )
     for d in dishes_data
 ]
 
 
 # 3. Define Search Callback
-def search_dishes(query: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+def search_dishes(query: str) -> List[DishWithCoordinates]:
     """
     Search for dishes by name, ingredient, taste, or preparation difficulty.
 
     Args:
         query: Search query string (e.g., "spicy", "easy", "meat", "sweet")
-        context: Context dict from backend
 
     Returns:
         List of matched dishes
@@ -260,39 +222,44 @@ def search_dishes(query: str, context: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 
 # 4. Define Chat Callback
-def chat_with_chef(question: str, context: Dict[str, Any]) -> str:
+def chat_with_chef(question: str) -> Tuple[str, List[DishWithCoordinates]]:
     """
     An AI chef assistant that recommends dishes and provides culinary advice.
 
     Args:
         question: User's natural language question
-        context: Context dict from backend
 
     Returns:
-        Chef's response
+        Tuple of (response text, list of recommended dishes for highlighting)
     """
     question_lower = question.lower()
 
     # Recommendations based on cuisine preference
     if "core worlds" in question_lower or "imperial" in question_lower:
+        recommended = [d for d in dishes if d.cuisine == "Core Worlds"]
         return (
             "For Core Worlds cuisine, I'd recommend the 'Coruscant Imperial Roast' - "
             "a sophisticated savory dish, or the 'Naboo Royal Pasta' for something more elegant. "
-            "Both require considerable skill but deliver truly galactic flavors!"
+            "Both require considerable skill but deliver truly galactic flavors!",
+            recommended
         )
 
     if "outer rim" in question_lower or "street food" in question_lower:
+        recommended = [d for d in dishes if d.cuisine == "Outer Rim"]
         return (
             "Outer Rim street food is all about bold flavors! The 'Geonosis Dust Seasoning Stew' "
             "offers an unforgettable spicy experience, while 'Tatooine Moisture Cake' is quick "
-            "and perfect for travelers like yourself."
+            "and perfect for travelers like yourself.",
+            recommended
         )
 
     if "hutt" in question_lower or "jabba" in question_lower:
+        recommended = [d for d in dishes if d.cuisine == "Hutt Territories"]
         return (
             "Jabba the Hutt prefers intensely seasoned, spicy dishes that command attention. "
             "I'd prepare 'Jabba's Treasure Feast' - a masterpiece of spice and complexity that "
-            "takes 90 minutes but worth every second!"
+            "takes 90 minutes but worth every second!",
+            recommended
         )
 
     # Recommendations based on time constraint
@@ -300,20 +267,20 @@ def chat_with_chef(question: str, context: Dict[str, Any]) -> str:
         easy_dishes = [d for d in dishes if d.preparation_time <= 15]
         if easy_dishes:
             easy_names = ", ".join([d.name for d in easy_dishes[:3]])
-            return f"For a quick meal, I'd suggest: {easy_names}. All ready in 15 minutes or less!"
+            return (f"For a quick meal, I'd suggest: {easy_names}. All ready in 15 minutes or less!", easy_dishes)
 
     # Recommendations based on taste preference
     if "sweet" in question_lower or "dessert" in question_lower:
         sweet_dishes = [d for d in dishes if "sweet" in d.taste_profile.lower()]
         if sweet_dishes:
             sweet_names = ", ".join([d.name for d in sweet_dishes[:2]])
-            return f"For something sweet, try: {sweet_names}. Perfect to end your meal!"
+            return (f"For something sweet, try: {sweet_names}. Perfect to end your meal!", sweet_dishes)
 
     if "spicy" in question_lower or "hot" in question_lower:
         spicy_dishes = [d for d in dishes if "spicy" in d.taste_profile.lower()]
         if spicy_dishes:
             spicy_names = ", ".join([d.name for d in spicy_dishes[:2]])
-            return f"For heat lovers: {spicy_names}. These will definitely challenge your palate!"
+            return (f"For heat lovers: {spicy_names}. These will definitely challenge your palate!", spicy_dishes)
 
     if "savory" in question_lower or "meat" in question_lower:
         savory_dishes = [
@@ -323,14 +290,15 @@ def chat_with_chef(question: str, context: Dict[str, Any]) -> str:
         ]
         if savory_dishes:
             savory_names = ", ".join([d.name for d in savory_dishes[:2]])
-            return f"For a hearty savory meal, I recommend: {savory_names}."
+            return (f"For a hearty savory meal, I recommend: {savory_names}.", savory_dishes)
 
-    # Default response
+    # Default response - no specific recommendations
     return (
         "Welcome to the Galactic Culinary Archive! I'm your AI Chef Assistant. "
         "Ask me for recommendations by cuisine (Core Worlds, Outer Rim, Hutt Territories), "
         "taste preference (sweet, spicy, savory), or time available (quick, easy). "
-        "What can I help you with today?"
+        "What can I help you with today?",
+        []
     )
 
 
@@ -341,7 +309,7 @@ if __name__ == "__main__":
     view_nodes(
         node_list=dishes,
         node_schema=DishWithCoordinates,
-        node_id_extractor=lambda d: d.id,
+        node_id_extractor=lambda d: d.name,
         node_label_extractor=lambda d: d.name,
         on_search=search_dishes,
         on_chat=chat_with_chef,

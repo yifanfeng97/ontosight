@@ -7,9 +7,10 @@ from typing import Union
 from ontosight.server.models.api import (
     GraphData,
     HypergraphData,
+    NodeData,
 )
 
-from ontosight.core.storage import GraphStorage, HypergraphStorage
+from ontosight.core.storage import GraphStorage, HypergraphStorage, NodeStorage
 
 from ontosight.server.models.api import SearchRequest
 from ontosight.server.state import global_state
@@ -18,8 +19,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
-@router.post("/search", response_model=Union[GraphData, HypergraphData])
-async def search(request: SearchRequest) -> Union[GraphData, HypergraphData]:
+@router.post("/search", response_model=Union[NodeData, GraphData, HypergraphData])
+async def search(request: SearchRequest) -> Union[NodeData, GraphData, HypergraphData]:
     """Search visualization for matching nodes and return highlighted sample data.
 
     Args:
@@ -77,6 +78,22 @@ async def search(request: SearchRequest) -> Union[GraphData, HypergraphData]:
                 edges=sample.get("edges", []),
                 hyperedges=sample["hyperedges"]
             )
+        
+        elif viz_type == "nodes":
+            node_list = results
+            storage: NodeStorage = global_state.get_storage()
+            if not storage:
+                raise HTTPException(status_code=400, detail="Storage not initialized")
+            
+            # Get sample with highlighting injected at storage layer
+            sample = storage.get_sample_from_data(node_list, highlight_center=True)
+            
+            highlighted_nodes_count = sum(1 for n in sample["nodes"] if n.get("highlighted"))
+            logger.info(
+                f"[/api/search] Node search returned {len(sample['nodes'])} nodes "
+                f"({highlighted_nodes_count} highlighted)"
+            )
+            return NodeData(nodes=sample["nodes"])
             
         else:
             raise NotImplementedError(f"Search not implemented for visualization type: {viz_type}")

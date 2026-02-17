@@ -100,6 +100,12 @@ def view_nodes(
         meta_data = {
             "Nodes": stats["total_nodes"],
         }
+        
+        # Add field count from schema if available
+        if node_schema is not None:
+            # Pydantic v2 uses model_fields, v1 uses __fields__
+            fields_count = len(getattr(node_schema, "model_fields", getattr(node_schema, "__fields__", {})))
+            meta_data["Fields"] = fields_count
 
         global_state.set_visualization_type("nodes")
         global_state.set_visualization_data("meta_data", meta_data)

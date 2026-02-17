@@ -20,18 +20,28 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
   const { setViewMode, viewMode } = useVisualization();
 
   useEffect(() => {
-    const defaultMode = vizType === "graph" || vizType === "hypergraph" ? "graph" : "nodes";
+    // If no view mode is set, use "graph" as default for all types
+    // "graph" means the canvas view (nodes/edges visualization)
+    // "nodes"/"edges"/"hyperedges" means the list/grid overlay
+    const defaultMode = "graph";
     setViewMode(defaultMode as any);
   }, [vizType, setViewMode]);
 
   const handleTabChange = (tab: string) => {
-    console.log("ViewRouter.TabChange", { tab, vizType });
-    setViewMode(tab as any);
+    console.log("ViewRouter.TabChange", { tab, vizType, currentViewMode: viewMode });
+    
+    // Toggle logic: If clicking the active tab, switch back to "graph" (default canvas view)
+    // This allows opening/closing the overlay grid view
+    if (viewMode === tab) {
+      setViewMode("graph" as any);
+    } else {
+      setViewMode(tab as any);
+    }
   };
 
-  // Determine if we're in list/grid view mode (overlay mode)
-  // For nodes visualization, overlay mode is disabled (pure node canvas)
-  const isOverlayMode = vizType !== "nodes" && ["nodes", "edges", "hyperedges", "items"].includes(viewMode || "");
+  const isOverlayMode = 
+    (vizType === "nodes" && viewMode === "nodes") || 
+    (vizType !== "nodes" && ["nodes", "edges", "hyperedges", "items"].includes(viewMode || ""));
   
   if (!data) {
     return (
@@ -125,6 +135,17 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
                     <PaginatedGridView
                       entityType="hyperedge"
                       fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
+                    />
+                  )}
+                </>
+              )}
+
+              {vizType === "nodes" && (
+                <>
+                  {viewMode === "nodes" && (
+                    <PaginatedGridView
+                      entityType="node"
+                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
                     />
                   )}
                 </>

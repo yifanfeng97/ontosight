@@ -12,7 +12,6 @@ from ontosight import view_nodes
 
 # 1. Define your data schema
 class Dish(BaseModel):
-    id: str = Field(..., description="Unique dish identifier")
     name: str = Field(..., description="Name of the dish")
     cuisine: str = Field(
         ..., description="Cuisine origin: Core Worlds, Outer Rim, Hutt Territories, Allied Regions"
@@ -28,7 +27,6 @@ class Dish(BaseModel):
 dishes = [
     # Core Worlds Cuisine
     Dish(
-        id="d01",
         name="Coruscant Imperial Roast",
         cuisine="Core Worlds",
         origin="Coruscant",
@@ -38,7 +36,6 @@ dishes = [
         difficulty="Hard",
     ),
     Dish(
-        id="d02",
         name="Senate Plaza Salad",
         cuisine="Core Worlds",
         origin="Coruscant",
@@ -48,7 +45,6 @@ dishes = [
         difficulty="Easy",
     ),
     Dish(
-        id="d03",
         name="Trandoshan Amber Tea",
         cuisine="Core Worlds",
         origin="Trandosha",
@@ -59,7 +55,6 @@ dishes = [
     ),
     # Outer Rim Street Food
     Dish(
-        id="d04",
         name="Tatooine Moisture Cake",
         cuisine="Outer Rim",
         origin="Tatooine",
@@ -69,7 +64,6 @@ dishes = [
         difficulty="Easy",
     ),
     Dish(
-        id="d05",
         name="Geonosis Dust Seasoning Stew",
         cuisine="Outer Rim",
         origin="Geonosis",
@@ -79,7 +73,6 @@ dishes = [
         difficulty="Medium",
     ),
     Dish(
-        id="d06",
         name="Bespin Cloud City Noodles",
         cuisine="Outer Rim",
         origin="Bespin",
@@ -90,7 +83,6 @@ dishes = [
     ),
     # Hutt Territories
     Dish(
-        id="d07",
         name="Jabba's Treasure Feast",
         cuisine="Hutt Territories",
         origin="Tatooine",
@@ -100,7 +92,6 @@ dishes = [
         difficulty="Hard",
     ),
     Dish(
-        id="d08",
         name="Mos Eisley Cantina Drink Mix",
         cuisine="Hutt Territories",
         origin="Tatooine",
@@ -111,7 +102,6 @@ dishes = [
     ),
     # Allied Regions
     Dish(
-        id="d09",
         name="Rebel Alliance Field Rations",
         cuisine="Allied Regions",
         origin="Yavin 4",
@@ -121,7 +111,6 @@ dishes = [
         difficulty="Easy",
     ),
     Dish(
-        id="d10",
         name="Millennium Falcon Emergency Paste",
         cuisine="Allied Regions",
         origin="Unknown",
@@ -132,7 +121,6 @@ dishes = [
     ),
     # More variety
     Dish(
-        id="d11",
         name="Endor Forest Mushroom Risotto",
         cuisine="Allied Regions",
         origin="Endor",
@@ -142,7 +130,6 @@ dishes = [
         difficulty="Medium",
     ),
     Dish(
-        id="d12",
         name="Hoth Ice Cream",
         cuisine="Core Worlds",
         origin="Hoth",
@@ -152,7 +139,6 @@ dishes = [
         difficulty="Hard",
     ),
     Dish(
-        id="d13",
         name="Naboo Royal Pasta",
         cuisine="Core Worlds",
         origin="Naboo",
@@ -162,7 +148,6 @@ dishes = [
         difficulty="Hard",
     ),
     Dish(
-        id="d14",
         name="Ewok Acorn Bread",
         cuisine="Allied Regions",
         origin="Endor",
@@ -172,7 +157,6 @@ dishes = [
         difficulty="Medium",
     ),
     Dish(
-        id="d15",
         name="Kamino Ocean Market Stew",
         cuisine="Outer Rim",
         origin="Kamino",
@@ -190,6 +174,6 @@ if __name__ == "__main__":
     view_nodes(
         node_list=dishes,
         node_schema=Dish,
-        node_id_extractor=lambda d: d.id,
+        node_id_extractor=lambda d: d.name,
         node_label_extractor=lambda d: d.name,
     )

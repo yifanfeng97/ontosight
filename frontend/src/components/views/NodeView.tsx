@@ -70,8 +70,12 @@ const NodeView = memo(function NodeView({ data }: NodeViewProps) {
         width: containerRef.current.clientWidth,
         height: containerRef.current.clientHeight,
         layout: {
-          type: 'grid',
-          cols: 10, // 每行显示的节点数
+          type: 'force',
+          collide: {
+            radius: LAYOUT_SPACING_CONFIG.nodeCollideRadius,
+          },
+          preventOverlap: true,
+          animated: true,
         },
         behaviors: ['drag-canvas', 'zoom-canvas', 'drag-element'],
         node: {

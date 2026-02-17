@@ -34,32 +34,7 @@ OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可�
 
 ---
 
-## 📸 可视化预览
-
-### 1. 核心可视化类型
-OntoSight 通过统一的接口支持图、超图和纯节点集合。
-
-**标准图** (二元关系) | **超图** (多元关系) | **节点** (实体集合)
-:---: | :---: | :---:
-<img src="docs/assets/graph_main.png" width="250px"> | <img src="docs/assets/hypergraph_main.png" width="250px"> | 档案库、语义空间、聚类展示
-
-### 2. 智能搜索 (对接向量数据库)
-定义自定义搜索回调，通过 Embedding 检索在图谱中实现“指哪亮哪”。
-
-| 图内搜索 | 超图内搜索 |
-| :---: | :---: |
-| <img src="docs/assets/graph_search.png" width="380px"> | <img src="docs/assets/hypergraph_search.png" width="380px"> |
-
-### 3. GraphRAG 与 AI 对话
-将图谱与 LLM 深度融合。在生成文本答案的同时，自动高亮显示相关的实体上下文。
-
-| AI 对话 (图谱) | AI 对话 (超图) |
-| :---: | :---: |
-| <img src="docs/assets/graph_chat.png" width="380px"> | <img src="docs/assets/hypergraph_chat.png" width="380px"> |
-
----
-
-## 🚀 快速上手
+## � 快速上手
 
 ### 安装
 
@@ -67,9 +42,14 @@ OntoSight 通过统一的接口支持图、超图和纯节点集合。
 pip install ontosight
 ```
 
-### 基础用法 - 图谱
+## 📸 可视化模式
 
-使用 Pydantic 模型定义你的数据结构：
+### 1. 标准知识图谱 (`view_graph`)
+用于展示二元关系的传统节点-边网络。最适合社交网络、依赖关系图和经典知识图谱。
+
+| 主视图 | 智能搜索 | AI 对话 |
+| :---: | :---: | :---: |
+| <img src="docs/assets/graph_main.png" width="100%"> | <img src="docs/assets/graph_search.png" width="100%"> | <img src="docs/assets/graph_chat.png" width="100%"> |
 
 ```python
 from pydantic import BaseModel
@@ -79,52 +59,57 @@ class Entity(BaseModel):
     name: str
     type: str
 
-class Relation(BaseModel):
-    source: str
-    target: str
-    relation: str
-
-# 准备数据
 nodes = [Entity(name="Alice", type="Person"), Entity(name="Wonderland", type="Place")]
-edges = [Relation(source="Alice", target="Wonderland", relation="visits")]
+edges = [{"source": "Alice", "target": "Wonderland", "label": "visits"}]
 
-# 启动可视化
 view_graph(
     node_list=nodes,
     edge_list=edges,
-    node_schema=Entity,
-    edge_schema=Relation,
     node_id_extractor=lambda n: n.name,
-    node_ids_in_edge_extractor=lambda e: (e.source, e.target),
-    edge_label_extractor=lambda e: e.relation
+    node_ids_in_edge_extractor=lambda e: (e["source"], e["target"])
 )
 ```
 
-### 基础用法 - 纯节点
+### 2. 多维超图 (`view_hypergraph`)
+可视化连接两个以上实体的复杂关系。非常适合展示科研合作网络、化学反应或复杂的逻辑路径。
 
-用于可视化没有边的实体集合：
+| 主视图 | 智能搜索 | AI 对话 |
+| :---: | :---: | :---: |
+| <img src="docs/assets/hypergraph_main.png" width="100%"> | <img src="docs/assets/hypergraph_search.png" width="100%"> | <img src="docs/assets/hypergraph_chat.png" width="100%"> |
 
 ```python
-from pydantic import BaseModel
+from ontosight import view_hypergraph
+
+# 一个超边可以连接多个节点
+hyperedges = [{"id": "he1", "members": ["A", "B", "C"], "label": "协作关系"}]
+
+view_hypergraph(
+    node_list=[{"id": "A"}, {"id": "B"}, {"id": "C"}],
+    edge_list=hyperedges,
+    node_id_extractor=lambda n: n["id"],
+    node_ids_in_edge_extractor=lambda e: e["members"]
+)
+```
+
+### 3. 实体档案与语义空间 (`view_nodes`)
+不包含显式连线的纯实体集合。利用力导向聚类和语义搜索，探索大规模档案库或 Embedding 空间。
+
+| 主视图 | 智能搜索 | AI 对话 |
+| :---: | :---: | :---: |
+| <img src="docs/assets/node_main.png" width="100%"> | <img src="docs/assets/node_search.png" width="100%"> | <img src="docs/assets/node_chat.png" width="100%"> |
+
+```python
 from ontosight import view_nodes
 
-class Recipe(BaseModel):
-    name: str
-    cuisine: str
-    difficulty: str
-
-# 准备数据
 recipes = [
-    Recipe(name="意大利面", cuisine="意大利", difficulty="简单"),
-    Recipe(name="点心", cuisine="中国", difficulty="中等"),
+    {"name": "意大利面", "cuisine": "意式"},
+    {"name": "寿司", "cuisine": "日式"}
 ]
 
-# 启动可视化
 view_nodes(
     node_list=recipes,
-    node_schema=Recipe,
-    node_id_extractor=lambda r: r.name,
-    node_label_extractor=lambda r: r.name,
+    node_id_extractor=lambda r: r["name"],
+    node_label_extractor=lambda r: r["name"]
 )
 ```
 
@@ -146,7 +131,7 @@ def my_vector_search(query: str):
 view_graph(..., on_search=my_vector_search)
 ```
 
-### 图谱问答 (GraphRAG)
+### 图谱问答
 将聊天界面直接连接到图谱。当用户提出问题时，大模型在生成文本答案的同时，OntoSight 会自动在图谱中高亮显示相关的知识子图。
 
 ```python

@@ -71,26 +71,41 @@ class NodeStorage(BaseStorage):
     def get_sample(
         self, 
         center_ids: Optional[List[str]] = None, 
-        hops: int = 2, 
-        highlight_center: bool = False
+        n_nodes: int = 10,
+        highlight_center: bool = False,
     ) -> Dict[str, Any]:
-        """Get a sample of nodes (or all nodes if smaller than sample size).
+        """Get a sample of nodes.
 
-        For node-only visualization, hops parameter is ignored.
+        For node-only visualization, hops parameter is ignored (kwargs).
 
         Args:
-            center_ids: List of node IDs to highlight (optional)
-            hops: Ignored for node storage
+            center_ids: List of node IDs to include first (and highlight)
+            n_nodes: Total number of nodes to return (default: 10)
             highlight_center: If True, mark center nodes with highlighted=True
 
         Returns:
             Dict with 'nodes' key containing list of node objects
         """
-        # For node storage, we return all nodes or filtered by center_ids
-        nodes_to_return = []
+        all_node_ids = list(self.nodes.keys())
         center_node_ids = set(center_ids) if center_ids else set()
+        
+        # 1. Start with requested center nodes (filtering out invalid ones)
+        result_ids = {nid for nid in center_node_ids if nid in self.nodes}
+        
+        # 2. If we need more nodes to reach n_nodes, sample randomly from remaining
+        if len(result_ids) < n_nodes:
+            remaining_ids = [nid for nid in all_node_ids if nid not in result_ids]
+            needed = n_nodes - len(result_ids)
+            
+            # Sample up to 'needed' amount, or take all remaining if fewer
+            if remaining_ids:
+                sampled_additional = random.sample(remaining_ids, min(len(remaining_ids), needed))
+                result_ids.update(sampled_additional)
 
-        for node_id, node_data in self.nodes.items():
+        # 3. Build return list
+        nodes_to_return = []
+        for node_id in result_ids:
+            node_data = self.nodes[node_id]
             node_copy = dict(node_data)
             
             # Mark highlighted if this is a center node and highlight_center is True
@@ -99,14 +114,13 @@ class NodeStorage(BaseStorage):
             
             nodes_to_return.append(node_copy)
 
-        logger.info(f"[NodeStorage] Returning {len(nodes_to_return)} nodes")
+        logger.info(f"[NodeStorage] Returning {len(nodes_to_return)} nodes (Target: {n_nodes})")
         return {"nodes": nodes_to_return}
 
     def get_sample_from_data(
         self, 
         node_list: List[NodeSchema],
         highlight_center: bool = False,
-        **kwargs
     ) -> Dict[str, Any]:
         """Get sample based on raw data objects.
 
@@ -115,7 +129,6 @@ class NodeStorage(BaseStorage):
         Args:
             node_list: Raw node data objects to extract IDs from
             highlight_center: If True, mark matching elements with highlighted=True
-            **kwargs: Additional keyword arguments (unused)
 
         Returns:
             Sample data with highlighted nodes if matched
@@ -140,11 +153,20 @@ class NodeStorage(BaseStorage):
         total = len(node_list)
         start = page * page_size
         end = start + page_size
-        items = node_list[start:end]
+        
+        # Consistent format with GraphStorage for frontend compatibility
+        # Extract 'label' from nested 'data' and place at root level
+        items = []
+        for node in node_list[start:end]:
+            item = dict(node)
+            item["label"] = node.get("data", {}).get("label", node.get("id"))
+            item["type"] = "node"
+            items.append(item)
 
         return {
             "items": items,
             "total": total,
             "page": page,
             "page_size": page_size,
+            "has_next": end < total,
         }

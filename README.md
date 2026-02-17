@@ -34,32 +34,7 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
 
 ---
 
-## 📸 Visualization Previews
-
-### 1. Core Visualization Types
-OntoSight supports graphs, hypergraphs, and pure node collections with a unified interface.
-
-**Graphs** (pairwise relationships) | **Hypergraphs** (multi-node relationships) | **Nodes** (entity collections)
-:---: | :---: | :---:
-<img src="docs/assets/graph_main.png" width="250px"> | <img src="docs/assets/hypergraph_main.png" width="250px"> | Entity archives, semantic spaces, clusters
-
-### 2. Intelligent Search (Vector DB Ready)
-Define custom search callbacks to highlight matching subgraphs via embedding-based retrieval.
-
-| Search in Graph | Search in Hypergraph |
-| :---: | :---: |
-| <img src="docs/assets/graph_search.png" width="380px"> | <img src="docs/assets/hypergraph_search.png" width="380px"> |
-
-### 3. GraphRAG & AI Chat
-Seamlessly connect your Graph to LLMs. Auto-highlight relevant entities while generating textual answers.
-
-| AI Chat (Graph) | AI Chat (Hypergraph) |
-| :---: | :---: |
-| <img src="docs/assets/graph_chat.png" width="380px"> | <img src="docs/assets/hypergraph_chat.png" width="380px"> |
-
----
-
-## 🚀 Quick Start
+## � Quick Start
 
 ### Installation
 
@@ -67,9 +42,14 @@ Seamlessly connect your Graph to LLMs. Auto-highlight relevant entities while ge
 pip install ontosight
 ```
 
-### Basic Usage - Graphs
+## 📸 Visualization Modes
 
-Define your data structure using Pydantic models:
+### 1. Standard Knowledge Graphs (`view_graph`)
+Traditional node-edge networks for pairwise relationships. Best for social networks, dependency graphs, and classic KGs.
+
+| Main View | Intelligent Search | AI Chat |
+| :---: | :---: | :---: |
+| <img src="docs/assets/graph_main.png" width="100%"> | <img src="docs/assets/graph_search.png" width="100%"> | <img src="docs/assets/graph_chat.png" width="100%"> |
 
 ```python
 from pydantic import BaseModel
@@ -79,52 +59,57 @@ class Entity(BaseModel):
     name: str
     type: str
 
-class Relation(BaseModel):
-    source: str
-    target: str
-    relation: str
-
-# Your data
 nodes = [Entity(name="Alice", type="Person"), Entity(name="Wonderland", type="Place")]
-edges = [Relation(source="Alice", target="Wonderland", relation="visits")]
+edges = [{"source": "Alice", "target": "Wonderland", "label": "visits"}]
 
-# Launch visualization
 view_graph(
     node_list=nodes,
     edge_list=edges,
-    node_schema=Entity,
-    edge_schema=Relation,
     node_id_extractor=lambda n: n.name,
-    node_ids_in_edge_extractor=lambda e: (e.source, e.target),
-    edge_label_extractor=lambda e: e.relation
+    node_ids_in_edge_extractor=lambda e: (e["source"], e["target"])
 )
 ```
 
-### Basic Usage - Pure Nodes
+### 2. Multi-Dimensional Hypergraphs (`view_hypergraph`)
+Visualize relationships that connect more than two entities. Perfect for collaborative networks, chemical reactions, or complex logical pathways.
 
-For visualizing entity collections without edges:
+| Main View | Intelligent Search | AI Chat |
+| :---: | :---: | :---: |
+| <img src="docs/assets/hypergraph_main.png" width="100%"> | <img src="docs/assets/hypergraph_search.png" width="100%"> | <img src="docs/assets/hypergraph_chat.png" width="100%"> |
 
 ```python
-from pydantic import BaseModel
+from ontosight import view_hypergraph
+
+# A hyperedge connects multiple nodes
+hyperedges = [{"id": "he1", "members": ["A", "B", "C"], "label": "Collaboration"}]
+
+view_hypergraph(
+    node_list=[{"id": "A"}, {"id": "B"}, {"id": "C"}],
+    edge_list=hyperedges,
+    node_id_extractor=lambda n: n["id"],
+    node_ids_in_edge_extractor=lambda e: e["members"]
+)
+```
+
+### 3. Entity Archives & Semantic Spaces (`view_nodes`)
+Pure entity collections without explicit edges. Use force-clustering and semantic search to explore large-scale archives or embedding spaces.
+
+| Main View | Intelligent Search | AI Chat |
+| :---: | :---: | :---: |
+| <img src="docs/assets/node_main.png" width="100%"> | <img src="docs/assets/node_search.png" width="100%"> | <img src="docs/assets/node_chat.png" width="100%"> |
+
+```python
 from ontosight import view_nodes
 
-class Recipe(BaseModel):
-    name: str
-    cuisine: str
-    difficulty: str
-
-# Your data
 recipes = [
-    Recipe(name="Pasta Carbonara", cuisine="Italian", difficulty="Easy"),
-    Recipe(name="Dim Sum", cuisine="Chinese", difficulty="Medium"),
+    {"name": "Pasta", "cuisine": "Italian"},
+    {"name": "Sushi", "cuisine": "Japanese"}
 ]
 
-# Launch visualization
 view_nodes(
     node_list=recipes,
-    node_schema=Recipe,
-    node_id_extractor=lambda r: r.name,
-    node_label_extractor=lambda r: r.name,
+    node_id_extractor=lambda r: r["name"],
+    node_label_extractor=lambda r: r["name"]
 )
 ```
 
@@ -146,7 +131,7 @@ def my_vector_search(query: str):
 view_graph(..., on_search=my_vector_search)
 ```
 
-### GraphRAG & Chat
+### Chat
 Connect a Chat interface directly to your Graph. When a user asks a question, the LLM can provide a textual answer, and OntoSight will auto-highlight the relevant subgraph.
 
 ```python

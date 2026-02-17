@@ -15,11 +15,9 @@ interface GraphViewProps {
 
 /**
  * GraphView 组件 - 使用 AntV G6 v5 构建的图引擎
- * 已重构：
+ * 特点：
  * 1. 使用 G6 v5 内部状态系统 (State System) 管理选中和高亮
  * 2. 使用内置 transforms 处理平行边
- * 3. 移除冗余的样式计算和手动更新逻辑
- * 4. 移除键盘监听，纯鼠标交互
  */
 const GraphView = memo(function GraphView({ data }: GraphViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
