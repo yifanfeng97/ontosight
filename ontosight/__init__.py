@@ -10,7 +10,7 @@ from ontosight.core import (
     view_nodes,
 )
 
-__version__ = "0.1.3"
+__version__ = "0.1.4"
 __author__ = "Yifan Feng"
 __email__ = "evanfeng97@gmail.com"
 
