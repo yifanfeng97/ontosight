@@ -106,50 +106,48 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
                 </div>
               }
             >
-              {vizType === "graph" && (
-                <>
-                  {viewMode === "nodes" && (
-                    <PaginatedGridView
-                      entityType="node"
-                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                    />
-                  )}
-                  {viewMode === "edges" && (
-                    <PaginatedGridView
-                      entityType="edge"
-                      fetchFunction={(page, pageSize) => apiClient.getEdgesPaginated(page, pageSize)}
-                    />
-                  )}
-                </>
-              )}
+              {(() => {
+                const gridViewConfig = {
+                  graph: {
+                    nodes: {
+                      entityType: "node" as const,
+                      fetchFunction: (page: number, pageSize: number) => apiClient.getNodesPaginated(page, pageSize),
+                    },
+                    edges: {
+                      entityType: "edge" as const,
+                      fetchFunction: (page: number, pageSize: number) => apiClient.getEdgesPaginated(page, pageSize),
+                    },
+                  },
+                  hypergraph: {
+                    nodes: {
+                      entityType: "node" as const,
+                      fetchFunction: (page: number, pageSize: number) => apiClient.getNodesPaginated(page, pageSize),
+                    },
+                    hyperedges: {
+                      entityType: "hyperedge" as const,
+                      fetchFunction: (page: number, pageSize: number) => apiClient.getHyperedgesPaginated(page, pageSize),
+                    },
+                  },
+                  nodes: {
+                    nodes: {
+                      entityType: "node" as const,
+                      fetchFunction: (page: number, pageSize: number) => apiClient.getNodesPaginated(page, pageSize),
+                    },
+                  },
+                } as const;
 
-              {vizType === "hypergraph" && (
-                <>
-                  {viewMode === "nodes" && (
-                    <PaginatedGridView
-                      entityType="node"
-                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                    />
-                  )}
-                  {viewMode === "hyperedges" && (
-                    <PaginatedGridView
-                      entityType="hyperedge"
-                      fetchFunction={(page, pageSize) => apiClient.getHyperedgesPaginated(page, pageSize)}
-                    />
-                  )}
-                </>
-              )}
+                const vizConfig = gridViewConfig[vizType as keyof typeof gridViewConfig];
+                const currentConfig = vizConfig?.[viewMode as keyof typeof vizConfig];
 
-              {vizType === "nodes" && (
-                <>
-                  {viewMode === "nodes" && (
-                    <PaginatedGridView
-                      entityType="node"
-                      fetchFunction={(page, pageSize) => apiClient.getNodesPaginated(page, pageSize)}
-                    />
-                  )}
-                </>
-              )}
+                if (!currentConfig) return null;
+
+                return (
+                  <PaginatedGridView
+                    entityType={currentConfig.entityType}
+                    fetchFunction={currentConfig.fetchFunction}
+                  />
+                );
+              })()}
             </Suspense>
           </div>
         )}

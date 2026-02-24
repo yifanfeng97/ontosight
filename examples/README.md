@@ -19,6 +19,11 @@ These examples show how to visualize pure entity collections without any edges -
 - **[05_nodes_culinary_archive.py](05_nodes_culinary_archive.py)**: A node-only view showcasing a galactic recipe database. Perfect for displaying large collections of independent items.
 - **[06_advanced_nodes_flavor_clusters.py](06_advanced_nodes_flavor_clusters.py)**: Advanced node visualization with semantic search and an AI chef assistant that recommends dishes based on taste preferences, difficulty level, and cuisine type.
 
+### 4. Testing & Debugging Visualizations
+These examples are designed to test specific features and edge cases of the visualization engine.
+- **[07_graph_isolated_nodes.py](07_graph_isolated_nodes.py)**: Tests the `min_nodes` sampling logic with a graph containing multiple disconnected connected components. Useful for verifying that the sampling algorithm can gather enough nodes when the graph is sparse.
+- **[08_hypergraph_isolated_nodes.py](08_hypergraph_isolated_nodes.py)**: Tests the `min_nodes` sampling logic with a hypergraph containing multiple disconnected components. Useful for verifying hyperedge sampling behavior.
+
 ## 🛠 How to Run
 
 1. Ensure you have the package installed:
@@ -40,3 +45,6 @@ These examples show how to visualize pure entity collections without any edges -
   - **Graphs** (`view_graph`): For pairwise relationships and networks
   - **Hypergraphs** (`view_hypergraph`): For many-to-many relationships and complex pathways
   - **Nodes** (`view_nodes`): For entity collections and semantic spaces without explicit edges
+- **Sampling Parameters**:
+  - `min_nodes`: Minimum number of nodes to include in the sample (default: 10)
+  - `max_attempts`: Maximum number of attempts to find a suitable center (default: 5)
