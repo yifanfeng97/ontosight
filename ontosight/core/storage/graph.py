@@ -124,7 +124,12 @@ class GraphStorage(BaseStorage):
         return self.stats
 
     def get_sample(
-        self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False
+        self,
+        center_ids: Optional[List[str]] = None,
+        hops: int = 2,
+        highlight_center: bool = False,
+        min_nodes: int = 10,
+        max_attempts: int = 5,
     ) -> Dict[str, Any]:
         """Get a subgraph around given center nodes/edges (or random if not provided).
 
@@ -132,19 +137,54 @@ class GraphStorage(BaseStorage):
             center_ids: List of node or edge IDs to use as starting points
             hops: Number of hops to expand
             highlight_center: If True, mark center nodes/edges with highlighted=True
+            min_nodes: Minimum number of nodes to include in the sample
+            max_attempts: Maximum number of attempts to find a suitable center
 
         Returns:
             Dict with 'nodes' and 'edges' keys containing the subgraph
         """
         if not center_ids:
-            # Select random node with degree > 0 (not isolated)
-            nodes_with_edges = [nid for nid in self.nodes.keys() if self.deg_node.get(nid, 0) > 0]
-            center_ids = [random.choice(nodes_with_edges)] if nodes_with_edges else []
+            all_nodes = list(self.nodes.keys())
+            if not all_nodes:
+                return {"nodes": [], "edges": []}
 
+            all_node_ids = set()
+            all_edge_ids = set()
+            result_nodes = []
+            result_edges = []
+
+            for _ in range(max_attempts):
+                current_center = [random.choice(all_nodes)]
+
+                sample = self._get_sample_with_center(current_center, hops, highlight_center)
+
+                for node in sample["nodes"]:
+                    if node["id"] not in all_node_ids:
+                        all_node_ids.add(node["id"])
+                        result_nodes.append(node)
+
+                for edge in sample["edges"]:
+                    if edge["id"] not in all_edge_ids:
+                        all_edge_ids.add(edge["id"])
+                        result_edges.append(edge)
+
+                if len(result_nodes) >= min_nodes:
+                    return {"nodes": result_nodes, "edges": result_edges}
+
+            return {"nodes": result_nodes, "edges": result_edges}
+
+        return self._get_sample_with_center(center_ids, hops, highlight_center)
+
+    def _get_sample_with_center(
+        self,
+        center_ids: List[str],
+        hops: int,
+        highlight_center: bool,
+    ) -> Dict[str, Any]:
+        """Internal method to get sample with given center IDs."""
         if not center_ids:
             return {"nodes": [], "edges": []}
 
-        # Separate node IDs and edge IDs from center_ids
         visited_nodes = set()
         visited_edges = set()
         center_node_ids = set()
@@ -153,11 +193,12 @@ class GraphStorage(BaseStorage):
         for element_id in center_ids:
             if element_id in self.nodes:
                 visited_nodes.add(element_id)
-                center_node_ids.add(element_id) if highlight_center else None
+                if highlight_center:
+                    center_node_ids.add(element_id)
             elif element_id in self.edges:
-                # If edge ID, add its source and target nodes
                 visited_edges.add(element_id)
-                center_edge_ids.add(element_id) if highlight_center else None
+                if highlight_center:
+                    center_edge_ids.add(element_id)
                 edge_data = self.edges[element_id]
                 visited_nodes.add(edge_data["source"])
                 visited_nodes.add(edge_data["target"])
@@ -165,18 +206,15 @@ class GraphStorage(BaseStorage):
         if not visited_nodes:
             return {"nodes": [], "edges": []}
 
-        # BFS to find all nodes within `hops` steps
         current_layer = set(visited_nodes)
 
         for _ in range(hops):
             next_layer = set()
             for node_id in current_layer:
-                # Collect edges incident to this node and expand to neighbors
                 for edge_id in self.incident_edges.get(node_id, []):
                     if edge_id not in visited_edges:
                         visited_edges.add(edge_id)
                         edge_data = self.edges[edge_id]
-                        # Find the other node in this edge
                         other_node = (
                             edge_data["target"]
                             if edge_data["source"] == node_id
@@ -187,17 +225,16 @@ class GraphStorage(BaseStorage):
                             visited_nodes.add(other_node)
             current_layer = next_layer
 
-        # Collect nodes and edges within sample
         sub_nodes = []
         for node_id in visited_nodes:
-            node_data = dict(self.nodes[node_id])  # Shallow copy
+            node_data = dict(self.nodes[node_id])
             if highlight_center and node_id in center_node_ids:
                 node_data["highlighted"] = True
             sub_nodes.append(node_data)
 
         sub_edges = []
         for edge_id in visited_edges:
-            edge_data = dict(self.edges[edge_id])  # Shallow copy
+            edge_data = dict(self.edges[edge_id])
             if highlight_center and edge_id in center_edge_ids:
                 edge_data["highlighted"] = True
             sub_edges.append(edge_data)

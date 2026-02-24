@@ -141,25 +141,83 @@ class HypergraphStorage(BaseStorage):
         """Get hypergraph statistics."""
         return self.stats
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+    def get_sample(
+        self,
+        center_ids: Optional[List[str]] = None,
+        hops: int = 2,
+        highlight_center: bool = False,
+        min_nodes: int = 10,
+        max_attempts: int = 5,
+    ) -> Dict[str, Any]:
         """Get sub-hypergraph around given nodes/hyperedges via hyperedge neighborhoods.
 
         Args:
             center_ids: List of node or hyperedge IDs to use as starting points
             hops: Number of hops to expand via hyperedge connections
             highlight_center: If True, mark center nodes/hyperedges with highlighted=True
+            min_nodes: Minimum number of nodes to include in the sample
+            max_attempts: Maximum number of attempts to find a suitable center
 
         Returns:
             Dict with 'nodes', 'edges', and 'hyperedges' keys
         """
         if not center_ids:
-            # Select random node with degree > 0 (not isolated)
-            nodes_with_hyperedges = [
-                nid for nid in self.nodes.keys() if self.node_deg.get(nid, 0) > 0
-            ]
-            center_ids = [random.choice(nodes_with_hyperedges)] if nodes_with_hyperedges else []
+            all_nodes = list(self.nodes.keys())
+            if not all_nodes:
+                return {"nodes": [], "edges": [], "hyperedges": []}
 
-        # Separate node IDs and hyperedge IDs from center_ids
+            all_node_ids = set()
+            all_edge_ids = set()
+            all_hyperedge_ids = set()
+            result_nodes = []
+            result_edges = []
+            result_hyperedges = []
+
+            for _ in range(max_attempts):
+                current_center = [random.choice(all_nodes)]
+
+                sample = self._get_sample_with_center(current_center, hops, highlight_center)
+
+                for node in sample["nodes"]:
+                    if node["id"] not in all_node_ids:
+                        all_node_ids.add(node["id"])
+                        result_nodes.append(node)
+
+                for edge in sample["edges"]:
+                    if edge["id"] not in all_edge_ids:
+                        all_edge_ids.add(edge["id"])
+                        result_edges.append(edge)
+
+                for hyperedge in sample["hyperedges"]:
+                    if hyperedge["id"] not in all_hyperedge_ids:
+                        all_hyperedge_ids.add(hyperedge["id"])
+                        result_hyperedges.append(hyperedge)
+
+                if len(result_nodes) >= min_nodes:
+                    return {
+                        "nodes": result_nodes,
+                        "edges": result_edges,
+                        "hyperedges": result_hyperedges,
+                    }
+
+            return {
+                "nodes": result_nodes,
+                "edges": result_edges,
+                "hyperedges": result_hyperedges,
+            }
+
+        return self._get_sample_with_center(center_ids, hops, highlight_center)
+
+    def _get_sample_with_center(
+        self,
+        center_ids: List[str],
+        hops: int,
+        highlight_center: bool,
+    ) -> Dict[str, Any]:
+        """Internal method to get sample with given center IDs."""
+        if not center_ids:
+            return {"nodes": [], "edges": [], "hyperedges": []}
+
         visited_nodes = set()
         visited_hyperedges = set()
         center_node_ids = set()
@@ -168,11 +226,12 @@ class HypergraphStorage(BaseStorage):
         for element_id in center_ids:
             if element_id in self.nodes:
                 visited_nodes.add(element_id)
-                center_node_ids.add(element_id) if highlight_center else None
+                if highlight_center:
+                    center_node_ids.add(element_id)
             elif element_id in self.hyperedges:
-                # If hyperedge ID, add all its linked nodes
                 visited_hyperedges.add(element_id)
-                center_hyperedge_ids.add(element_id) if highlight_center else None
+                if highlight_center:
+                    center_hyperedge_ids.add(element_id)
                 hyperedge_data = self.hyperedges[element_id]
                 for node_in_he in hyperedge_data.get("linked_nodes", []):
                     visited_nodes.add(node_in_he)
@@ -180,18 +239,14 @@ class HypergraphStorage(BaseStorage):
         if not visited_nodes:
             return {"nodes": [], "edges": [], "hyperedges": []}
 
-        # BFS in hypergraph space
         current_layer = set(visited_nodes)
 
         for _ in range(hops):
             next_layer = set()
-
-            # From current nodes, find all hyperedges
             for node_id in current_layer:
                 for he_id in self.node_to_hyperedges.get(node_id, set()):
                     if he_id not in visited_hyperedges:
                         visited_hyperedges.add(he_id)
-                        # Add all nodes in this hyperedge
                         for node_in_he in self.hyperedges[he_id].get("linked_nodes", []):
                             if node_in_he not in visited_nodes:
                                 next_layer.add(node_in_he)
@@ -199,22 +254,20 @@ class HypergraphStorage(BaseStorage):
 
             current_layer = next_layer
 
-        # Collect nodes and hyperedges
         sub_nodes = []
         for node_id in visited_nodes:
-            node_data = dict(self.nodes[node_id])  # Shallow copy
+            node_data = dict(self.nodes[node_id])
             if highlight_center and node_id in center_node_ids:
                 node_data["highlighted"] = True
             sub_nodes.append(node_data)
 
         sub_hyperedges = []
         for he_id in visited_hyperedges:
-            he_data = dict(self.hyperedges[he_id])  # Shallow copy
+            he_data = dict(self.hyperedges[he_id])
             if highlight_center and he_id in center_hyperedge_ids:
                 he_data["highlighted"] = True
             sub_hyperedges.append(he_data)
 
-        # Generate auxiliary layout edges for sub-hypergraph
         sub_edges = []
         for sub_hyperedge in sub_hyperedges:
             node_list = sub_hyperedge.get("linked_nodes", [])
@@ -223,7 +276,6 @@ class HypergraphStorage(BaseStorage):
             center_node_id = min(node_list, key=lambda nid: self.node_deg.get(nid, 0))
             for node_id in node_list:
                 if node_id != center_node_id:
-                    # Use stable IDs to avoid frontend rendering race conditions
                     edge_id = f"edge-{sub_hyperedge['id']}-{node_id}"
                     sub_edges.append(
                         {

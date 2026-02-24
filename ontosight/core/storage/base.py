@@ -18,13 +18,22 @@ class BaseStorage:
         """Get statistics about the storage."""
         raise NotImplementedError
 
-    def get_sample(self, center_ids: Optional[List[str]] = None, hops: int = 2, highlight_center: bool = False) -> Dict[str, Any]:
+    def get_sample(
+        self,
+        center_ids: Optional[List[str]] = None,
+        hops: int = 2,
+        highlight_center: bool = False,
+        min_nodes: int = 10,
+        max_attempts: int = 5,
+    ) -> Dict[str, Any]:
         """Get sample around given nodes.
-        
+
         Args:
             center_ids: List of center node/element IDs
             hops: Number of hops to expand (graph/hypergraph specific)
             highlight_center: If True, mark center elements with highlighted=True
+            min_nodes: Minimum number of nodes to include in the sample
+            max_attempts: Maximum number of attempts to find a suitable center
         """
         raise NotImplementedError
 

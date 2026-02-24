@@ -69,33 +69,40 @@ class NodeStorage(BaseStorage):
         return self.stats
 
     def get_sample(
-        self, 
-        center_ids: Optional[List[str]] = None, 
-        n_nodes: int = 10,
+        self,
+        center_ids: Optional[List[str]] = None,
+        hops: int = 2,
         highlight_center: bool = False,
+        min_nodes: int = 10,
+        max_attempts: int = 5,
+        n_nodes: Optional[int] = None,
     ) -> Dict[str, Any]:
         """Get a sample of nodes.
 
-        For node-only visualization, hops parameter is ignored (kwargs).
+        For node-only visualization, hops parameter is ignored.
 
         Args:
             center_ids: List of node IDs to include first (and highlight)
-            n_nodes: Total number of nodes to return (default: 10)
+            hops: Number of hops to expand (ignored for NodeStorage)
             highlight_center: If True, mark center nodes with highlighted=True
+            min_nodes: Minimum number of nodes to include in the sample (default: 10)
+            max_attempts: Maximum number of attempts (ignored for NodeStorage)
+            n_nodes: Deprecated alias for min_nodes
 
         Returns:
             Dict with 'nodes' key containing list of node objects
         """
-        all_node_ids = list(self.nodes.keys())
+        target_nodes = n_nodes if n_nodes is not None else min_nodes
         center_node_ids = set(center_ids) if center_ids else set()
+        all_node_ids = list(self.nodes.keys())
         
         # 1. Start with requested center nodes (filtering out invalid ones)
         result_ids = {nid for nid in center_node_ids if nid in self.nodes}
         
-        # 2. If we need more nodes to reach n_nodes, sample randomly from remaining
-        if len(result_ids) < n_nodes:
+        # 2. If we need more nodes to reach target_nodes, sample randomly from remaining
+        if len(result_ids) < target_nodes:
             remaining_ids = [nid for nid in all_node_ids if nid not in result_ids]
-            needed = n_nodes - len(result_ids)
+            needed = target_nodes - len(result_ids)
             
             # Sample up to 'needed' amount, or take all remaining if fewer
             if remaining_ids:
@@ -114,7 +121,7 @@ class NodeStorage(BaseStorage):
             
             nodes_to_return.append(node_copy)
 
-        logger.info(f"[NodeStorage] Returning {len(nodes_to_return)} nodes (Target: {n_nodes})")
+        logger.info(f"[NodeStorage] Returning {len(nodes_to_return)} nodes (Target: {target_nodes})")
         return {"nodes": nodes_to_return}
 
     def get_sample_from_data(
