@@ -93,7 +93,7 @@ class GraphStorage(BaseStorage):
             self.incident_edges[target_id].append(edge_id)
 
         self.stats = self._compute_stats()
-        logger.info(f"GraphStorage initialized: {len(self.nodes)} nodes, {len(self.edges)} edges")
+        logger.debug(f"GraphStorage initialized: {len(self.nodes)} nodes, {len(self.edges)} edges")
 
     def _compute_stats(self) -> Dict[str, Any]:
         """Compute graph statistics."""
@@ -239,7 +239,7 @@ class GraphStorage(BaseStorage):
                 edge_data["highlighted"] = True
             sub_edges.append(edge_data)
 
-        logger.info(f"[GraphStorage] get_sample: {len(sub_nodes)} nodes, {len(sub_edges)} edges")
+        logger.debug(f"[GraphStorage] get_sample: {len(sub_nodes)} nodes, {len(sub_edges)} edges")
         return {"nodes": sub_nodes, "edges": sub_edges}
 
     def get_all_nodes_paginated(self, page: int = 0, page_size: int = 30) -> Dict[str, Any]:
@@ -317,7 +317,7 @@ class GraphStorage(BaseStorage):
             if node_id in self.nodes:
                 node_ids.append(node_id)
             else:
-                logging.warning(f"Node {self.node_label_extractor(node)} not found in graph")
+                logger.debug(f"Node {self.node_label_extractor(node)} not found in graph")
 
         # Extract edge IDs
         edge_ids = []
@@ -326,7 +326,7 @@ class GraphStorage(BaseStorage):
             if edge_id in self.edges:
                 edge_ids.append(edge_id)
             else:
-                logging.warning(f"Edge {self.edge_label_extractor(edge)} not found in graph")
+                logger.debug(f"Edge {self.edge_label_extractor(edge)} not found in graph")
 
         # Combine node and edge IDs and call get_sample with highlight_center
         all_ids = node_ids + edge_ids

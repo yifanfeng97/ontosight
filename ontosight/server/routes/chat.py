@@ -65,7 +65,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     sample = storage.get_sample_from_data(node_list, edge_list, highlight_center=True)
                     highlighted_nodes = sum(1 for n in sample["nodes"] if n.get("highlighted"))
                     highlighted_edges = sum(1 for e in sample["edges"] if e.get("highlighted"))
-                    logger.info(
+                    logger.debug(
                         f"[/api/chat] Graph chat returned {len(sample['nodes'])} nodes, {len(sample['edges'])} edges "
                         f"({highlighted_nodes} highlighted nodes, {highlighted_edges} highlighted edges)"
                     )
@@ -80,7 +80,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                     )
                     highlighted_nodes = sum(1 for n in sample["nodes"] if n.get("highlighted"))
                     highlighted_hes = sum(1 for he in sample["hyperedges"] if he.get("highlighted"))
-                    logger.info(
+                    logger.debug(
                         f"[/api/chat] Hypergraph chat returned {len(sample['nodes'])} nodes, "
                         f"{len(sample['hyperedges'])} hyperedges "
                         f"({highlighted_nodes} highlighted nodes, {highlighted_hes} highlighted hyperedges)"
@@ -97,7 +97,7 @@ async def chat(request: ChatRequest) -> ChatResponse:
                 if node_list:
                     sample = storage.get_sample_from_data(node_list, highlight_center=True)
                     highlighted_nodes = sum(1 for n in sample["nodes"] if n.get("highlighted"))
-                    logger.info(
+                    logger.debug(
                         f"[/api/chat] Node chat returned {len(sample['nodes'])} nodes "
                         f"({highlighted_nodes} highlighted)"
                     )

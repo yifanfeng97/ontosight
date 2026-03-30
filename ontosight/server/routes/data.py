@@ -54,7 +54,7 @@ async def get_data(
                 raise HTTPException(status_code=400, detail="Storage not initialized")
             id_list = ids.split(",") if ids else None
             subgraph = storage.get_sample(center_ids=id_list, hops=2)
-            logger.info(
+            logger.debug(
                 f"[/api/data] Graph: {len(subgraph['nodes'])} nodes, {len(subgraph['edges'])} edges"
             )
             return GraphData(nodes=subgraph["nodes"], edges=subgraph["edges"])
@@ -65,7 +65,7 @@ async def get_data(
                 raise HTTPException(status_code=400, detail="Storage not initialized")
             id_list = ids.split(",") if ids else None
             sub_hg = storage.get_sample(center_ids=id_list, hops=2)
-            logger.info(
+            logger.debug(
                 f"[/api/data] Hypergraph: {len(sub_hg['nodes'])} nodes, {len(sub_hg['edges'])} edges, {len(sub_hg['hyperedges'])} hyperedges"
             )
             return HypergraphData(
@@ -78,7 +78,7 @@ async def get_data(
                 raise HTTPException(status_code=400, detail="Storage not initialized")
             id_list = ids.split(",") if ids else None
             node_data = storage.get_sample(center_ids=id_list, highlight_center=True)
-            logger.info(f"[/api/data] Nodes: {len(node_data['nodes'])} nodes")
+            logger.debug(f"[/api/data] Nodes: {len(node_data['nodes'])} nodes")
             return NodeData(nodes=node_data["nodes"])
 
         else:

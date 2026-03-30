@@ -48,14 +48,11 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
     _server_host = host
     _server_port = actual_port
 
-    if actual_port != port:
-        logger.warning(f"Port {port} was busy. Using port {actual_port} instead.")
-
     try:
         from ontosight.server.app import app
 
         # Configure uvicorn
-        config = uvicorn.Config(app, host=host, port=actual_port, log_level="warning")
+        config = uvicorn.Config(app, host=host, port=actual_port, log_level="error")
         server = uvicorn.Server(config)
 
         # Start server in a Daemon thread (dies when main thread dies)
@@ -65,8 +62,6 @@ def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
         # Wait for server to start
         if not _wait_for_server(host, actual_port, timeout=10):
             raise RuntimeError("Server failed to start")
-
-        logger.info(f"Server started successfully at {host}:{actual_port}")
 
     except Exception as e:
         logger.error(f"Failed to start server: {e}")
@@ -128,7 +123,6 @@ def get_server_url(path: str = "") -> str:
 def open_browser(path: str = "") -> None:
     """Open the visualization in the default web browser."""
     url = get_server_url(path)
-    logger.info(f"Opening browser at {url}")
     webbrowser.open(url)
 
 
@@ -155,11 +149,12 @@ def default_label_formatter(identifier: str) -> str:
 
 def wait_for_user() -> None:
     """Block execution until the user explicitly stops the server."""
-    print(f"\nOntoSight server is running at {get_server_url()}")
+    print(f"\nVisualizing with OntoSight...\n")
+    print(f"OntoSight server is running at {get_server_url()}")
     print("Press Ctrl+C to stop the server and exit...")
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        logger.info("\nStopping server...")
+        print("\nStopping server...")
         # Server process will be cleaned up by atexit handler

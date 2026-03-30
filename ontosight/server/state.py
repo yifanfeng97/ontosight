@@ -255,7 +255,7 @@ class GlobalState:
             self._visualization_data.clear()
             self._context.clear()
             self._storage = None
-            logger.warning("GlobalState cleared (all callbacks and data removed)")
+            logger.debug("GlobalState cleared (all callbacks and data removed)")
 
     def get_state_summary(self) -> Dict[str, Any]:
         """Get a summary of current state for logging/debugging.

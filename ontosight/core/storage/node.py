@@ -48,7 +48,7 @@ class NodeStorage(BaseStorage):
             self.nodes[node_id] = {"id": node_id, "data": {"label": label, "raw": raw_data}}
 
         self.stats = self._compute_stats()
-        logger.info(f"NodeStorage initialized: {len(self.nodes)} nodes")
+        logger.debug(f"NodeStorage initialized: {len(self.nodes)} nodes")
 
     def _compute_stats(self) -> Dict[str, Any]:
         """Compute node statistics."""
@@ -121,7 +121,7 @@ class NodeStorage(BaseStorage):
             
             nodes_to_return.append(node_copy)
 
-        logger.info(f"[NodeStorage] Returning {len(nodes_to_return)} nodes (Target: {target_nodes})")
+        logger.debug(f"[NodeStorage] Returning {len(nodes_to_return)} nodes (Target: {target_nodes})")
         return {"nodes": nodes_to_return}
 
     def get_sample_from_data(

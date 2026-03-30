@@ -52,7 +52,7 @@ async def search(request: SearchRequest) -> Union[NodeData, GraphData, Hypergrap
             
             highlighted_nodes_count = sum(1 for n in sample["nodes"] if n.get("highlighted"))
             highlighted_edges = sum(1 for e in sample["edges"] if e.get("highlighted"))
-            logger.info(
+            logger.debug(
                 f"[/api/search] Graph search returned {len(sample['nodes'])} nodes, {len(sample['edges'])} edges "
                 f"({highlighted_nodes_count} highlighted nodes, {highlighted_edges} highlighted edges)"
             )
@@ -89,7 +89,7 @@ async def search(request: SearchRequest) -> Union[NodeData, GraphData, Hypergrap
             sample = storage.get_sample_from_data(node_list, highlight_center=True)
             
             highlighted_nodes_count = sum(1 for n in sample["nodes"] if n.get("highlighted"))
-            logger.info(
+            logger.debug(
                 f"[/api/search] Node search returned {len(sample['nodes'])} nodes "
                 f"({highlighted_nodes_count} highlighted)"
             )
