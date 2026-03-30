@@ -1,6 +1,6 @@
 [project]
 name = "ontosight"
-version = "0.1.5"
+version = "0.1.6"
 description = "OntoSight: A flexible, AI-ready visualization engine for interactive knowledge graphs and hypergraphs."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -61,15 +61,13 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.sdist]
 include = ["/ontosight"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["ontosight"]
 
-[tool.hatch.build.targets.wheel.force-include]
-"ontosight/static" = "ontosight/static"
-
-
-[tool.hatch.build.targets.sdist.force-include]
-"ontosight/static" = "ontosight/static"
+[tool.hatch.build]
+# Use artifacts to include files ignored by VCS (frontend build artifacts)
+artifacts = ["ontosight/static/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
