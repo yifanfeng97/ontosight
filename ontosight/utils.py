@@ -35,14 +35,14 @@ def get_model_id(model: BaseModel) -> str:
 
 
 def ensure_server_running(host: str = "127.0.0.1", port: int = 8000) -> None:
-    """Ensure the visualization server is running in a background thread."""
+    """Ensure the visualization server is running in a background thread.
+
+    Each call starts a new server instance on a fresh port to support
+    multiple concurrent visualization windows.
+    """
     global _server_thread, _server_host, _server_port
 
-    if _server_thread is not None and _server_thread.is_alive():
-        # Already running
-        return
-
-    # Find an available port (handles zombie processes)
+    # Always find a new available port to support multiple concurrent visualizations.
     actual_port = _find_available_port(host, port)
 
     _server_host = host
@@ -122,12 +122,7 @@ def get_server_url(path: str = "") -> str:
 
 def open_browser(path: str = "") -> None:
     """Open the visualization in the default web browser."""
-    import time
     url = get_server_url(path)
-    # Append a timestamp to force the browser to reload the page
-    # instead of reusing a cached tab with stale visualization state.
-    separator = "&" if "?" in url else "?"
-    url = f"{url}{separator}_t={int(time.time())}"
     webbrowser.open(url)
 
 

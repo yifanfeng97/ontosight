@@ -58,6 +58,7 @@ async function fetchWithRetry<T>(
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
         ...options.headers,
       },
     });
