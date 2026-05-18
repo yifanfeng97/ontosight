@@ -122,7 +122,12 @@ def get_server_url(path: str = "") -> str:
 
 def open_browser(path: str = "") -> None:
     """Open the visualization in the default web browser."""
+    import time
     url = get_server_url(path)
+    # Append a timestamp to force the browser to reload the page
+    # instead of reusing a cached tab with stale visualization state.
+    separator = "&" if "?" in url else "?"
+    url = f"{url}{separator}_t={int(time.time())}"
     webbrowser.open(url)
 
 

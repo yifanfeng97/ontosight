@@ -49,6 +49,7 @@ class GlobalState:
 
     _instance: Optional["GlobalState"] = None
     _lock = threading.Lock()
+    DEFAULT_VIZ_TYPE: str = "graph"
 
     def __new__(cls) -> "GlobalState":
         """Ensure only one instance exists (singleton pattern)."""
@@ -68,7 +69,7 @@ class GlobalState:
         self._state_lock = threading.Lock()
         self._callbacks: Dict[str, Callable] = {}
         self._visualization_data: Dict[str, Any] = {}
-        self._visualization_type: str = "graph"  # Default type
+        self._visualization_type: str = self.DEFAULT_VIZ_TYPE
         self._context: Dict[str, Any] = {}
         self._storage: Optional["BaseStorage"] = None  # Storage engine instance
 
@@ -255,6 +256,7 @@ class GlobalState:
             self._visualization_data.clear()
             self._context.clear()
             self._storage = None
+            self._visualization_type = self.DEFAULT_VIZ_TYPE
             logger.debug("GlobalState cleared (all callbacks and data removed)")
 
     def get_state_summary(self) -> Dict[str, Any]:
