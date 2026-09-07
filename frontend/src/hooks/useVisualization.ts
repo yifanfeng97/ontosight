@@ -6,6 +6,9 @@ export interface SelectedItem {
   type: "node" | "edge" | "hyperedge";
 }
 
+export type HypergraphStyle = "classic" | "workbench";
+export type WorkbenchView = "overview" | "enclosure";
+
 export interface VisualizationState {
   meta: any | null;
   data: any | null;
@@ -17,6 +20,8 @@ export interface VisualizationState {
   selectedItemDetails: Map<string, any>; // Cache for item details
   highlightedNodes: Set<string>;
   viewMode: "graph" | "nodes" | "edges" | "hyperedges" | "hypergraph";
+  hypergraphStyle: HypergraphStyle;
+  workbenchView: WorkbenchView;
   zoomLevel: number;
   resetTrigger: number;
   currentPage: number;
@@ -36,6 +41,8 @@ export interface VisualizationState {
   highlightNodes: (nodeIds: string[]) => void;
   clearHighlight: () => void;
   setViewMode: (mode: VisualizationState["viewMode"]) => void;
+  setHypergraphStyle: (style: HypergraphStyle) => void;
+  setWorkbenchView: (view: WorkbenchView) => void;
   setZoomLevel: (level: number) => void;
   resetVisualization: () => void;
   triggerLayoutReset: () => void;
@@ -61,6 +68,8 @@ export const useVisualization = create<VisualizationState>((set, get) => ({
   selectedItemDetails: new Map(),
   highlightedNodes: new Set(),
   viewMode: "graph",
+  hypergraphStyle: "classic",
+  workbenchView: "overview",
   zoomLevel: 1,
   resetTrigger: 0,
   currentPage: 0,
@@ -109,6 +118,10 @@ export const useVisualization = create<VisualizationState>((set, get) => ({
   clearHighlight: () => set({ highlightedNodes: new Set() }),
 
   setViewMode: (viewMode) => set({ viewMode }),
+
+  // Presentation switches keep the same sample, selection, and callbacks.
+  setHypergraphStyle: (hypergraphStyle) => set({ hypergraphStyle }),
+  setWorkbenchView: (workbenchView) => set({ workbenchView }),
 
   setZoomLevel: (zoomLevel) => set({ zoomLevel }),
 

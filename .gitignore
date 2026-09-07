@@ -192,6 +192,7 @@ yarn-error.log*
 # Testing
 .tests/
 test-results/
+playwright-report/
 
 # Documentation builds
 docs/_build/

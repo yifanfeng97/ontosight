@@ -3,11 +3,13 @@ import { useVisualization } from "@/hooks/useVisualization";
 import { apiClient } from "@/services/api";
 import FloatingNav from "@/components/layout/FloatingNav";
 import { AlertCircle } from "lucide-react";
+import HypergraphStyleSwitcher from "./HypergraphStyleSwitcher";
 
 const GraphView = lazy(() => import("./GraphView"));
 const NodeView = lazy(() => import("./NodeView"));
 const PaginatedGridView = lazy(() => import("./PaginatedGridView"));
 const HypergraphView = lazy(() => import("./HypergraphView"));
+const WorkbenchHypergraphView = lazy(() => import("./workbench/WorkbenchHypergraphView"));
 
 interface ViewRouterProps {
   data: any;
@@ -17,7 +19,8 @@ interface ViewRouterProps {
 export default function ViewRouter({ data, meta }: ViewRouterProps) {
   // Get visualization type from meta
   const vizType = meta?.type;
-  const { setViewMode, viewMode } = useVisualization();
+  const { setViewMode, viewMode, hypergraphStyle } = useVisualization();
+  const isWorkbench = vizType === "hypergraph" && hypergraphStyle === "workbench";
 
   useEffect(() => {
     // If no view mode is set, use "graph" as default for all types
@@ -76,7 +79,7 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
       {/* View Content - Fill remaining space with layered rendering */}
       <div className="flex-1 min-h-0 relative w-full">
         {/* Canvas Layer - Always present, with conditional blur effect for modern glass-morphism */}
-        <div className={`absolute inset-0 transition-all duration-300 ${isOverlayMode ? 'blur-sm opacity-70' : 'blur-none opacity-100'}`}>
+        <div style={isWorkbench ? { top: "var(--onto-workbench-nav-height, 94px)" } : undefined} className={`onto-canvas-layer absolute inset-0 transition-all duration-300 ${isOverlayMode ? 'blur-sm opacity-70' : 'blur-none opacity-100'}`}>
           <Suspense
             fallback={
               <div className="flex items-center justify-center h-full">
@@ -88,14 +91,16 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
             }
           >
             {vizType === "graph" && <GraphView data={data} meta={meta} />}
-            {vizType === "hypergraph" && <HypergraphView data={data} meta={meta} />}
+            {vizType === "hypergraph" && (isWorkbench
+              ? <WorkbenchHypergraphView data={data} meta={meta} />
+              : <HypergraphView data={data} meta={meta} />)}
             {vizType === "nodes" && <NodeView data={data} meta={meta} />}
           </Suspense>
         </div>
 
         {/* Overlay Layer - Gallery appears on top with backdrop */}
         {isOverlayMode && (
-          <div className="absolute inset-0 z-50">
+          <div style={isWorkbench ? { top: "var(--onto-workbench-nav-height, 94px)" } : undefined} className="absolute inset-0 z-50">
             <Suspense
               fallback={
                 <div className="flex items-center justify-center h-full">
@@ -154,8 +159,9 @@ export default function ViewRouter({ data, meta }: ViewRouterProps) {
       </div>
 
       {/* View Switcher - MOVED TO BOTTOM of DOM for highest stacking priority, z-[100] */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:right-[10vw] md:translate-x-0 z-[100] flex justify-center pointer-events-auto w-[90vw] md:w-[70vw] lg:w-[60vw]">
-        <div className="flex justify-center w-full">
+      <div className={isWorkbench ? "absolute top-0 left-0 right-0 z-[100] flex justify-center pointer-events-auto" : "absolute top-4 left-1/2 -translate-x-1/2 md:left-auto md:right-[10vw] md:translate-x-0 z-[100] flex justify-center pointer-events-auto w-[90vw] md:w-[70vw] lg:w-[60vw]"}>
+        <div className={isWorkbench ? "flex flex-wrap items-center justify-center gap-2 w-full" : "flex justify-center w-full"}>
+          {isWorkbench && <HypergraphStyleSwitcher />}
           <FloatingNav
             vizType={vizType}
             activeView={viewMode}

@@ -39,7 +39,7 @@ export default function DetailPanel() {
             const itemDetails = getItemDetails(item.id);
 
             return (
-              <div key={item.id} className="group relative">
+              <div key={`${item.id}-${index}`} className="group relative">
                 <ItemCard
                   id={item.id}
                   label={itemDetails?.data?.label || itemDetails?.label || itemDetails?.id || "Loading..."}

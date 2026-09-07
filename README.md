@@ -29,6 +29,7 @@ OntoSight is a lightweight yet powerful Python library designed to bridge the ga
   - **Nodes** (`view_nodes`): Pure entity collections without edges - perfect for archives, semantic spaces, and clusters
 - **AI-Ready Callbacks**: Flexible `on_search` and `on_chat` hooks to integrate with any LLM (GPT-4, Claude, Llama 3) or Vector Database (Milvus, Pinecone, Chroma).
 - **Interactive Exploration**: Built-in detail panels, filtering, and real-time highlighting.
+- **Switchable Hypergraph Styles**: Keep Classic or choose Workbench for a capsule overview and a single-hyperedge enclosure. Both share the same data, selection, search, and chat. See the [Workbench guide](docs/workbench.md) for a local demo and controls.
 - **Framework Agnostic**: Works with any data source. Define your schema using Pydantic and let OntoSight handle the rest.
 - **Developer First**: Python-native API with automatic web-server management and browser launching.
 

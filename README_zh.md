@@ -29,6 +29,7 @@ OntoSight 是一个轻量且强大的 Python 库，旨在消除静态图谱可�
   - **节点** (`view_nodes`)：纯实体集合 - 无边，适合档案库、语义空间和聚类展示
 - **AI 友好的扩展性**：通过灵活的 `on_search` 和 `on_chat` 回调，轻松对接任何大模型 (GPT-4, Claude, Llama 3) 或向量数据库 (Milvus, Pinecone, Chroma)。
 - **交互式探索**：内置属性详情面板、过滤功能以及实时节点高亮显示。
+- **可切换的超图风格**：保留默认 Classic，新增 Workbench 胶囊总览和单超边包络。两种风格共享数据、选择、搜索及聊天结果。运行示例和操作方式见 [Workbench 使用说明](docs/workbench.md)。
 - **架构无关**：支持任何数据源。使用 Pydantic 定义 Schema，剩下的交给 OntoSight。
 - **开发者至上**：原生 Python API，自动管理 Web 服务器并启动浏览器。
 
