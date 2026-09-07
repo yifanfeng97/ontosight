@@ -7,9 +7,11 @@ import Island from "@/components/core/Island";
 import { AlertCircle } from "lucide-react";
 import { BACKDROP_BLUR_CONFIG } from "@/theme/visual-config";
 import { cn } from "@/utils";
+import "@/components/views/workbench/workbench.css";
+import HypergraphStyleSwitcher from "@/components/views/HypergraphStyleSwitcher";
 
 export default function MainLayout() {
-  const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode, viewMode, clearHistory } = useVisualization();
+  const { loading, error, meta, data, viewedHistory, triggerLayoutReset, setViewMode, viewMode, clearHistory, hypergraphStyle } = useVisualization();
 
   // Determine which features are available based on meta
   const hasSearch = meta?.features?.search === true;
@@ -22,7 +24,7 @@ export default function MainLayout() {
   const isGridViewMode = ["nodes", "edges", "hyperedges"].includes(viewMode || "");
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-slate-50">
+    <div className="onto-layout relative w-screen h-screen overflow-hidden bg-slate-50" data-visualization-type={vizType} data-visual-style={vizType === "hypergraph" ? hypergraphStyle : "classic"}>
       {/* Canvas Background with subtle grid pattern */}
       <div 
         className={`absolute inset-0 z-0 transition-opacity duration-300 ${isGridViewMode ? "opacity-20" : "opacity-40"}`}
@@ -37,7 +39,7 @@ export default function MainLayout() {
 
       {/* Main ViewRouter - Full Screen Canvas */}
       <div 
-        className={`absolute inset-0 z-0 transition-all duration-300`}
+        className={`onto-main-view absolute inset-0 z-0 transition-all duration-300`}
       >
         {/* White overlay for grid modes to keep it clean instead of grey */}
         {isGridViewMode && (
@@ -76,13 +78,13 @@ export default function MainLayout() {
       {/* Floating Islands Layer - Always on top of everything including Grid Overlay, z-[90] for maximum interaction */}
       <div className="fixed inset-0 z-[90] pointer-events-none">
         {/* Left Sidebar Island Container - Vertical Stack with relative width */}
-        <div className="fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-[22vw] min-w-[280px] max-w-[350px]">
+        <div data-has-details={isHistorySelected} className="onto-sidebar fixed left-6 top-6 bottom-6 flex flex-col gap-6 pointer-events-auto w-[22vw] min-w-[280px] max-w-[350px]">
           {/* Stats Island - Top Left */}
           {meta?.stats && (
             <Island
               title="Statistics"
               position="custom"
-              className="w-full group"
+              className="onto-side-island onto-stats-island w-full group"
             >
               <StatsPanel stats={meta.stats} />
             </Island>
@@ -95,7 +97,7 @@ export default function MainLayout() {
               position="custom"
               showClose
               onClose={clearHistory}
-              className="w-full flex-1 min-h-0 group"
+              className="onto-side-island w-full flex-1 min-h-0 group"
               contentClassName="overflow-y-auto"
             >
               <DetailPanel />
@@ -103,11 +105,14 @@ export default function MainLayout() {
           )}
 
           {/* Spacer when no details */}
-          {!isHistorySelected && <div className="flex-1" />}
+          {!isHistorySelected && <div className="onto-sidebar-spacer flex-1" />}
         </div>
       </div>
 
       {/* Floating Toolbar (Search + Chat + Reset) - Absolute priority z-[110] */}
+      {vizType === "hypergraph" && hypergraphStyle === "classic" && data && !loading && !error && (
+        <div className="onto-classic-style-entry"><HypergraphStyleSwitcher /></div>
+      )}
       <div className="relative z-[110]">
         <FloatingTools hasSearch={hasSearch} hasChat={hasChat} />
       </div>

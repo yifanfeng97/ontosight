@@ -32,7 +32,7 @@ const FloatingTools = memo(function FloatingTools({
     <>
       {/* Right Tool Blade - Mica Jelly Style */}
       <div className={cn(
-        "fixed top-1/2 -translate-y-1/2 z-[100] flex flex-col gap-3 p-2.5 rounded-[2rem] bg-white/70 border border-white/50 shadow-[0_15px_45px_rgba(0,0,0,0.06)] backdrop-blur-[40px] pointer-events-auto",
+        "onto-tools fixed top-1/2 -translate-y-1/2 z-[100] flex flex-col gap-3 p-2.5 rounded-[2rem] bg-white/70 border border-white/50 shadow-[0_15px_45px_rgba(0,0,0,0.06)] backdrop-blur-[40px] pointer-events-auto",
         "transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]",
         openDrawer === "chat" ? "right-[420px]" : "right-8",
         "hover:shadow-[0_20px_60px_rgba(0,0,0,0.1)] hover:scale-[1.03]"

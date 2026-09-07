@@ -1,0 +1,43 @@
+name: Test Workbench
+
+on:
+  pull_request:
+  push:
+    branches: [master, "codex/**"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install Python dependencies
+        run: python -m pip install -e . pytest httpx build
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Test and build frontend
+        working-directory: frontend
+        run: |
+          npm test -- --run
+          npm run build
+      - name: Test Python endpoints
+        run: python -m pytest
+      - name: Install browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - name: Test interactions against the real demo server
+        working-directory: frontend
+        run: npm run test:e2e
+      - name: Build wheel with frontend assets
+        run: python -m build --wheel
